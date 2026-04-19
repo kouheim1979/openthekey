@@ -116,6 +116,121 @@
             width: 60%;
             max-width: 250px;
         }
+
+        /* 鍵の形選択画面 */
+        #keyOptions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        button.key-option {
+            background-color: #444;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100px;
+            cursor: pointer;
+            color: #fff;
+        }
+        button.key-option .icon {
+            margin-bottom: 0.4rem;
+            border: 3px solid #ffd700;
+            background-color: transparent;
+        }
+        button.key-option .icon.circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+        }
+        button.key-option .icon.square {
+            width: 50px;
+            height: 50px;
+            border-radius: 0;
+        }
+        button.key-option .icon.triangle {
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 50px solid #ffd700;
+            margin-bottom: 0.4rem;
+            border: none;
+        }
+        button.key-option span {
+            font-size: 0.9rem;
+            color: #fff;
+        }
+
+        /* 鍵差し込みアニメーション画面 */
+        #lockArea {
+            position: relative;
+            width: 260px;
+            height: 120px;
+            border: 4px solid #888;
+            border-radius: 0.5rem;
+            background-color: #333;
+            margin-top: 1rem;
+        }
+        #lockArea .lockHole {
+            position: absolute;
+            top: 50%;
+            left: 70%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 30px;
+            border: 3px solid #444;
+            background-color: #222;
+            border-radius: 0.2rem;
+        }
+        .key {
+            position: absolute;
+            top: 50%;
+            left: -120px;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+        }
+        .key .head {
+            width: 30px;
+            height: 30px;
+            border: 3px solid #ffd700;
+            background-color: transparent;
+        }
+        .key.circle .head {
+            border-radius: 50%;
+        }
+        .key.square .head {
+            border-radius: 0;
+        }
+        .key.triangle .head {
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 30px solid #ffd700;
+            background: transparent;
+            border: none;
+        }
+        .key .body {
+            width: 60px;
+            height: 10px;
+            border: 3px solid #ffd700;
+            border-left: none;
+            background-color: transparent;
+        }
+        .slide-in {
+            animation: insertKey 1.5s forwards;
+        }
+        @keyframes insertKey {
+            0% { left: -120px; }
+            100% { left: 80px; }
+        }
     </style>
 </head>
 <body>
@@ -133,17 +248,50 @@
         <h2>遊び方</h2>
         <p>「カギを開けよう」は、ピンの高さを揃えて鍵を開けるミニゲームです。</p>
         <ul>
-            <li>スタートボタンでゲームを開始します。</li>
-            <li>3・2・1のカウントダウン後にステージが始まります。</li>
+            <li>スタートボタンを押すと、まず鍵の形を選択します。</li>
+            <li>鍵の形を選ぶと鍵がカギ穴に差し込まれるアニメーションが流れます。</li>
+            <li>アニメーション終了後に3・2・1のカウントダウンが始まり、その後ステージが始まります。</li>
             <li>画面に表示されたピンをタップすると高さが変化します。</li>
             <li>全てのピンを正しい高さに揃えるとステージクリアです。</li>
             <li>制限時間内にクリアできなければゲームオーバーです。</li>
-            <li>ステージが進むとピンの数が増えたり、制限時間が短くなります。</li>
+            <li>ステージが進むとピンの数や状態数が増え、制限時間が短くなります。</li>
             <li>画面上部にはステージ、残り時間、スコアが表示されます。</li>
             <li>効果音のON/OFFはタイトル画面で切り替えられます。</li>
             <li>ベストスコアは自動的に保存されます。</li>
         </ul>
         <button id="backHowToButton">タイトルへ戻る</button>
+    </div>
+
+    <!-- 鍵の形選択画面 -->
+    <div id="selectKeyScreen" class="screen">
+        <h2>鍵の形を選択</h2>
+        <div id="keyOptions">
+            <button class="key-option" data-shape="circle">
+                <div class="icon circle"></div>
+                <span>丸い鍵</span>
+            </button>
+            <button class="key-option" data-shape="square">
+                <div class="icon square"></div>
+                <span>四角い鍵</span>
+            </button>
+            <button class="key-option" data-shape="triangle">
+                <div class="icon triangle"></div>
+                <span>三角の鍵</span>
+            </button>
+        </div>
+        <button id="backFromSelectButton">タイトルへ戻る</button>
+    </div>
+
+    <!-- 鍵差し込みアニメーション画面 -->
+    <div id="insertionScreen" class="screen">
+        <h2>鍵を差し込んでいます…</h2>
+        <div id="lockArea">
+            <div class="lockHole"></div>
+            <div id="insertKey" class="key circle">
+                <div class="head"></div>
+                <div class="body"></div>
+            </div>
+        </div>
     </div>
 
     <!-- カウントダウン画面 -->
@@ -191,19 +339,29 @@
         let soundEnabled = false;
         let audioContext = null;
 
-        // ステージごとの設定
-        const stageConfigs = [
-            { pinCount: 3, stateCount: 3, timeLimit: 15 }, // 1
-            { pinCount: 3, stateCount: 3, timeLimit: 14 }, // 2
-            { pinCount: 3, stateCount: 4, timeLimit: 13 }, // 3
-            { pinCount: 4, stateCount: 4, timeLimit: 12 }, // 4
-            { pinCount: 4, stateCount: 4, timeLimit: 11 }, // 5
-            { pinCount: 5, stateCount: 4, timeLimit: 10 }, // 6
-            { pinCount: 5, stateCount: 5, timeLimit: 9 },  // 7
-            { pinCount: 6, stateCount: 5, timeLimit: 8 },  // 8
-            { pinCount: 7, stateCount: 6, timeLimit: 8 },  // 9
-            { pinCount: 8, stateCount: 6, timeLimit: 8 }   // 10
-        ];
+        // 鍵の形選択用の変数
+        let selectedShape = null;
+        // 各鍵形状ごとの基本ピン数
+        const shapes = {
+            circle: { name: '丸い鍵', basePin: 3 },
+            square: { name: '四角い鍵', basePin: 4 },
+            triangle: { name: '三角の鍵', basePin: 5 }
+        };
+
+        /**
+         * ステージのパラメータを動的に計算する関数。
+         * 鍵の形状に応じて基本ピン数が異なり、ステージごとにピン数・状態数・制限時間を変化させる。
+         */
+        function getStageParameters() {
+            const basePin = selectedShape ? shapes[selectedShape].basePin : 3;
+            // ステージが進むごとにピン数を増やすが最大8本まで
+            const pinCount = Math.min(basePin + stageNumber - 1, 8);
+            // 状態数は2ステージ毎に1増え、最大6まで
+            const stateCount = Math.min(3 + Math.floor((stageNumber - 1) / 2), 6);
+            // 制限時間はステージが進むごとに1秒ずつ短くし、下限は8秒
+            const timeLimit = Math.max(15 - (stageNumber - 1), 8);
+            return { pinCount, stateCount, timeLimit };
+        }
 
         // DOM要素の取得
         const titleScreen = document.getElementById('titleScreen');
@@ -222,6 +380,11 @@
         const soundToggleButton = document.getElementById('soundToggleButton');
         const howToScreen = document.getElementById('howToScreen');
         const backHowToButton = document.getElementById('backHowToButton');
+        // 新規画面の取得
+        const selectKeyScreen = document.getElementById('selectKeyScreen');
+        const insertionScreen = document.getElementById('insertionScreen');
+        const backFromSelectButton = document.getElementById('backFromSelectButton');
+        const insertKey = document.getElementById('insertKey');
 
         // 効果音の初期化
         function initAudio() {
@@ -231,7 +394,6 @@
                 audioContext = null;
             }
         }
-
         // 効果音を生成する関数
         function playTone(frequency, duration, type='sine') {
             if (!soundEnabled || !audioContext) return;
@@ -245,20 +407,14 @@
             osc.stop(audioContext.currentTime + duration / 1000);
         }
         // 特定の効果音
-        function playClickSound() {
-            playTone(600, 80, 'square');
-        }
-        function playSuccessSound() {
-            playTone(900, 200, 'triangle');
-        }
-        function playFailureSound() {
-            playTone(200, 400, 'sawtooth');
-        }
+        function playClickSound() { playTone(600, 80, 'square'); }
+        function playSuccessSound() { playTone(900, 200, 'triangle'); }
+        function playFailureSound() { playTone(200, 400, 'sawtooth'); }
 
         // 画面表示切替
         function showScreen(target) {
             // 全てのscreenクラスを非表示
-            [titleScreen, countdownScreen, gameScreen, stageClearScreen, gameOverScreen, howToScreen].forEach(elem => elem.classList.remove('active'));
+            [titleScreen, countdownScreen, gameScreen, stageClearScreen, gameOverScreen, howToScreen, selectKeyScreen, insertionScreen].forEach(elem => elem.classList.remove('active'));
             // 目的の画面を表示
             target.classList.add('active');
         }
@@ -290,6 +446,18 @@
             document.getElementById('retryButton').addEventListener('click', retryGame);
             document.getElementById('backTitleButton').addEventListener('click', backToTitle);
             soundToggleButton.addEventListener('click', toggleSound);
+            // 鍵の形選択ボタンのイベントリスナー
+            const keyOptionButtons = document.querySelectorAll('.key-option');
+            keyOptionButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const shape = button.getAttribute('data-shape');
+                    selectKey(shape);
+                });
+            });
+            // 鍵選択画面でタイトルに戻る
+            backFromSelectButton.addEventListener('click', () => {
+                showScreen(titleScreen);
+            });
         }
 
         // 効果音のON/OFF切替
@@ -301,12 +469,51 @@
             }
         }
 
-        // ゲーム開始処理
+        /**
+         * 鍵の形を選択したときの処理
+         * @param {string} shape - 選択した鍵形状（circle, square, triangle）
+         */
+        function selectKey(shape) {
+            selectedShape = shape;
+            // 挿入アニメーション画面を表示
+            showInsertionAnimation();
+        }
+
+        /**
+         * 鍵を差し込むアニメーションを表示し、終了後にカウントダウンを開始する
+         */
+        function showInsertionAnimation() {
+            // 鍵のクラスをリセットして形状を設定
+            insertKey.className = 'key ' + selectedShape;
+            // remove slide-in class if previously added
+            insertKey.classList.remove('slide-in');
+            // 画面を挿入画面に切替
+            showScreen(insertionScreen);
+            // アニメーションをトリガー
+            setTimeout(() => {
+                insertKey.classList.add('slide-in');
+            }, 50);
+            // アニメーション終了後にカウントダウン開始（1.6秒後）
+            setTimeout(() => {
+                insertKey.classList.remove('slide-in');
+                showCountdown();
+            }, 1600);
+        }
+
+        // 鍵の形選択画面の表示
+        function showKeySelection() {
+            if (timerInterval) clearInterval(timerInterval);
+            if (countdownInterval) clearInterval(countdownInterval);
+            showScreen(selectKeyScreen);
+        }
+
+        // ゲーム開始処理：ステージ数やスコアを初期化し鍵の形選択から開始
         function startGame() {
             stageNumber = 1;
             score = 0;
             missCount = 0;
-            showCountdown();
+            selectedShape = null;
+            showKeySelection();
         }
 
         // カウントダウン表示
@@ -329,7 +536,8 @@
         // ステージ開始処理
         function startStage() {
             currentState = 'playing';
-            const config = stageConfigs[stageNumber - 1];
+            // 鍵の形に基づいてステージパラメータを計算
+            const config = getStageParameters();
             const { pinCount, stateCount, timeLimit } = config;
             // ピン情報の初期化
             pins = [];
@@ -391,7 +599,6 @@
                 missCount++;
                 playClickSound();
             } else {
-                // 正解の位置になったときにもクリック音
                 playClickSound();
             }
             // 全てのピンが正解になっているかチェック
@@ -424,7 +631,6 @@
                 // 全ステージクリア
                 endGame(true);
             } else {
-                // ミスカウントをリセット
                 missCount = 0;
                 showCountdown();
             }
@@ -447,24 +653,24 @@
                 try {
                     localStorage.setItem('kagi_bestScore', String(bestScore));
                 } catch (e) {
-                    // ローカルストレージが使えない場合は無視
+                    /* localStorageが使えない場合は無視 */ 
                 }
                 bestScoreDisplay.textContent = 'ベストスコア: ' + bestScore;
             }
             showScreen(gameOverScreen);
         }
 
-        // リトライ: 最初のステージから再挑戦
+        // リトライ: 鍵選択画面から再挑戦
         function retryGame() {
             stageNumber = 1;
             score = 0;
             missCount = 0;
-            showCountdown();
+            selectedShape = null;
+            showKeySelection();
         }
 
         // タイトルへ戻る
         function backToTitle() {
-            // 現在動作中のインターバルをクリア
             if (timerInterval) clearInterval(timerInterval);
             if (countdownInterval) clearInterval(countdownInterval);
             showScreen(titleScreen);
