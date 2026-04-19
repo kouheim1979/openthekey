@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>カギを開けよう</title>
+    <style>
+        /* ベーススタイルのリセット */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: sans-serif;
+            background-color: #222; /* 暗い背景で高コントラストにする */
+            color: #f5f5f5;        /* 明るい文字色 */
+        }
+        button {
+            font-size: 1.2rem;
+            padding: 0.8rem 1.2rem;
+            margin: 0.4rem;
+            border: none;
+            border-radius: 0.4rem;
+            background-color: #444;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            width: 80%;
+            max-width: 300px;
+        }
+        button:active {
+            background-color: #666;
+            transform: scale(0.96);
+        }
+        h1, h2, h3 {
+            margin: 0.6rem 0;
+            text-align: center;
+            color: #ffd700; /* ゴールド系のアクセントカラー */
+        }
+        .screen {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            text-align: center;
+        }
+        .active {
+            display: flex;
+        }
+        #scoreBoard {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        #pinsContainer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .pin-button {
+            width: 60px;
+            height: 60px;
+            margin: 0.5rem;
+            font-size: 1.2rem;
+            background-color: #555;
+            border-radius: 0.5rem;
+        }
+        .pin-button.correct {
+            background-color: #2e8b57; /* 成功したピンは緑色に */
+        }
+        .pin-button.wrong {
+            animation: shake 0.2s;
+        }
+        @keyframes shake {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(-3px, 0); }
+            50% { transform: translate(3px, 0); }
+            75% { transform: translate(-3px, 0); }
+            100% { transform: translate(0, 0); }
+        }
+        /* モーダル風画面は使わないがスタイルを残す */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background-color: #333;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            color: #fff;
+        }
+        .modal-content h2 {
+            color: #ffd700;
+        }
+        /* ステージクリア・ゲームオーバー画面のボタン幅調整 */
+        #nextStageButton, #retryButton, #backTitleButton {
+            width: 60%;
+            max-width: 250px;
+        }
+    </style>
+</head>
+<body>
+    <!-- タイトル画面 -->
+    <div id="titleScreen" class="screen active">
+        <h1>カギを開けよう</h1>
+        <p id="bestScoreDisplay">ベストスコア: --</p>
+        <button id="startButton">スタート</button>
+        <button id="howToButton">遊び方</button>
+        <button id="soundToggleButton">効果音OFF</button>
+    </div>
+
+    <!-- 遊び方画面 -->
+    <div id="howToScreen" class="screen">
+        <h2>遊び方</h2>
+        <p>「カギを開けよう」は、ピンの高さを揃えて鍵を開けるミニゲームです。</p>
+        <ul>
+            <li>スタートボタンでゲームを開始します。</li>
+            <li>3・2・1のカウントダウン後にステージが始まります。</li>
+            <li>画面に表示されたピンをタップすると高さが変化します。</li>
+            <li>全てのピンを正しい高さに揃えるとステージクリアです。</li>
+            <li>制限時間内にクリアできなければゲームオーバーです。</li>
+            <li>ステージが進むとピンの数が増えたり、制限時間が短くなります。</li>
+            <li>画面上部にはステージ、残り時間、スコアが表示されます。</li>
+            <li>効果音のON/OFFはタイトル画面で切り替えられます。</li>
+            <li>ベストスコアは自動的に保存されます。</li>
+        </ul>
+        <button id="backHowToButton">タイトルへ戻る</button>
+    </div>
+
+    <!-- カウントダウン画面 -->
+    <div id="countdownScreen" class="screen">
+        <h2 id="countdownText">3</h2>
+    </div>
+
+    <!-- ゲーム画面 -->
+    <div id="gameScreen" class="screen">
+        <div id="scoreBoard">
+            <span id="stageDisplay">ステージ 1</span>
+            <span id="timerDisplay">残り: 0.0</span>
+            <span id="scoreDisplay">スコア: 0</span>
+        </div>
+        <div id="pinsContainer"></div>
+    </div>
+
+    <!-- ステージクリア画面 -->
+    <div id="stageClearScreen" class="screen">
+        <h2>ステージクリア！</h2>
+        <p id="stageClearMsg"></p>
+        <button id="nextStageButton">次のステージへ</button>
+    </div>
+
+    <!-- ゲームオーバー画面 -->
+    <div id="gameOverScreen" class="screen">
+        <h2>ゲームオーバー</h2>
+        <p id="finalScore"></p>
+        <button id="retryButton">リトライ</button>
+        <button id="backTitleButton">タイトルへ</button>
+    </div>
+
+    <script>
+        // 状態管理用の変数
+        let currentState = 'title';
+        let stageNumber = 1;
+        const maxStage = 10;
+        let pins = [];
+        let timeLeft = 0;
+        let timerInterval = null;
+        let countdownInterval = null;
+        let score = 0;
+        let missCount = 0;
+        let bestScore = 0;
+        let soundEnabled = false;
+        let audioContext = null;
+
+        // ステージごとの設定
+        const stageConfigs = [
+            { pinCount: 3, stateCount: 3, timeLimit: 15 }, // 1
+            { pinCount: 3, stateCount: 3, timeLimit: 14 }, // 2
+            { pinCount: 3, stateCount: 4, timeLimit: 13 }, // 3
+            { pinCount: 4, stateCount: 4, timeLimit: 12 }, // 4
+            { pinCount: 4, stateCount: 4, timeLimit: 11 }, // 5
+            { pinCount: 5, stateCount: 4, timeLimit: 10 }, // 6
+            { pinCount: 5, stateCount: 5, timeLimit: 9 },  // 7
+            { pinCount: 6, stateCount: 5, timeLimit: 8 },  // 8
+            { pinCount: 7, stateCount: 6, timeLimit: 8 },  // 9
+            { pinCount: 8, stateCount: 6, timeLimit: 8 }   // 10
+        ];
+
+        // DOM要素の取得
+        const titleScreen = document.getElementById('titleScreen');
+        const countdownScreen = document.getElementById('countdownScreen');
+        const gameScreen = document.getElementById('gameScreen');
+        const stageClearScreen = document.getElementById('stageClearScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const pinsContainer = document.getElementById('pinsContainer');
+        const stageDisplay = document.getElementById('stageDisplay');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const countdownText = document.getElementById('countdownText');
+        const stageClearMsg = document.getElementById('stageClearMsg');
+        const finalScore = document.getElementById('finalScore');
+        const bestScoreDisplay = document.getElementById('bestScoreDisplay');
+        const soundToggleButton = document.getElementById('soundToggleButton');
+        const howToScreen = document.getElementById('howToScreen');
+        const backHowToButton = document.getElementById('backHowToButton');
+
+        // 効果音の初期化
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                audioContext = null;
+            }
+        }
+
+        // 効果音を生成する関数
+        function playTone(frequency, duration, type='sine') {
+            if (!soundEnabled || !audioContext) return;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = type;
+            osc.frequency.value = frequency;
+            gain.gain.setValueAtTime(0.2, audioContext.currentTime);
+            osc.connect(gain).connect(audioContext.destination);
+            osc.start();
+            osc.stop(audioContext.currentTime + duration / 1000);
+        }
+        // 特定の効果音
+        function playClickSound() {
+            playTone(600, 80, 'square');
+        }
+        function playSuccessSound() {
+            playTone(900, 200, 'triangle');
+        }
+        function playFailureSound() {
+            playTone(200, 400, 'sawtooth');
+        }
+
+        // 画面表示切替
+        function showScreen(target) {
+            // 全てのscreenクラスを非表示
+            [titleScreen, countdownScreen, gameScreen, stageClearScreen, gameOverScreen, howToScreen].forEach(elem => elem.classList.remove('active'));
+            // 目的の画面を表示
+            target.classList.add('active');
+        }
+
+        // 最初の初期化処理
+        function init() {
+            // ローカルストレージからベストスコア取得
+            try {
+                const stored = localStorage.getItem('kagi_bestScore');
+                bestScore = stored ? parseInt(stored, 10) : 0;
+                if (isNaN(bestScore)) bestScore = 0;
+            } catch (e) {
+                bestScore = 0;
+            }
+            bestScoreDisplay.textContent = 'ベストスコア: ' + bestScore;
+            // 効果音設定の初期値
+            soundEnabled = false;
+            soundToggleButton.textContent = '効果音OFF';
+            initAudio();
+            // イベントリスナー登録
+            document.getElementById('startButton').addEventListener('click', startGame);
+            document.getElementById('howToButton').addEventListener('click', () => {
+                showScreen(howToScreen);
+            });
+            backHowToButton.addEventListener('click', () => {
+                showScreen(titleScreen);
+            });
+            document.getElementById('nextStageButton').addEventListener('click', nextStage);
+            document.getElementById('retryButton').addEventListener('click', retryGame);
+            document.getElementById('backTitleButton').addEventListener('click', backToTitle);
+            soundToggleButton.addEventListener('click', toggleSound);
+        }
+
+        // 効果音のON/OFF切替
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            soundToggleButton.textContent = soundEnabled ? '効果音ON' : '効果音OFF';
+            if (soundEnabled && !audioContext) {
+                initAudio();
+            }
+        }
+
+        // ゲーム開始処理
+        function startGame() {
+            stageNumber = 1;
+            score = 0;
+            missCount = 0;
+            showCountdown();
+        }
+
+        // カウントダウン表示
+        function showCountdown() {
+            showScreen(countdownScreen);
+            let count = 3;
+            countdownText.textContent = count;
+            if (countdownInterval) clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownText.textContent = count;
+                } else {
+                    clearInterval(countdownInterval);
+                    startStage();
+                }
+            }, 1000);
+        }
+
+        // ステージ開始処理
+        function startStage() {
+            currentState = 'playing';
+            const config = stageConfigs[stageNumber - 1];
+            const { pinCount, stateCount, timeLimit } = config;
+            // ピン情報の初期化
+            pins = [];
+            for (let i = 0; i < pinCount; i++) {
+                const correct = Math.floor(Math.random() * stateCount);
+                pins.push({ current: 0, correct: correct, stateCount: stateCount });
+            }
+            // 残り時間設定
+            timeLeft = timeLimit;
+            // UI更新
+            stageDisplay.textContent = 'ステージ ' + stageNumber;
+            timerDisplay.textContent = '残り: ' + timeLeft.toFixed(1);
+            scoreDisplay.textContent = 'スコア: ' + score;
+            // ピンボタン生成
+            pinsContainer.innerHTML = '';
+            pins.forEach((pin, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'pin-button';
+                btn.textContent = pin.current + 1; // 表示は1始まり
+                btn.addEventListener('click', () => handlePinClick(index, btn));
+                pinsContainer.appendChild(btn);
+            });
+            // ゲーム画面を表示
+            showScreen(gameScreen);
+            // タイマー開始
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft -= 0.1;
+                if (timeLeft < 0) timeLeft = 0;
+                timerDisplay.textContent = '残り: ' + timeLeft.toFixed(1);
+                if (timeLeft === 0) {
+                    clearInterval(timerInterval);
+                    // 失敗
+                    endGame(false);
+                }
+            }, 100);
+        }
+
+        // ピンをクリックしたときの処理
+        function handlePinClick(index, btn) {
+            if (currentState !== 'playing') return;
+            const pin = pins[index];
+            // 現在の状態を更新
+            pin.current = (pin.current + 1) % pin.stateCount;
+            // テキスト更新
+            btn.textContent = pin.current + 1;
+            // 状態が正解かどうか
+            if (pin.current === pin.correct) {
+                btn.classList.add('correct');
+                btn.classList.remove('wrong');
+            } else {
+                btn.classList.remove('correct');
+                // 失敗時の軽い演出
+                btn.classList.add('wrong');
+                setTimeout(() => btn.classList.remove('wrong'), 200);
+            }
+            // ミスカウント（正解以外ならミスとしてカウント）
+            if (pin.current !== pin.correct) {
+                missCount++;
+                playClickSound();
+            } else {
+                // 正解の位置になったときにもクリック音
+                playClickSound();
+            }
+            // 全てのピンが正解になっているかチェック
+            const allCorrect = pins.every(p => p.current === p.correct);
+            if (allCorrect) {
+                // ステージクリア
+                clearInterval(timerInterval);
+                completeStage();
+            }
+        }
+
+        // ステージクリア処理
+        function completeStage() {
+            currentState = 'stageClear';
+            playSuccessSound();
+            // スコア計算: ステージクリア数*100 + 残り時間*10 - ミス*5
+            const stageScore = stageNumber * 100 + Math.floor(timeLeft * 10) - missCount * 5;
+            if (stageScore > 0) {
+                score += stageScore;
+            }
+            scoreDisplay.textContent = 'スコア: ' + score;
+            stageClearMsg.textContent = '残り時間ボーナス: ' + Math.floor(timeLeft * 10) + ' / ミス: ' + missCount;
+            showScreen(stageClearScreen);
+        }
+
+        // 次のステージへ進む
+        function nextStage() {
+            stageNumber++;
+            if (stageNumber > maxStage) {
+                // 全ステージクリア
+                endGame(true);
+            } else {
+                // ミスカウントをリセット
+                missCount = 0;
+                showCountdown();
+            }
+        }
+
+        // ゲーム終了（クリアまたは失敗）
+        function endGame(cleared) {
+            currentState = 'gameOver';
+            if (!cleared) {
+                playFailureSound();
+            }
+            // 総合スコアに残り時間ボーナスを追加（クリア時のみ）
+            if (cleared) {
+                score += Math.floor(timeLeft * 10);
+            }
+            finalScore.textContent = 'スコア: ' + score + ' ステージ: ' + (stageNumber - 1);
+            // ベストスコア更新
+            if (score > bestScore) {
+                bestScore = score;
+                try {
+                    localStorage.setItem('kagi_bestScore', String(bestScore));
+                } catch (e) {
+                    // ローカルストレージが使えない場合は無視
+                }
+                bestScoreDisplay.textContent = 'ベストスコア: ' + bestScore;
+            }
+            showScreen(gameOverScreen);
+        }
+
+        // リトライ: 最初のステージから再挑戦
+        function retryGame() {
+            stageNumber = 1;
+            score = 0;
+            missCount = 0;
+            showCountdown();
+        }
+
+        // タイトルへ戻る
+        function backToTitle() {
+            // 現在動作中のインターバルをクリア
+            if (timerInterval) clearInterval(timerInterval);
+            if (countdownInterval) clearInterval(countdownInterval);
+            showScreen(titleScreen);
+            bestScoreDisplay.textContent = 'ベストスコア: ' + bestScore;
+        }
+
+        // ページ読み込み時に初期化
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
