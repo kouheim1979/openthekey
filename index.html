@@ -268,6 +268,10 @@ button,input,select{font:inherit}
   line-height:1.35;
   font-weight:1000;
 }
+.rank-card.r2 .pay-name,
+.rank-card.r3 .pay-name{
+  font-size:18px;
+}
 .note{
   border:4px solid var(--ink);
   border-radius:22px;
@@ -354,6 +358,7 @@ td:last-child,th:last-child{border-right:0}
     <div class="actions">
       <button id="geoBtn" class="btn primary">📍 現在地から探す</button>
       <button id="clearBtn" class="btn secondary">🧹 表示をクリア</button>
+      <button id="listModeBtn" class="btn ghost">📚 登録店一覧モード</button>
     </div>
 
     <div id="status" class="status info">
@@ -787,6 +792,10 @@ const $ = (id) => document.getElementById(id);
 
 let lastSelectedStore = null;
 
+function candidateGroupKey(matchStore){
+  return matchStore.store;
+}
+
 function normalizeText(value){
   return String(value || "")
     .normalize("NFKC")
@@ -918,7 +927,7 @@ async function fetchOverpass(lat,lng,radius){
 }
 
 function buildCandidatesFromOsm(osmJson, currentLat, currentLng){
-  const candidates = [];
+  const groups = new Map();
   const seen = new Set();
 
   for(const el of osmJson.elements || []){
@@ -934,21 +943,43 @@ function buildCandidatesFromOsm(osmJson, currentLat, currentLng){
     if(typeof lat !== "number" || typeof lng !== "number") continue;
 
     const distance = Math.round(haversineMeters(currentLat, currentLng, lat, lng));
-    const key = `${el.type}-${el.id}-${match.store.store}`;
+    const seenKey = `${el.type}-${el.id}-${match.store.store}`;
 
-    if(seen.has(key)) continue;
-    seen.add(key);
+    if(seen.has(seenKey)) continue;
+    seen.add(seenKey);
 
-    candidates.push({
-      source:"geo",
-      store:match.store,
-      osmName:tags.name || tags.brand || match.store.store,
-      distance,
-      lat,
-      lng,
-      score:match.score
-    });
+    const groupKey = candidateGroupKey(match.store);
+    const osmName = tags.name || tags.brand || match.store.store;
+    const item = { osmName, distance, lat, lng, score:match.score };
+
+    if(!groups.has(groupKey)){
+      groups.set(groupKey, {
+        source:"geo",
+        store:match.store,
+        distance,
+        lat,
+        lng,
+        score:match.score,
+        matches:[item]
+      });
+    }else{
+      const g = groups.get(groupKey);
+      g.matches.push(item);
+      if(distance < g.distance){
+        g.distance = distance;
+        g.lat = lat;
+        g.lng = lng;
+      }
+      g.score = Math.max(g.score, match.score);
+    }
   }
+
+  const candidates = Array.from(groups.values()).map((g) => {
+    g.matches.sort((a,b) => a.distance - b.distance);
+    g.osmName = g.matches[0]?.osmName || g.store.store;
+    g.brandCount = g.matches.length;
+    return g;
+  });
 
   candidates.sort((a,b) => {
     if(a.distance !== b.distance) return a.distance - b.distance;
@@ -976,11 +1007,11 @@ function renderCandidates(candidates, titlePrefix="候補"){
 
     const label = c.store.store;
     const extra = c.source === "geo"
-      ? `<span class="dist">${escapeHtml(c.distance)}m</span>`
+      ? `<span class="dist">${escapeHtml(c.distance)}m${c.brandCount > 1 ? ` / ${c.brandCount}店舗` : ""}</span>`
       : `<span class="dist">手動</span>`;
 
     const osm = c.source === "geo" && c.osmName && c.osmName !== c.store.store
-      ? `<small style="font-weight:900;color:#5a526d;">${escapeHtml(c.osmName)}</small>`
+      ? `<small style="font-weight:900;color:#5a526d;">最寄り：${escapeHtml(c.osmName)}</small>`
       : "";
 
     btn.innerHTML = `<span>🏪 ${escapeHtml(label)} ${osm}</span>${extra}`;
@@ -998,6 +1029,9 @@ function renderPayment(store, context=null){
 
   if(context && context.source === "geo"){
     metaLines.push(`現在地から約${context.distance}m`);
+    if(context.brandCount > 1){
+      metaLines.push(`同ブランド候補：${context.brandCount}店舗`);
+    }
     if(context.osmName && context.osmName !== store.store){
       metaLines.push(`地図上の名称：${context.osmName}`);
     }
@@ -1175,6 +1209,14 @@ function setupEvents(){
   $("geoBtn").addEventListener("click", handleGeoSearch);
   $("clearBtn").addEventListener("click", clearView);
   $("copyBtn").addEventListener("click", copyResult);
+  $("listModeBtn").addEventListener("click", () => {
+    renderAllTable();
+    hide($("candidatePanel"));
+    hide($("resultPanel"));
+    show($("allPanel"));
+    setStatus("📚 登録されている店舗一覧モードです。", "info");
+    $("allPanel").scrollIntoView({behavior:"smooth", block:"start"});
+  });
 
   $("manualSearch").addEventListener("input", (e) => {
     const keyword = e.target.value;
