@@ -1,687 +1,1214 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <title>カギを開けよう</title>
-    <style>
-        /* ベーススタイルのリセット */
-        html, body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            font-family: sans-serif;
-            background-color: #222; /* 暗い背景で高コントラストにする */
-            color: #f5f5f5;        /* 明るい文字色 */
-        }
-        button {
-            font-size: 1.2rem;
-            padding: 0.8rem 1.2rem;
-            margin: 0.4rem;
-            border: none;
-            border-radius: 0.4rem;
-            background-color: #444;
-            color: #fff;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-            width: 80%;
-            max-width: 300px;
-        }
-        button:active {
-            background-color: #666;
-            transform: scale(0.96);
-        }
-        h1, h2, h3 {
-            margin: 0.6rem 0;
-            text-align: center;
-            color: #ffd700; /* ゴールド系のアクセントカラー */
-        }
-        .screen {
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            text-align: center;
-        }
-        .active {
-            display: flex;
-        }
-        #scoreBoard {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            width: 100%;
-            margin-bottom: 1rem;
-        }
-        #pinsContainer {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            margin-top: 1rem;
-        }
-        .pin-button {
-            width: 60px;
-            height: 60px;
-            margin: 0.5rem;
-            font-size: 1.2rem;
-            background-color: #555;
-            border-radius: 0.5rem;
-        }
-        .pin-button.correct {
-            background-color: #2e8b57; /* 成功したピンは緑色に */
-        }
-        .pin-button.wrong {
-            animation: shake 0.2s;
-        }
-        @keyframes shake {
-            0% { transform: translate(0, 0); }
-            25% { transform: translate(-3px, 0); }
-            50% { transform: translate(3px, 0); }
-            75% { transform: translate(-3px, 0); }
-            100% { transform: translate(0, 0); }
-        }
-        /* モーダル風画面は使わないがスタイルを残す */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-        }
-        .modal.active {
-            display: flex;
-        }
-        .modal-content {
-            background-color: #333;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            max-width: 90%;
-            max-height: 90%;
-            overflow-y: auto;
-            color: #fff;
-        }
-        .modal-content h2 {
-            color: #ffd700;
-        }
-        /* ステージクリア・ゲームオーバー画面のボタン幅調整 */
-        #nextStageButton, #retryButton, #backTitleButton {
-            width: 60%;
-            max-width: 250px;
-        }
-
-        /* 鍵の形選択画面 */
-        #keyOptions {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-        button.key-option {
-            background-color: #444;
-            border: none;
-            border-radius: 0.5rem;
-            padding: 0.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100px;
-            cursor: pointer;
-            color: #fff;
-        }
-        button.key-option .icon {
-            margin-bottom: 0.4rem;
-            border: 3px solid #ffd700;
-            background-color: transparent;
-        }
-        button.key-option .icon.circle {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-        }
-        button.key-option .icon.square {
-            width: 50px;
-            height: 50px;
-            border-radius: 0;
-        }
-        button.key-option .icon.triangle {
-            width: 0;
-            height: 0;
-            border-left: 25px solid transparent;
-            border-right: 25px solid transparent;
-            border-bottom: 50px solid #ffd700;
-            margin-bottom: 0.4rem;
-            border: none;
-        }
-        button.key-option span {
-            font-size: 0.9rem;
-            color: #fff;
-        }
-
-        /* 鍵差し込みアニメーション画面 */
-        #lockArea {
-            position: relative;
-            width: 260px;
-            height: 120px;
-            border: 4px solid #888;
-            border-radius: 0.5rem;
-            background-color: #333;
-            margin-top: 1rem;
-        }
-        #lockArea .lockHole {
-            position: absolute;
-            top: 50%;
-            left: 70%;
-            transform: translate(-50%, -50%);
-            width: 40px;
-            height: 30px;
-            border: 3px solid #444;
-            background-color: #222;
-            border-radius: 0.2rem;
-        }
-        .key {
-            position: absolute;
-            top: 50%;
-            left: -120px;
-            transform: translateY(-50%);
-            display: flex;
-            align-items: center;
-        }
-        .key .head {
-            width: 30px;
-            height: 30px;
-            border: 3px solid #ffd700;
-            background-color: transparent;
-        }
-        .key.circle .head {
-            border-radius: 50%;
-        }
-        .key.square .head {
-            border-radius: 0;
-        }
-        .key.triangle .head {
-            width: 0;
-            height: 0;
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            border-bottom: 30px solid #ffd700;
-            background: transparent;
-            border: none;
-        }
-        .key .body {
-            width: 60px;
-            height: 10px;
-            border: 3px solid #ffd700;
-            border-left: none;
-            background-color: transparent;
-        }
-        .slide-in {
-            animation: insertKey 1.5s forwards;
-        }
-        @keyframes insertKey {
-            0% { left: -120px; }
-            100% { left: 80px; }
-        }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>いまのお店の最適支払いチェッカー</title>
+<style>
+:root{
+  --ink:#171225;
+  --muted:#6f6881;
+  --paper:#fffaf0;
+  --white:#ffffff;
+  --pink:#ff4fa3;
+  --yellow:#ffe45c;
+  --blue:#4ac7ff;
+  --green:#60f09b;
+  --purple:#8c6cff;
+  --red:#ff6b6b;
+  --shadow:6px 6px 0 var(--ink);
+  --shadow-sm:3px 3px 0 var(--ink);
+  --radius:22px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",sans-serif;color:var(--ink)}
+body{
+  background:
+    radial-gradient(circle at 12% 10%, rgba(255,79,163,.32) 0 90px, transparent 92px),
+    radial-gradient(circle at 90% 12%, rgba(74,199,255,.30) 0 120px, transparent 122px),
+    radial-gradient(circle at 30% 88%, rgba(255,228,92,.38) 0 150px, transparent 152px),
+    linear-gradient(135deg,#fff5fb 0%,#f4fbff 46%,#fff9df 100%);
+}
+button,input,select{font:inherit}
+.app{
+  width:min(980px,100%);
+  margin:0 auto;
+  padding:18px;
+}
+.hero{
+  position:relative;
+  overflow:hidden;
+  border:4px solid var(--ink);
+  border-radius:30px;
+  background:var(--paper);
+  box-shadow:var(--shadow);
+  padding:22px;
+}
+.hero:before{
+  content:"";
+  position:absolute;
+  inset:auto -30px -48px auto;
+  width:180px;
+  height:180px;
+  background:repeating-linear-gradient(45deg,var(--yellow) 0 10px,var(--pink) 10px 20px);
+  border:4px solid var(--ink);
+  border-radius:50%;
+  transform:rotate(-12deg);
+  opacity:.9;
+}
+.hero h1{
+  position:relative;
+  margin:0 0 8px;
+  font-size:clamp(28px,7vw,52px);
+  line-height:1.05;
+  letter-spacing:-.05em;
+}
+.hero p{
+  position:relative;
+  margin:0;
+  max-width:680px;
+  color:var(--muted);
+  font-weight:800;
+  line-height:1.65;
+}
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border:3px solid var(--ink);
+  background:var(--yellow);
+  box-shadow:var(--shadow-sm);
+  border-radius:999px;
+  padding:7px 12px;
+  font-size:14px;
+  font-weight:1000;
+  margin-bottom:14px;
+}
+.panel{
+  margin-top:22px;
+  border:4px solid var(--ink);
+  border-radius:var(--radius);
+  background:var(--white);
+  box-shadow:var(--shadow);
+  padding:18px;
+}
+.controls{
+  display:grid;
+  grid-template-columns:1.4fr .8fr;
+  gap:12px;
+  align-items:end;
+}
+@media(max-width:720px){
+  .controls{grid-template-columns:1fr}
+}
+.field label{
+  display:block;
+  font-weight:1000;
+  margin:0 0 7px;
+}
+.input,select{
+  width:100%;
+  min-height:54px;
+  border:3px solid var(--ink);
+  border-radius:16px;
+  background:#fff;
+  padding:12px 14px;
+  font-weight:900;
+  outline:none;
+  box-shadow:var(--shadow-sm);
+}
+.input:focus,select:focus{
+  box-shadow:0 0 0 4px rgba(74,199,255,.35), var(--shadow-sm);
+}
+.actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:14px;
+}
+@media(max-width:560px){
+  .actions{grid-template-columns:1fr}
+}
+.btn{
+  min-height:58px;
+  border:4px solid var(--ink);
+  border-radius:18px;
+  padding:12px 14px;
+  font-weight:1000;
+  cursor:pointer;
+  color:var(--ink);
+  box-shadow:var(--shadow-sm);
+  transition:transform .08s ease, box-shadow .08s ease, filter .2s ease;
+}
+.btn:hover{filter:saturate(1.08)}
+.btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--ink)}
+.btn.primary{background:var(--pink);color:#fff}
+.btn.secondary{background:var(--blue)}
+.btn.ghost{background:var(--yellow)}
+.btn.small{
+  min-height:44px;
+  border-width:3px;
+  border-radius:14px;
+  padding:8px 12px;
+  font-size:14px;
+}
+.status{
+  margin-top:14px;
+  border:3px dashed var(--ink);
+  border-radius:16px;
+  padding:12px;
+  background:#fff8c7;
+  font-weight:900;
+  color:#423713;
+  line-height:1.6;
+}
+.status.error{background:#ffe3e3;color:#6b1111}
+.status.ok{background:#ddffe9;color:#0d4b22}
+.status.info{background:#e7f7ff;color:#073c57}
+.hidden{display:none!important}
+.section-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:0 0 12px;
+}
+.section-title h2{
+  margin:0;
+  font-size:22px;
+}
+.bubbles{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  margin-top:12px;
+}
+.bubble{
+  border:4px solid var(--ink);
+  border-radius:999px;
+  background:#fff;
+  box-shadow:var(--shadow-sm);
+  padding:12px 15px;
+  font-weight:1000;
+  cursor:pointer;
+  max-width:100%;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  transition:transform .08s ease, box-shadow .08s ease;
+}
+.bubble:nth-child(4n+1){background:#ffd6eb}
+.bubble:nth-child(4n+2){background:#d9f4ff}
+.bubble:nth-child(4n+3){background:#fff0a8}
+.bubble:nth-child(4n){background:#dcffe8}
+.bubble:hover{transform:translateY(-2px)}
+.bubble:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--ink)}
+.bubble .dist{
+  background:var(--ink);
+  color:#fff;
+  border-radius:999px;
+  padding:4px 8px;
+  font-size:12px;
+  white-space:nowrap;
+}
+.result{
+  display:grid;
+  gap:14px;
+}
+.store-head{
+  border:4px solid var(--ink);
+  border-radius:22px;
+  background:linear-gradient(135deg,#fff 0%,#fff6c7 100%);
+  box-shadow:var(--shadow-sm);
+  padding:16px;
+}
+.store-head .store-name{
+  margin:0;
+  font-size:clamp(26px,7vw,42px);
+  line-height:1.05;
+  letter-spacing:-.04em;
+}
+.store-head .meta{
+  margin-top:8px;
+  color:var(--muted);
+  font-weight:900;
+  line-height:1.55;
+}
+.rank-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+}
+@media(max-width:780px){
+  .rank-grid{grid-template-columns:1fr}
+}
+.rank-card{
+  border:4px solid var(--ink);
+  border-radius:22px;
+  background:#fff;
+  box-shadow:var(--shadow-sm);
+  padding:16px;
+  min-height:140px;
+}
+.rank-card.r1{background:linear-gradient(135deg,#ffe45c,#fff6b3)}
+.rank-card.r2{background:linear-gradient(135deg,#4ac7ff,#dcf6ff)}
+.rank-card.r3{background:linear-gradient(135deg,#60f09b,#e3ffed)}
+.rank-label{
+  display:inline-block;
+  border:3px solid var(--ink);
+  border-radius:999px;
+  background:#fff;
+  padding:5px 10px;
+  font-weight:1000;
+  box-shadow:2px 2px 0 var(--ink);
+  margin-bottom:10px;
+}
+.pay-name{
+  font-size:21px;
+  line-height:1.35;
+  font-weight:1000;
+}
+.note{
+  border:4px solid var(--ink);
+  border-radius:22px;
+  background:#f1edff;
+  box-shadow:var(--shadow-sm);
+  padding:15px;
+  font-weight:900;
+  line-height:1.65;
+}
+.table-wrap{
+  overflow:auto;
+  border:4px solid var(--ink);
+  border-radius:20px;
+  box-shadow:var(--shadow-sm);
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:760px;
+  background:#fff;
+}
+th,td{
+  border-bottom:2px solid var(--ink);
+  border-right:2px solid var(--ink);
+  padding:10px;
+  text-align:left;
+  vertical-align:top;
+  font-weight:800;
+}
+th{
+  background:var(--yellow);
+  font-weight:1000;
+  position:sticky;
+  top:0;
+}
+tr:last-child td{border-bottom:0}
+td:last-child,th:last-child{border-right:0}
+.footer{
+  margin:22px 0 8px;
+  text-align:center;
+  color:var(--muted);
+  font-weight:800;
+  line-height:1.6;
+}
+.kbd{
+  display:inline-block;
+  padding:2px 8px;
+  border:2px solid var(--ink);
+  border-radius:8px;
+  background:#fff;
+  box-shadow:2px 2px 0 var(--ink);
+  font-weight:1000;
+}
+</style>
 </head>
 <body>
-    <!-- タイトル画面 -->
-    <div id="titleScreen" class="screen active">
-        <h1>カギを開けよう</h1>
-        <p id="bestScoreDisplay">ベストスコア: --</p>
-        <button id="startButton">スタート</button>
-        <button id="howToButton">遊び方</button>
-        <button id="soundToggleButton">効果音OFF</button>
+<div class="app">
+  <header class="hero">
+    <div class="badge">💳 現在地 × 支払い最適化</div>
+    <h1>いまのお店、<br>何で払う？</h1>
+    <p>
+      現在地から近くの対象店舗を探して、候補をバブル表示します。
+      候補を選ぶと、そのお店のおすすめ支払い方法1〜3位をすぐ表示します。
+    </p>
+  </header>
+
+  <section class="panel">
+    <div class="controls">
+      <div class="field">
+        <label for="manualSearch">店舗名で検索</label>
+        <input id="manualSearch" class="input" type="search" placeholder="例：セブン、マック、オーケー、タリーズ">
+      </div>
+      <div class="field">
+        <label for="radiusSelect">現在地検索の半径</label>
+        <select id="radiusSelect">
+          <option value="120">120m：今いる建物付近</option>
+          <option value="250" selected>250m：近くのお店</option>
+          <option value="500">500m：駅前・商業施設向け</option>
+          <option value="800">800m：広めに探す</option>
+        </select>
+      </div>
     </div>
 
-    <!-- 遊び方画面 -->
-    <div id="howToScreen" class="screen">
-        <h2>遊び方</h2>
-        <p>「カギを開けよう」は、ピンの高さを揃えて鍵を開けるミニゲームです。</p>
-        <ul>
-            <li>スタートボタンを押すと、まず鍵の形を選択します。</li>
-            <li>鍵の形を選ぶと鍵がカギ穴に差し込まれるアニメーションが流れます。</li>
-            <li>アニメーション終了後に3・2・1のカウントダウンが始まり、その後ステージが始まります。</li>
-            <li>画面に表示されたピンをタップすると高さが変化します。</li>
-            <li>全てのピンを正しい高さに揃えるとステージクリアです。</li>
-            <li>制限時間内にクリアできなければゲームオーバーです。</li>
-            <li>ステージが進むとピンの数や状態数が増え、制限時間が短くなります。</li>
-            <li>画面上部にはステージ、残り時間、スコアが表示されます。</li>
-            <li>効果音のON/OFFはタイトル画面で切り替えられます。</li>
-            <li>ベストスコアは自動的に保存されます。</li>
-        </ul>
-        <button id="backHowToButton">タイトルへ戻る</button>
+    <div class="actions">
+      <button id="geoBtn" class="btn primary">📍 現在地から探す</button>
+      <button id="clearBtn" class="btn secondary">🧹 表示をクリア</button>
     </div>
 
-    <!-- 鍵の形選択画面 -->
-    <div id="selectKeyScreen" class="screen">
-        <h2>鍵の形を選択</h2>
-        <div id="keyOptions">
-            <button class="key-option" data-shape="circle">
-                <div class="icon circle"></div>
-                <span>丸い鍵</span>
-            </button>
-            <button class="key-option" data-shape="square">
-                <div class="icon square"></div>
-                <span>四角い鍵</span>
-            </button>
-            <button class="key-option" data-shape="triangle">
-                <div class="icon triangle"></div>
-                <span>三角の鍵</span>
-            </button>
-        </div>
-        <button id="backFromSelectButton">タイトルへ戻る</button>
+    <div id="status" class="status info">
+      まずは <span class="kbd">現在地から探す</span> を押すか、店舗名を入力してください。
+    </div>
+  </section>
+
+  <section id="candidatePanel" class="panel hidden">
+    <div class="section-title">
+      <h2>候補店舗</h2>
+      <button id="showAllBtn" class="btn ghost small">全対象店舗を表示</button>
+    </div>
+    <div id="bubbles" class="bubbles"></div>
+  </section>
+
+  <section id="resultPanel" class="panel hidden">
+    <div class="section-title">
+      <h2>おすすめ支払い方法</h2>
+      <button id="copyBtn" class="btn ghost small">結果をコピー</button>
+    </div>
+    <div id="result" class="result"></div>
+  </section>
+
+  <section id="allPanel" class="panel hidden">
+    <div class="section-title">
+      <h2>内蔵店舗データ</h2>
+      <button id="hideAllBtn" class="btn secondary small">閉じる</button>
+    </div>
+    <div class="table-wrap">
+      <table id="storeTable">
+        <thead>
+          <tr>
+            <th>店舗</th>
+            <th>1位</th>
+            <th>2位</th>
+            <th>3位</th>
+            <th>備考</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="footer">
+    位置情報は端末内のブラウザ処理と周辺店舗検索にのみ使用します。<br>
+    店舗候補はOpenStreetMapの登録状況に依存します。
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const STORE_DATA = [
+  {
+    store:"セブン-イレブン",
+    aliases:["セブン-イレブン","セブンイレブン","7-eleven","7 eleven","7-11","seven eleven","seven-eleven"],
+    first:"三井住友カード スマホタッチ",
+    second:"三菱UFJカード",
+    third:"PayPay",
+    note:"三井住友・三菱UFJどちらも対象"
+  },
+  {
+    store:"ローソン",
+    aliases:["ローソン","lawson"],
+    first:"三井住友カード スマホタッチ",
+    second:"三菱UFJカード",
+    third:"PayPay",
+    note:"三井住友・三菱UFJどちらも対象"
+  },
+  {
+    store:"ミニストップ",
+    aliases:["ミニストップ","ministop"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"マクドナルド",
+    aliases:["マクドナルド","マック","mcdonald","mcdonalds","mcDonald's","マクド"],
+    first:"三井住友カード スマホタッチ/モバイルオーダー",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"モスバーガー",
+    aliases:["モスバーガー","mos burger","モス"],
+    first:"三井住友カード スマホタッチ/モバイルオーダー",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"ケンタッキー",
+    aliases:["ケンタッキー","kfc","kentucky","ケンタ"],
+    first:"三井住友カード スマホタッチ/モバイルオーダー",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"吉野家",
+    aliases:["吉野家","yoshinoya"],
+    first:"三井住友カード スマホタッチ/モバイルオーダー",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"すき家",
+    aliases:["すき家","sukiya"],
+    first:"三井住友カード スマホタッチ/モバイルオーダー",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"サイゼリヤ",
+    aliases:["サイゼリヤ","サイゼリア","saizeriya"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"ガスト",
+    aliases:["ガスト","gusto"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"バーミヤン",
+    aliases:["バーミヤン","bamiyan"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"しゃぶ葉",
+    aliases:["しゃぶ葉","しゃぶよう","shabu-yo","shabuyo"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"ジョナサン",
+    aliases:["ジョナサン","jonathan","jonathans"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"夢庵",
+    aliases:["夢庵","ゆめあん","yumean"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"から好し",
+    aliases:["から好し","からよし","karayoshi"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"はま寿司",
+    aliases:["はま寿司","はまずし","hamazushi","hama sushi"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"かっぱ寿司",
+    aliases:["かっぱ寿司","かっぱずし","kappa sushi","kappazushi"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"ココス",
+    aliases:["ココス","cocos","coco's"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"ドトール",
+    aliases:["ドトール","doutor"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"エクセルシオール",
+    aliases:["エクセルシオール","エクセルシオールカフェ","excelsior","excelsior caffe","excelsior cafe"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"スタバ",
+    aliases:["スタバ","スターバックス","starbucks"],
+    first:"三井住友カード モバイルオーダー",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"店頭ではなくモバイルオーダー前提"
+  },
+  {
+    store:"くら寿司",
+    aliases:["くら寿司","くらずし","kura sushi","kurazushi"],
+    first:"三菱UFJカード",
+    second:"PayPay",
+    third:"三井住友カード通常",
+    note:"三菱UFJ対象"
+  },
+  {
+    store:"スシロー",
+    aliases:["スシロー","sushiro"],
+    first:"三菱UFJカード",
+    second:"PayPay",
+    third:"三井住友カード通常",
+    note:"三菱UFJ対象"
+  },
+  {
+    store:"松屋",
+    aliases:["松屋","matsuya"],
+    first:"三菱UFJカード",
+    second:"PayPay",
+    third:"三井住友カード通常",
+    note:"三菱UFJ対象"
+  },
+  {
+    store:"松のや",
+    aliases:["松のや","松乃家","matsunoya"],
+    first:"三菱UFJカード",
+    second:"PayPay",
+    third:"三井住友カード通常",
+    note:"三菱UFJ対象"
+  },
+  {
+    store:"マイカリー食堂",
+    aliases:["マイカリー食堂","my curry","mycurry","マイカリー"],
+    first:"三菱UFJカード",
+    second:"PayPay",
+    third:"三井住友カード通常",
+    note:"三菱UFJ対象"
+  },
+  {
+    store:"松弁ネット/松屋モバイルオーダー",
+    aliases:["松弁ネット","松屋モバイルオーダー","matsuya mobile order"],
+    first:"三菱UFJカード",
+    second:"PayPay",
+    third:"三井住友カード通常",
+    note:"三菱UFJ対象"
+  },
+  {
+    store:"ピザハットオンライン",
+    aliases:["ピザハット","pizza hut","pizzahut","ピザハットオンライン"],
+    first:"三菱UFJカード",
+    second:"PayPay",
+    third:"三井住友カード通常",
+    note:"三菱UFJ対象"
+  },
+  {
+    store:"ゼッテリア",
+    aliases:["ゼッテリア","zetteria"],
+    first:"三菱UFJカード",
+    second:"PayPay",
+    third:"三井住友カード通常",
+    note:"三菱UFJ対象"
+  },
+  {
+    store:"コカ・コーラ自販機",
+    aliases:["コカ・コーラ","コカコーラ","coca-cola","coca cola","coke on","cokeon","自販機"],
+    first:"三菱UFJカード",
+    second:"PayPay/Coke ON Pay",
+    third:"三井住友カード通常",
+    note:"三菱UFJ対象"
+  },
+  {
+    store:"オーケー",
+    aliases:["オーケー","オーケーストア","ok store","ok supermarket","ok"],
+    first:"三菱UFJカード",
+    second:"PayPay",
+    third:"現金＋オーケークラブ",
+    note:"三菱UFJ対象"
+  },
+  {
+    store:"東急ストア",
+    aliases:["東急ストア","tokyu store"],
+    first:"三菱UFJカード",
+    second:"PayPay",
+    third:"三井住友カード通常",
+    note:"三菱UFJ対象"
+  },
+  {
+    store:"三和・フードワン",
+    aliases:["三和","スーパー三和","フードワン","food one","sanwa"],
+    first:"三菱UFJカード",
+    second:"PayPay",
+    third:"三井住友カード通常",
+    note:"三菱UFJ対象"
+  },
+  {
+    store:"オオゼキ",
+    aliases:["オオゼキ","ozeki"],
+    first:"三菱UFJカード",
+    second:"PayPay",
+    third:"三井住友カード通常",
+    note:"三菱UFJ対象"
+  },
+  {
+    store:"肉のハナマサ",
+    aliases:["肉のハナマサ","ハナマサ","hanamasa"],
+    first:"三菱UFJカード",
+    second:"PayPay",
+    third:"三井住友カード通常",
+    note:"三菱UFJ対象"
+  },
+  {
+    store:"ジャパンミート",
+    aliases:["ジャパンミート","japan meat","japanmeat"],
+    first:"三菱UFJカード",
+    second:"PayPay",
+    third:"三井住友カード通常",
+    note:"三菱UFJ対象"
+  },
+  {
+    store:"CoCo壱番屋",
+    aliases:["CoCo壱番屋","ココイチ","ここいち","cocoichi","coco ichibanya","curry house coco"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"かつや",
+    aliases:["かつや","katsuya"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"からやま",
+    aliases:["からやま","karayama"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"丸亀製麺",
+    aliases:["丸亀製麺","まるがめ製麺","marugame","marugame seimen"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"びっくりドンキー",
+    aliases:["びっくりドンキー","bikkuri donkey"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"横浜家",
+    aliases:["横浜家","横濱家","よこはまや","yokohamaya"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"天狗",
+    aliases:["天狗","てんぐ","tengu"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"魁力屋",
+    aliases:["魁力屋","かいりきや","kairikiya"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"一風堂",
+    aliases:["一風堂","いっぷうどう","ippudo"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"タリーズ",
+    aliases:["タリーズ","タリーズコーヒー","tullys","tully's"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  }
+];
+
+const OVERPASS_ENDPOINTS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter"
+];
+
+const $ = (id) => document.getElementById(id);
+
+let lastSelectedStore = null;
+
+function normalizeText(value){
+  return String(value || "")
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[ー‐-‒–—―\-−\s　・･'’`]/g,"")
+    .replace(/株式会社|有限会社|合同会社|店$/g,"")
+    .trim();
+}
+
+function escapeHtml(value){
+  return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    "\"":"&quot;",
+    "'":"&#039;"
+  }[ch]));
+}
+
+function setStatus(message, type="info"){
+  const el = $("status");
+  el.className = "status " + type;
+  el.innerHTML = message;
+}
+
+function show(el){
+  el.classList.remove("hidden");
+}
+
+function hide(el){
+  el.classList.add("hidden");
+}
+
+function haversineMeters(lat1, lon1, lat2, lon2){
+  const R = 6371000;
+  const toRad = (deg) => deg * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function matchStoreFromText(text){
+  const target = normalizeText(text);
+  if(!target) return null;
+
+  let best = null;
+
+  for(const store of STORE_DATA){
+    for(const alias of store.aliases){
+      const a = normalizeText(alias);
+      if(!a) continue;
+
+      let score = 0;
+      if(target === a){
+        score = 100;
+      }else if(target.includes(a)){
+        score = 80;
+      }else if(a.includes(target) && target.length >= 2){
+        score = 55;
+      }
+
+      if(score > 0 && (!best || score > best.score)){
+        best = { store, score, alias };
+      }
+    }
+  }
+
+  return best;
+}
+
+function readOsmName(tags){
+  const parts = [
+    tags.name,
+    tags["name:ja"],
+    tags.brand,
+    tags.operator,
+    tags.shop,
+    tags.amenity
+  ].filter(Boolean);
+
+  return parts.join(" / ");
+}
+
+function buildOverpassQuery(lat,lng,radius){
+  return `
+[out:json][timeout:25];
+(
+  node(around:${radius},${lat},${lng})["name"];
+  way(around:${radius},${lat},${lng})["name"];
+  relation(around:${radius},${lat},${lng})["name"];
+);
+out center tags;
+`.trim();
+}
+
+async function fetchOverpass(lat,lng,radius){
+  const query = buildOverpassQuery(lat,lng,radius);
+  let lastError = null;
+
+  for(const endpoint of OVERPASS_ENDPOINTS){
+    try{
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 14000);
+
+      const res = await fetch(endpoint, {
+        method:"POST",
+        headers:{ "Content-Type":"text/plain;charset=UTF-8" },
+        body:query,
+        signal:controller.signal
+      });
+
+      clearTimeout(timer);
+
+      if(!res.ok){
+        throw new Error("Overpass API error: " + res.status);
+      }
+
+      return await res.json();
+    }catch(err){
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error("周辺店舗データの取得に失敗しました。");
+}
+
+function buildCandidatesFromOsm(osmJson, currentLat, currentLng){
+  const candidates = [];
+  const seen = new Set();
+
+  for(const el of osmJson.elements || []){
+    const tags = el.tags || {};
+    const nameText = readOsmName(tags);
+    const match = matchStoreFromText(nameText);
+
+    if(!match) continue;
+
+    const lat = typeof el.lat === "number" ? el.lat : el.center?.lat;
+    const lng = typeof el.lon === "number" ? el.lon : el.center?.lon;
+
+    if(typeof lat !== "number" || typeof lng !== "number") continue;
+
+    const distance = Math.round(haversineMeters(currentLat, currentLng, lat, lng));
+    const key = `${el.type}-${el.id}-${match.store.store}`;
+
+    if(seen.has(key)) continue;
+    seen.add(key);
+
+    candidates.push({
+      source:"geo",
+      store:match.store,
+      osmName:tags.name || tags.brand || match.store.store,
+      distance,
+      lat,
+      lng,
+      score:match.score
+    });
+  }
+
+  candidates.sort((a,b) => {
+    if(a.distance !== b.distance) return a.distance - b.distance;
+    return b.score - a.score;
+  });
+
+  return candidates.slice(0, 18);
+}
+
+function renderCandidates(candidates, titlePrefix="候補"){
+  const panel = $("candidatePanel");
+  const bubbles = $("bubbles");
+
+  bubbles.innerHTML = "";
+
+  if(candidates.length === 0){
+    hide(panel);
+    return;
+  }
+
+  for(const c of candidates){
+    const btn = document.createElement("button");
+    btn.className = "bubble";
+    btn.type = "button";
+
+    const label = c.store.store;
+    const extra = c.source === "geo"
+      ? `<span class="dist">${escapeHtml(c.distance)}m</span>`
+      : `<span class="dist">手動</span>`;
+
+    const osm = c.source === "geo" && c.osmName && c.osmName !== c.store.store
+      ? `<small style="font-weight:900;color:#5a526d;">${escapeHtml(c.osmName)}</small>`
+      : "";
+
+    btn.innerHTML = `<span>🏪 ${escapeHtml(label)} ${osm}</span>${extra}`;
+    btn.addEventListener("click", () => renderPayment(c.store, c));
+    bubbles.appendChild(btn);
+  }
+
+  show(panel);
+}
+
+function renderPayment(store, context=null){
+  lastSelectedStore = store;
+
+  const metaLines = [];
+
+  if(context && context.source === "geo"){
+    metaLines.push(`現在地から約${context.distance}m`);
+    if(context.osmName && context.osmName !== store.store){
+      metaLines.push(`地図上の名称：${context.osmName}`);
+    }
+  }
+
+  const metaHtml = metaLines.length
+    ? `<div class="meta">${metaLines.map(escapeHtml).join("<br>")}</div>`
+    : `<div class="meta">手入力または一覧から選択</div>`;
+
+  $("result").innerHTML = `
+    <div class="store-head">
+      <h3 class="store-name">${escapeHtml(store.store)}</h3>
+      ${metaHtml}
     </div>
 
-    <!-- 鍵差し込みアニメーション画面 -->
-    <div id="insertionScreen" class="screen">
-        <h2>鍵を差し込んでいます…</h2>
-        <div id="lockArea">
-            <div class="lockHole"></div>
-            <div id="insertKey" class="key circle">
-                <div class="head"></div>
-                <div class="body"></div>
-            </div>
-        </div>
+    <div class="rank-grid">
+      <div class="rank-card r1">
+        <div class="rank-label">🥇 1位</div>
+        <div class="pay-name">${escapeHtml(store.first)}</div>
+      </div>
+      <div class="rank-card r2">
+        <div class="rank-label">🥈 2位</div>
+        <div class="pay-name">${escapeHtml(store.second)}</div>
+      </div>
+      <div class="rank-card r3">
+        <div class="rank-label">🥉 3位</div>
+        <div class="pay-name">${escapeHtml(store.third)}</div>
+      </div>
     </div>
 
-    <!-- カウントダウン画面 -->
-    <div id="countdownScreen" class="screen">
-        <h2 id="countdownText">3</h2>
+    <div class="note">
+      <strong>備考：</strong>${escapeHtml(store.note)}
     </div>
+  `;
 
-    <!-- ゲーム画面 -->
-    <div id="gameScreen" class="screen">
-        <div id="scoreBoard">
-            <span id="stageDisplay">ステージ 1</span>
-            <span id="timerDisplay">残り: 0.0</span>
-            <span id="scoreDisplay">スコア: 0</span>
-        </div>
-        <div id="pinsContainer"></div>
-    </div>
+  show($("resultPanel"));
+  $("resultPanel").scrollIntoView({behavior:"smooth", block:"start"});
+}
 
-    <!-- ステージクリア画面 -->
-    <div id="stageClearScreen" class="screen">
-        <h2>ステージクリア！</h2>
-        <p id="stageClearMsg"></p>
-        <button id="nextStageButton">次のステージへ</button>
-    </div>
+function searchManual(keyword){
+  const q = normalizeText(keyword);
+  if(!q){
+    return [];
+  }
 
-    <!-- ゲームオーバー画面 -->
-    <div id="gameOverScreen" class="screen">
-        <h2>ゲームオーバー</h2>
-        <p id="finalScore"></p>
-        <button id="retryButton">リトライ</button>
-        <button id="backTitleButton">タイトルへ</button>
-    </div>
+  const results = [];
 
-    <script>
-        // 状態管理用の変数
-        let currentState = 'title';
-        let stageNumber = 1;
-        const maxStage = 10;
-        let pins = [];
-        let timeLeft = 0;
-        let timerInterval = null;
-        let countdownInterval = null;
-        let score = 0;
-        let missCount = 0;
-        let bestScore = 0;
-        let soundEnabled = false;
-        let audioContext = null;
+  for(const store of STORE_DATA){
+    const haystack = normalizeText([
+      store.store,
+      ...store.aliases,
+      store.first,
+      store.second,
+      store.third,
+      store.note
+    ].join(" "));
 
-        // 鍵の形選択用の変数
-        let selectedShape = null;
-        // 各鍵形状ごとの基本ピン数
-        const shapes = {
-            circle: { name: '丸い鍵', basePin: 3 },
-            square: { name: '四角い鍵', basePin: 4 },
-            triangle: { name: '三角の鍵', basePin: 5 }
-        };
+    if(haystack.includes(q)){
+      results.push({source:"manual", store});
+    }
+  }
 
-        /**
-         * ステージのパラメータを動的に計算する関数。
-         * 鍵の形状に応じて基本ピン数が異なり、ステージごとにピン数・状態数・制限時間を変化させる。
-         */
-        function getStageParameters() {
-            const basePin = selectedShape ? shapes[selectedShape].basePin : 3;
-            // ステージが進むごとにピン数を増やすが最大8本まで
-            const pinCount = Math.min(basePin + stageNumber - 1, 8);
-            // 状態数は2ステージ毎に1増え、最大6まで
-            const stateCount = Math.min(3 + Math.floor((stageNumber - 1) / 2), 6);
-            // 制限時間はステージが進むごとに1秒ずつ短くし、下限は8秒
-            const timeLimit = Math.max(15 - (stageNumber - 1), 8);
-            return { pinCount, stateCount, timeLimit };
+  return results;
+}
+
+async function handleGeoSearch(){
+  if(!("geolocation" in navigator)){
+    setStatus("このブラウザは位置情報取得に対応していません。店舗名検索を使ってください。", "error");
+    return;
+  }
+
+  const radius = Number($("radiusSelect").value || 250);
+
+  setStatus("📍 位置情報を取得中です。ブラウザの許可ダイアログが出たら許可してください。", "info");
+
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const accuracy = Math.round(pos.coords.accuracy || 0);
+
+      try{
+        setStatus(`📡 現在地を取得しました。精度は約${accuracy}mです。周辺${radius}mの対象店舗を探しています。`, "info");
+
+        const osmJson = await fetchOverpass(lat, lng, radius);
+        const candidates = buildCandidatesFromOsm(osmJson, lat, lng);
+
+        if(candidates.length === 0){
+          setStatus(
+            `近くに対象店舗候補が見つかりませんでした。<br>
+             OpenStreetMapに店舗名が登録されていない場合があります。店舗名検索を使ってください。`,
+            "error"
+          );
+          hide($("candidatePanel"));
+          return;
         }
 
-        // DOM要素の取得
-        const titleScreen = document.getElementById('titleScreen');
-        const countdownScreen = document.getElementById('countdownScreen');
-        const gameScreen = document.getElementById('gameScreen');
-        const stageClearScreen = document.getElementById('stageClearScreen');
-        const gameOverScreen = document.getElementById('gameOverScreen');
-        const pinsContainer = document.getElementById('pinsContainer');
-        const stageDisplay = document.getElementById('stageDisplay');
-        const timerDisplay = document.getElementById('timerDisplay');
-        const scoreDisplay = document.getElementById('scoreDisplay');
-        const countdownText = document.getElementById('countdownText');
-        const stageClearMsg = document.getElementById('stageClearMsg');
-        const finalScore = document.getElementById('finalScore');
-        const bestScoreDisplay = document.getElementById('bestScoreDisplay');
-        const soundToggleButton = document.getElementById('soundToggleButton');
-        const howToScreen = document.getElementById('howToScreen');
-        const backHowToButton = document.getElementById('backHowToButton');
-        // 新規画面の取得
-        const selectKeyScreen = document.getElementById('selectKeyScreen');
-        const insertionScreen = document.getElementById('insertionScreen');
-        const backFromSelectButton = document.getElementById('backFromSelectButton');
-        const insertKey = document.getElementById('insertKey');
+        setStatus(`✅ ${candidates.length}件の候補を見つけました。今いるお店を選んでください。`, "ok");
+        renderCandidates(candidates, "現在地候補");
+      }catch(err){
+        setStatus(
+          `周辺店舗データの取得に失敗しました。<br>
+           店舗名検索はそのまま使えます。<br>
+           詳細：${escapeHtml(err.message || err)}`,
+          "error"
+        );
+      }
+    },
+    (err) => {
+      let message = "位置情報を取得できませんでした。";
 
-        // 効果音の初期化
-        function initAudio() {
-            try {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            } catch (e) {
-                audioContext = null;
-            }
-        }
-        // 効果音を生成する関数
-        function playTone(frequency, duration, type='sine') {
-            if (!soundEnabled || !audioContext) return;
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            osc.type = type;
-            osc.frequency.value = frequency;
-            gain.gain.setValueAtTime(0.2, audioContext.currentTime);
-            osc.connect(gain).connect(audioContext.destination);
-            osc.start();
-            osc.stop(audioContext.currentTime + duration / 1000);
-        }
-        // 特定の効果音
-        function playClickSound() { playTone(600, 80, 'square'); }
-        function playSuccessSound() { playTone(900, 200, 'triangle'); }
-        function playFailureSound() { playTone(200, 400, 'sawtooth'); }
+      if(err.code === 1){
+        message = "位置情報の許可が拒否されました。ブラウザ設定で位置情報を許可するか、店舗名検索を使ってください。";
+      }else if(err.code === 2){
+        message = "現在地を特定できませんでした。屋内や地下では失敗することがあります。";
+      }else if(err.code === 3){
+        message = "位置情報取得がタイムアウトしました。もう一度試すか、店舗名検索を使ってください。";
+      }
 
-        // 画面表示切替
-        function showScreen(target) {
-            // 全てのscreenクラスを非表示
-            [titleScreen, countdownScreen, gameScreen, stageClearScreen, gameOverScreen, howToScreen, selectKeyScreen, insertionScreen].forEach(elem => elem.classList.remove('active'));
-            // 目的の画面を表示
-            target.classList.add('active');
-        }
+      setStatus(message, "error");
+    },
+    {
+      enableHighAccuracy:true,
+      timeout:12000,
+      maximumAge:30000
+    }
+  );
+}
 
-        // 最初の初期化処理
-        function init() {
-            // ローカルストレージからベストスコア取得
-            try {
-                const stored = localStorage.getItem('kagi_bestScore');
-                bestScore = stored ? parseInt(stored, 10) : 0;
-                if (isNaN(bestScore)) bestScore = 0;
-            } catch (e) {
-                bestScore = 0;
-            }
-            bestScoreDisplay.textContent = 'ベストスコア: ' + bestScore;
-            // 効果音設定の初期値
-            soundEnabled = false;
-            soundToggleButton.textContent = '効果音OFF';
-            initAudio();
-            // イベントリスナー登録
-            document.getElementById('startButton').addEventListener('click', startGame);
-            document.getElementById('howToButton').addEventListener('click', () => {
-                showScreen(howToScreen);
-            });
-            backHowToButton.addEventListener('click', () => {
-                showScreen(titleScreen);
-            });
-            document.getElementById('nextStageButton').addEventListener('click', nextStage);
-            document.getElementById('retryButton').addEventListener('click', retryGame);
-            document.getElementById('backTitleButton').addEventListener('click', backToTitle);
-            soundToggleButton.addEventListener('click', toggleSound);
-            // 鍵の形選択ボタンのイベントリスナー
-            const keyOptionButtons = document.querySelectorAll('.key-option');
-            keyOptionButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const shape = button.getAttribute('data-shape');
-                    selectKey(shape);
-                });
-            });
-            // 鍵選択画面でタイトルに戻る
-            backFromSelectButton.addEventListener('click', () => {
-                showScreen(titleScreen);
-            });
-        }
+function renderAllTable(){
+  const tbody = $("storeTable").querySelector("tbody");
+  tbody.innerHTML = STORE_DATA.map(store => `
+    <tr>
+      <td>${escapeHtml(store.store)}</td>
+      <td>${escapeHtml(store.first)}</td>
+      <td>${escapeHtml(store.second)}</td>
+      <td>${escapeHtml(store.third)}</td>
+      <td>${escapeHtml(store.note)}</td>
+    </tr>
+  `).join("");
+}
 
-        // 効果音のON/OFF切替
-        function toggleSound() {
-            soundEnabled = !soundEnabled;
-            soundToggleButton.textContent = soundEnabled ? '効果音ON' : '効果音OFF';
-            if (soundEnabled && !audioContext) {
-                initAudio();
-            }
-        }
+function clearView(){
+  $("manualSearch").value = "";
+  hide($("candidatePanel"));
+  hide($("resultPanel"));
+  hide($("allPanel"));
+  lastSelectedStore = null;
+  setStatus("表示をクリアしました。現在地検索または店舗名検索を使ってください。", "info");
+}
 
-        /**
-         * 鍵の形を選択したときの処理
-         * @param {string} shape - 選択した鍵形状（circle, square, triangle）
-         */
-        function selectKey(shape) {
-            selectedShape = shape;
-            // 挿入アニメーション画面を表示
-            showInsertionAnimation();
-        }
+async function copyResult(){
+  if(!lastSelectedStore){
+    setStatus("コピーする結果がありません。先に店舗を選んでください。", "error");
+    return;
+  }
 
-        /**
-         * 鍵を差し込むアニメーションを表示し、終了後にカウントダウンを開始する
-         */
-        function showInsertionAnimation() {
-            // 鍵のクラスをリセットして形状を設定
-            insertKey.className = 'key ' + selectedShape;
-            // remove slide-in class if previously added
-            insertKey.classList.remove('slide-in');
-            // 画面を挿入画面に切替
-            showScreen(insertionScreen);
-            // アニメーションをトリガー
-            setTimeout(() => {
-                insertKey.classList.add('slide-in');
-            }, 50);
-            // アニメーション終了後にカウントダウン開始（1.6秒後）
-            setTimeout(() => {
-                insertKey.classList.remove('slide-in');
-                showCountdown();
-            }, 1600);
-        }
+  const text = [
+    `店舗：${lastSelectedStore.store}`,
+    `1位：${lastSelectedStore.first}`,
+    `2位：${lastSelectedStore.second}`,
+    `3位：${lastSelectedStore.third}`,
+    `備考：${lastSelectedStore.note}`
+  ].join("\n");
 
-        // 鍵の形選択画面の表示
-        function showKeySelection() {
-            if (timerInterval) clearInterval(timerInterval);
-            if (countdownInterval) clearInterval(countdownInterval);
-            showScreen(selectKeyScreen);
-        }
+  try{
+    await navigator.clipboard.writeText(text);
+    setStatus("結果をコピーしました。", "ok");
+  }catch(err){
+    setStatus("コピーに失敗しました。ブラウザの制限により使えない場合があります。", "error");
+  }
+}
 
-        // ゲーム開始処理：ステージ数やスコアを初期化し鍵の形選択から開始
-        function startGame() {
-            stageNumber = 1;
-            score = 0;
-            missCount = 0;
-            selectedShape = null;
-            showKeySelection();
-        }
+function setupEvents(){
+  $("geoBtn").addEventListener("click", handleGeoSearch);
+  $("clearBtn").addEventListener("click", clearView);
+  $("copyBtn").addEventListener("click", copyResult);
 
-        // カウントダウン表示
-        function showCountdown() {
-            showScreen(countdownScreen);
-            let count = 3;
-            countdownText.textContent = count;
-            if (countdownInterval) clearInterval(countdownInterval);
-            countdownInterval = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    countdownText.textContent = count;
-                } else {
-                    clearInterval(countdownInterval);
-                    startStage();
-                }
-            }, 1000);
-        }
+  $("manualSearch").addEventListener("input", (e) => {
+    const keyword = e.target.value;
+    const results = searchManual(keyword);
 
-        // ステージ開始処理
-        function startStage() {
-            currentState = 'playing';
-            // 鍵の形に基づいてステージパラメータを計算
-            const config = getStageParameters();
-            const { pinCount, stateCount, timeLimit } = config;
-            // ピン情報の初期化
-            pins = [];
-            for (let i = 0; i < pinCount; i++) {
-                const correct = Math.floor(Math.random() * stateCount);
-                pins.push({ current: 0, correct: correct, stateCount: stateCount });
-            }
-            // 残り時間設定
-            timeLeft = timeLimit;
-            // UI更新
-            stageDisplay.textContent = 'ステージ ' + stageNumber;
-            timerDisplay.textContent = '残り: ' + timeLeft.toFixed(1);
-            scoreDisplay.textContent = 'スコア: ' + score;
-            // ピンボタン生成
-            pinsContainer.innerHTML = '';
-            pins.forEach((pin, index) => {
-                const btn = document.createElement('button');
-                btn.className = 'pin-button';
-                btn.textContent = pin.current + 1; // 表示は1始まり
-                btn.addEventListener('click', () => handlePinClick(index, btn));
-                pinsContainer.appendChild(btn);
-            });
-            // ゲーム画面を表示
-            showScreen(gameScreen);
-            // タイマー開始
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                timeLeft -= 0.1;
-                if (timeLeft < 0) timeLeft = 0;
-                timerDisplay.textContent = '残り: ' + timeLeft.toFixed(1);
-                if (timeLeft === 0) {
-                    clearInterval(timerInterval);
-                    // 失敗
-                    endGame(false);
-                }
-            }, 100);
-        }
+    if(!keyword.trim()){
+      hide($("candidatePanel"));
+      setStatus("店舗名を入力するか、現在地から探してください。", "info");
+      return;
+    }
 
-        // ピンをクリックしたときの処理
-        function handlePinClick(index, btn) {
-            if (currentState !== 'playing') return;
-            const pin = pins[index];
-            // 現在の状態を更新
-            pin.current = (pin.current + 1) % pin.stateCount;
-            // テキスト更新
-            btn.textContent = pin.current + 1;
-            // 状態が正解かどうか
-            if (pin.current === pin.correct) {
-                btn.classList.add('correct');
-                btn.classList.remove('wrong');
-            } else {
-                btn.classList.remove('correct');
-                // 失敗時の軽い演出
-                btn.classList.add('wrong');
-                setTimeout(() => btn.classList.remove('wrong'), 200);
-            }
-            // ミスカウント（正解以外ならミスとしてカウント）
-            if (pin.current !== pin.correct) {
-                missCount++;
-                playClickSound();
-            } else {
-                playClickSound();
-            }
-            // 全てのピンが正解になっているかチェック
-            const allCorrect = pins.every(p => p.current === p.correct);
-            if (allCorrect) {
-                // ステージクリア
-                clearInterval(timerInterval);
-                completeStage();
-            }
-        }
+    if(results.length === 0){
+      hide($("candidatePanel"));
+      setStatus("該当する店舗が見つかりません。別名や短い名前で検索してみてください。例：マック、セブン、オーケー", "error");
+      return;
+    }
 
-        // ステージクリア処理
-        function completeStage() {
-            currentState = 'stageClear';
-            playSuccessSound();
-            // スコア計算: ステージクリア数*100 + 残り時間*10 - ミス*5
-            const stageScore = stageNumber * 100 + Math.floor(timeLeft * 10) - missCount * 5;
-            if (stageScore > 0) {
-                score += stageScore;
-            }
-            scoreDisplay.textContent = 'スコア: ' + score;
-            stageClearMsg.textContent = '残り時間ボーナス: ' + Math.floor(timeLeft * 10) + ' / ミス: ' + missCount;
-            showScreen(stageClearScreen);
-        }
+    setStatus(`🔎 ${results.length}件見つかりました。候補を選んでください。`, "ok");
+    renderCandidates(results, "検索候補");
+  });
 
-        // 次のステージへ進む
-        function nextStage() {
-            stageNumber++;
-            if (stageNumber > maxStage) {
-                // 全ステージクリア
-                endGame(true);
-            } else {
-                missCount = 0;
-                showCountdown();
-            }
-        }
+  $("showAllBtn").addEventListener("click", () => {
+    renderAllTable();
+    show($("allPanel"));
+    $("allPanel").scrollIntoView({behavior:"smooth", block:"start"});
+  });
 
-        // ゲーム終了（クリアまたは失敗）
-        function endGame(cleared) {
-            currentState = 'gameOver';
-            if (!cleared) {
-                playFailureSound();
-            }
-            // 総合スコアに残り時間ボーナスを追加（クリア時のみ）
-            if (cleared) {
-                score += Math.floor(timeLeft * 10);
-            }
-            // クリア時は「最終クリアステージ」、失敗時は「到達した現在ステージ」を表示する
-            const reachedStage = cleared ? (stageNumber - 1) : stageNumber;
-            const safeStage = Math.max(1, Math.min(reachedStage, maxStage));
-            finalScore.textContent = 'スコア: ' + score + ' 到達ステージ: ' + safeStage;
-            // ベストスコア更新
-            if (score > bestScore) {
-                bestScore = score;
-                try {
-                    localStorage.setItem('kagi_bestScore', String(bestScore));
-                } catch (e) {
-                    /* localStorageが使えない場合は無視 */ 
-                }
-                bestScoreDisplay.textContent = 'ベストスコア: ' + bestScore;
-            }
-            showScreen(gameOverScreen);
-        }
+  $("hideAllBtn").addEventListener("click", () => {
+    hide($("allPanel"));
+  });
+}
 
-        // リトライ: 鍵選択画面から再挑戦
-        function retryGame() {
-            stageNumber = 1;
-            score = 0;
-            missCount = 0;
-            selectedShape = null;
-            showKeySelection();
-        }
-
-        // タイトルへ戻る
-        function backToTitle() {
-            if (timerInterval) clearInterval(timerInterval);
-            if (countdownInterval) clearInterval(countdownInterval);
-            showScreen(titleScreen);
-            bestScoreDisplay.textContent = 'ベストスコア: ' + bestScore;
-        }
-
-        // ページ読み込み時に初期化
-        window.addEventListener('load', init);
-    </script>
+setupEvents();
+renderAllTable();
+</script>
 </body>
 </html>
