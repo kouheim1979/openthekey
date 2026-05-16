@@ -337,7 +337,7 @@ td:last-child,th:last-child{border-right:0}
 <body>
 <div class="app">
   <header class="hero">
-    <div class="badge">💳 現在地 × 支払い最適化</div>
+    <div class="badge">👛 現在地 × 支払い最適化</div>
     <h1>いまのお店、<br>何で払う？</h1>
     <p>
       現在地から近くの対象店舗を探して、候補をバブル表示します。
@@ -363,9 +363,9 @@ td:last-child,th:last-child{border-right:0}
     </div>
 
     <div class="actions">
-      <button id="geoBtn" class="btn primary">📍 現在地から探す</button>
-      <button id="clearBtn" class="btn secondary">🧹 表示をクリア</button>
-      <button id="listModeBtn" class="btn ghost">📚 登録店一覧モード</button>
+      <button id="geoBtn" class="btn primary">🧭 現在地から探す</button>
+      <button id="clearBtn" class="btn secondary">🗑️ 表示をクリア</button>
+      <button id="listModeBtn" class="btn ghost">🗂️ 登録店一覧モード</button>
     </div>
 
     <div id="status" class="status info">
@@ -445,6 +445,18 @@ function buildAppIconSvg(){
 
   <circle cx="376" cy="156" r="52" fill="#ffe45c" stroke="#171225" stroke-width="14"/>
   <text x="376" y="177" text-anchor="middle" font-size="52" font-weight="900" font-family="Arial, sans-serif" fill="#171225">¥</text>
+  <circle cx="112" cy="112" r="54" fill="#ffe45c" stroke="#171225" stroke-width="14"/>
+  <circle cx="415" cy="115" r="44" fill="#4ac7ff" stroke="#171225" stroke-width="14"/>
+  <circle cx="410" cy="402" r="54" fill="#60f09b" stroke="#171225" stroke-width="14"/>
+  <path d="M258 78c-72 0-130 56-130 125 0 89 130 224 130 224s130-135 130-224c0-69-58-125-130-125z" fill="#ff4fa3" stroke="#171225" stroke-width="18" stroke-linejoin="round"/>
+  <circle cx="258" cy="202" r="46" fill="#ffffff" stroke="#171225" stroke-width="16"/>
+  <rect x="142" y="275" width="248" height="126" rx="28" fill="#4ac7ff" stroke="#171225" stroke-width="16"/>
+  <rect x="142" y="306" width="248" height="28" fill="#171225"/>
+  <rect x="172" y="352" width="74" height="22" rx="11" fill="#fffaf0" stroke="#171225" stroke-width="8"/>
+  <rect x="264" y="352" width="86" height="22" rx="11" fill="#ffe45c" stroke="#171225" stroke-width="8"/>
+  <circle cx="364" cy="150" r="52" fill="#ffe45c" stroke="#171225" stroke-width="14"/>
+  <text x="364" y="170" text-anchor="middle" font-size="58" font-weight="900" font-family="Arial, sans-serif" fill="#171225">1</text>
+  <text x="258" y="230" text-anchor="middle" font-size="52" font-weight="900" font-family="Arial, 'Hiragino Sans', 'Yu Gothic', sans-serif" fill="#171225">払</text>
 </svg>`.trim();
 }
 
@@ -900,6 +912,302 @@ const STORE_DATA = [
   {
     store:"タリーズ",
     aliases:["タリーズ","タリーズコーヒー","tullys","tully's"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"chano-ma",
+    aliases:["chano-ma","chanoma","チャノマ","ちゃのま"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"latte chano-mama",
+    aliases:["latte chano-mama","latte chanomama","チャノママ"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"yusoshi",
+    aliases:["yusoshi","ユソーシ","ゆそーし"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"なか卯",
+    aliases:["なか卯","なかう","nakau"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"かつ庵",
+    aliases:["かつ庵","かつあん","katsuan"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"ジョリーパスタ",
+    aliases:["ジョリーパスタ","jolly pasta","jollypasta"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"ビッグボーイ",
+    aliases:["ビッグボーイ","big boy","bigboy"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"ヴィクトリアステーション",
+    aliases:["ヴィクトリアステーション","ビクトリアステーション","victoria station"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"熟成焼肉いちばん",
+    aliases:["熟成焼肉いちばん","焼肉いちばん","ichiban"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"オリーブの丘",
+    aliases:["オリーブの丘","olive hill"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"華屋与兵衛",
+    aliases:["華屋与兵衛","はなやよへい","hanaya yohei"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"久兵衛屋",
+    aliases:["久兵衛屋","きゅうべいや","kyubeya"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"伝丸",
+    aliases:["伝丸","でんまる","denmaru"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"ガスト",
+    aliases:["ガスト","gusto"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"バーミヤン",
+    aliases:["バーミヤン","bamiyan"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"しゃぶ葉",
+    aliases:["しゃぶ葉","しゃぶよう","shabuyo"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"ジョナサン",
+    aliases:["ジョナサン","jonathan"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"夢庵",
+    aliases:["夢庵","ゆめあん","yumean"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"から好し",
+    aliases:["から好し","からよし","karayoshi"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"ステーキガスト",
+    aliases:["ステーキガスト","steak gusto"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"むさしの森珈琲",
+    aliases:["むさしの森珈琲","むさしの森コーヒー","musashinomori coffee"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"藍屋",
+    aliases:["藍屋","あいや","aiya"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"とんから亭",
+    aliases:["とんから亭","tonkaratei"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"chawan",
+    aliases:["chawan","ちゃわん","チャワン"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"La Ohana",
+    aliases:["La Ohana","ラ・オハナ","la ohana"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"魚屋路",
+    aliases:["魚屋路","ととやみち","totoyamichi"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"桃菜",
+    aliases:["桃菜","とうさい","tohsai"],
+    first:"三井住友カード スマホタッチ",
+    second:"PayPay",
+    third:"三菱UFJカード通常",
+    note:"三井住友対象"
+  },
+  {
+    store:"茶茶",
+    aliases:["茶茶","ちゃちゃ","chacha"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"豆ちゃ",
+    aliases:["豆ちゃ","まめちゃ","mamecha"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"小割烹 おはし",
+    aliases:["小割烹 おはし","おはし","ohashi"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"A to Z Cafe",
+    aliases:["A to Z Cafe","atoz cafe"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"Rice people,Nice people!",
+    aliases:["Rice people,Nice people!","ライスピープル"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"24/7",
+    aliases:["24/7","24/7 cafe apartment"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"あわよくばあー",
+    aliases:["あわよくばあー","あわよくばー"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"bistroあわ",
+    aliases:["bistroあわ","ビストロあわ","bistro awa"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"藤井茗縁",
+    aliases:["藤井茗縁","ふじいめいえん","fujii meien"],
+    first:"PayPay",
+    second:"三井住友カード通常",
+    third:"三菱UFJカード通常",
+    note:"特約対象外"
+  },
+  {
+    store:"純喫茶パール",
+    aliases:["純喫茶パール","パール","pearl"],
     first:"PayPay",
     second:"三井住友カード通常",
     third:"三菱UFJカード通常",
