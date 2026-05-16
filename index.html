@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>いまのお店の最適支払いチェッカー</title>
+<meta name="theme-color" content="#ff4fa3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="支払いチェッカー">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link id="dynamicFavicon" rel="icon" type="image/svg+xml" href="">
+<link id="dynamicAppleTouchIcon" rel="apple-touch-icon" href="">
+<link id="dynamicManifest" rel="manifest" href="">
 <style>
 :root{
   --ink:#171225;
@@ -411,6 +418,113 @@ td:last-child,th:last-child{border-right:0}
 
 <script>
 "use strict";
+
+function buildAppIconSvg(){
+  return `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect x="28" y="28" width="456" height="456" rx="104" fill="#fffaf0" stroke="#171225" stroke-width="22"/>
+  <circle cx="112" cy="112" r="54" fill="#ffe45c" stroke="#171225" stroke-width="14"/>
+  <circle cx="415" cy="115" r="44" fill="#4ac7ff" stroke="#171225" stroke-width="14"/>
+  <circle cx="410" cy="402" r="54" fill="#60f09b" stroke="#171225" stroke-width="14"/>
+  <path d="M258 78c-72 0-130 56-130 125 0 89 130 224 130 224s130-135 130-224c0-69-58-125-130-125z" fill="#ff4fa3" stroke="#171225" stroke-width="18" stroke-linejoin="round"/>
+  <circle cx="258" cy="202" r="46" fill="#ffffff" stroke="#171225" stroke-width="16"/>
+  <rect x="142" y="275" width="248" height="126" rx="28" fill="#4ac7ff" stroke="#171225" stroke-width="16"/>
+  <rect x="142" y="306" width="248" height="28" fill="#171225"/>
+  <rect x="172" y="352" width="74" height="22" rx="11" fill="#fffaf0" stroke="#171225" stroke-width="8"/>
+  <rect x="264" y="352" width="86" height="22" rx="11" fill="#ffe45c" stroke="#171225" stroke-width="8"/>
+  <circle cx="364" cy="150" r="52" fill="#ffe45c" stroke="#171225" stroke-width="14"/>
+  <text x="364" y="170" text-anchor="middle" font-size="58" font-weight="900" font-family="Arial, sans-serif" fill="#171225">1</text>
+  <text x="258" y="230" text-anchor="middle" font-size="52" font-weight="900" font-family="Arial, 'Hiragino Sans', 'Yu Gothic', sans-serif" fill="#171225">払</text>
+</svg>`.trim();
+}
+
+function svgToDataUri(svg){
+  return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+}
+
+function makePngIconDataUrl(size){
+  return new Promise((resolve, reject) => {
+    const svg = buildAppIconSvg();
+    const img = new Image();
+    const svgUrl = svgToDataUri(svg);
+
+    img.onload = () => {
+      try{
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, size, size);
+        ctx.drawImage(img, 0, 0, size, size);
+
+        resolve(canvas.toDataURL("image/png"));
+      }catch(err){
+        reject(err);
+      }
+    };
+
+    img.onerror = () => reject(new Error("アイコン画像の生成に失敗しました。"));
+    img.src = svgUrl;
+  });
+}
+
+async function setupEmbeddedAppIcons(){
+  try{
+    const svg = buildAppIconSvg();
+    const svgDataUri = svgToDataUri(svg);
+
+    const favicon = document.getElementById("dynamicFavicon");
+    if(favicon){
+      favicon.href = svgDataUri;
+    }
+
+    const icon192 = await makePngIconDataUrl(192);
+    const icon512 = await makePngIconDataUrl(512);
+
+    const appleIcon = document.getElementById("dynamicAppleTouchIcon");
+    if(appleIcon){
+      appleIcon.href = icon512;
+    }
+
+    const manifest = {
+      name: "いまのお店の最適支払いチェッカー",
+      short_name: "支払い",
+      description: "現在地から近くのお店を選び、最適な支払い方法を表示するアプリ",
+      start_url: ".",
+      scope: ".",
+      display: "standalone",
+      background_color: "#fffaf0",
+      theme_color: "#ff4fa3",
+      icons: [
+        {
+          src: icon192,
+          sizes: "192x192",
+          type: "image/png",
+          purpose: "any maskable"
+        },
+        {
+          src: icon512,
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "any maskable"
+        }
+      ]
+    };
+
+    const manifestBlob = new Blob([JSON.stringify(manifest, null, 2)], {
+      type: "application/manifest+json"
+    });
+
+    const manifestUrl = URL.createObjectURL(manifestBlob);
+    const manifestLink = document.getElementById("dynamicManifest");
+    if(manifestLink){
+      manifestLink.href = manifestUrl;
+    }
+  }catch(err){
+    console.warn("埋め込みアプリアイコンの設定に失敗しました:", err);
+  }
+}
 
 const STORE_DATA = [
   {
@@ -1566,6 +1680,7 @@ function setupEvents(){
   });
 }
 
+setupEmbeddedAppIcons();
 setupEvents();
 renderAllTable();
 </script>
