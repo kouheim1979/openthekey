@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>支払いチェッカー 更新中</title>
+<style>body{font-family:system-ui,-apple-system,sans-serif;margin:0;min-height:100vh;display:grid;place-items:center;background:#fffaf0;color:#171225}main{padding:24px;text-align:center}strong{display:block;font-size:22px;margin-bottom:8px}</style>
+</head>
+<body><main><strong>支払いチェッカーを読み込み中…</strong><span>2026年9月の還元率に更新しています。</span></main>
+<script>
+(async()=>{
+  try{
+    const res=await fetch('./legacy.html?v=20260906-1',{cache:'no-store'});
+    if(!res.ok) throw new Error('legacy.html '+res.status);
+    let html=await res.text();
+
+    // 2026-09-06 current reward assumptions for this checker.
+    html=html.replace(/((?:first|second|third):)"PayPay\/Coke ON Pay"/g,'$1"PayPay（最大1.5%）/Coke ON Pay"');
+    html=html.replace(/((?:first|second|third):)"PayPay"/g,'$1"PayPay（最大1.5%）"');
+    html=html.replace(/((?:first|second|third):)"三井住友カード スマホタッチ\/モバイルオーダー"/g,'$1"Olive クレジットモード スマホタッチ/モバイルオーダー（8%）"');
+    html=html.replace(/((?:first|second|third):)"三井住友カード スマホタッチ"/g,'$1"Olive クレジットモード スマホタッチ（8%）"');
+    html=html.replace(/((?:first|second|third):)"三井住友カード モバイルオーダー"/g,'$1"Olive クレジットモード モバイルオーダー（8%）"');
+    html=html.replace(/((?:first|second|third):)"三菱UFJカード"/g,'$1"三菱UFJカード（対象店7%〜最大20%・要条件）"');
+
+    html=html.replaceAll('note:"三井住友対象"','note:"Oliveクレジットモードなら8%（スマホタッチ／対象モバイルオーダー）"');
+    html=html.replaceAll('note:"三菱UFJ対象"','note:"三菱UFJカード対象：7%〜最大20%（条件・エントリーあり）"');
+    html=html.replaceAll('note:"特約対象外"','note:"特約対象外：PayPayは最大1.5%。楽天ペイが使える店なら、楽天カード払い1.0%／条件達成済みの楽天キャッシュ払い最大1.5%"');
+    html=html.replace('note:"店頭ではなくモバイルオーダー前提"','note:"スタバはアプリ／App Clip経由のApple PayによるモバイルオーダーでOliveクレジットモード8%"');
+
+    const patchScript=`
+(function(){
+  const seven=STORE_DATA.find(s=>s.store==="セブン-イレブン");
+  if(seven){
+    seven.note="Oliveクレジットモードは8%。セブンアプリ連携など所定条件達成なら最大11%。三菱UFJカードは7%〜最大20%なので、MDCアプリ表示が8%超なら三菱UFJを優先。";
+  }
+  const lawson=STORE_DATA.find(s=>s.store==="ローソン");
+  if(lawson){
+    lawson.note="Oliveクレジットモード8%と三菱UFJカード7%〜最大20%の比較。MDCアプリ表示が8%超なら三菱UFJを優先。";
+  }
+  const fresh=STORE_DATA.find(s=>s.store==="フレッシュネスバーガー");
+  if(!fresh){
+    STORE_DATA.push({
+      store:"フレッシュネスバーガー",
+      aliases:["フレッシュネスバーガー","フレッシュネス","freshness burger","freshnessburger"],
+      first:"Olive クレジットモード スマホタッチ（8%）",
+      second:"PayPay（最大1.5%）",
+      third:"楽天ペイ（条件達成時最大1.5%）",
+      note:"2026年8月1日から三井住友カード高還元の対象。Oliveクレジットモードのスマホタッチなら8%。楽天ペイは一部店舗を除き利用可。"
+    });
+  }
+})();
+`;
+    html=html.replace('setupEmbeddedAppIcons();',patchScript+'\nsetupEmbeddedAppIcons();');
+    html=html.replace('候補を選ぶと、そのお店のおすすめ支払い方法1〜3位をすぐ表示します。','候補を選ぶと、そのお店のおすすめ支払い方法1〜3位をすぐ表示します。還元率は2026年9月6日時点の前提で補正しています。');
+    html=html.replace('店舗候補はOpenStreetMapの登録状況に依存します。','店舗候補はOpenStreetMapの登録状況に依存します。<br>基準：PayPay最大1.5%／Olive対象店8%／三菱UFJ対象店7%〜最大20%（条件あり）。');
+
+    document.open();
+    document.write(html);
+    document.close();
+  }catch(err){
+    document.body.innerHTML='<main><strong>読み込みに失敗しました</strong><span>'+String(err.message||err)+'</span></main>';
+  }
+})();
+</script>
+</body>
+</html>
