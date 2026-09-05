@@ -10,11 +10,10 @@
 <script>
 (async()=>{
   try{
-    const res=await fetch('./legacy.html?v=20260906-2',{cache:'no-store'});
+    const res=await fetch('./legacy.html?v=20260906-3',{cache:'no-store'});
     if(!res.ok) throw new Error('legacy.html '+res.status);
     let html=await res.text();
 
-    // 2026-09-06 current reward assumptions for this checker.
     html=html.replace(/((?:first|second|third):)"PayPay\/Coke ON Pay"/g,'$1"PayPay（クレジット最大1.5%／残高最大1.0%）/Coke ON Pay"');
     html=html.replace(/((?:first|second|third):)"PayPay"/g,'$1"PayPay（クレジット最大1.5%／残高最大1.0%）"');
     html=html.replace(/((?:first|second|third):)"三井住友カード スマホタッチ\/モバイルオーダー"/g,'$1"Olive クレジットモード スマホタッチ/モバイルオーダー（8%）"');
@@ -33,53 +32,70 @@
     const patchScript=`
 (function(){
   const PAYPAY="PayPay（クレジット最大1.5%／残高最大1.0%）";
-  const RAKUTEN25="楽天ペイ＋楽天ポイントカード（合計最大2.5%・条件あり）";
+  const RAKUTEN_PAY="楽天ペイ残高（最大1.5%・条件あり）";
   const SMBC_NORMAL="三井住友カード／Olive通常（0.5%）";
   const MUFG_TARGET="三菱UFJカード（対象店7%〜最大20%・要条件）";
   const OK_CASH="現金＋オーケークラブ（食料品3%相当割引）";
 
-  function eachStore(name, fn){
-    STORE_DATA.filter(s=>s.store===name).forEach(fn);
+  STORE_DATA.forEach(s=>{
+    s.rakutenPoint="公式の現行楽天ポイントカード対応を確認できず";
+  });
+
+  function eachStore(name, fn){ STORE_DATA.filter(s=>s.store===name).forEach(fn); }
+  function pointYes(names, text="対応：提示で約+0.5%（200円ごとに1ポイント、店舗により税込/税抜基準）"){
+    names.forEach(name=>eachStore(name,s=>s.rakutenPoint=text));
   }
+  function pointEnded(names, text){ names.forEach(name=>eachStore(name,s=>s.rakutenPoint=text)); }
+
+  pointYes([
+    "ガスト","バーミヤン","しゃぶ葉","夢庵","ジョナサン","ステーキガスト","むさしの森珈琲","から好し","藍屋","とんから亭","La Ohana","魚屋路","桃菜"
+  ],"対応：提示で+0.5%（200円税込につき1ポイント）");
+
+  pointYes([
+    "すき家","はま寿司","なか卯","ココス","ジョリーパスタ","ビッグボーイ","ヴィクトリアステーション","熟成焼肉いちばん","オリーブの丘","ゼッテリア","華屋与兵衛","久兵衛屋","かつ庵"
+  ],"対応：提示で+0.5%（原則200円税込につき1ポイント・一部店舗除く）");
+
+  pointYes(["ケンタッキー"],"対応：提示で約+0.5%（200円税抜につき1ポイント）");
+  pointYes(["吉野家"],"対応：提示で約+0.5%（200円税抜につき1ポイント）");
+  pointYes(["くら寿司"],"対応：提示で約+0.5%（200円税抜につき1ポイント）");
+  pointYes(["東急ストア"],"対応：提示で約+0.5%（200円税抜につき1ポイント）");
+  pointYes(["タリーズ"],"対応：提示で+0.5%（200円税込につき1ポイント）");
+
+  pointEnded(["マクドナルド"],"非対応：楽天ポイントカードは2024年1月14日で終了");
+  pointEnded(["丸亀製麺"],"非対応：楽天ポイントカードは2024年5月31日で終了");
+  pointEnded(["CoCo壱番屋"],"非対応：楽天ポイントカードの進呈・利用は終了");
 
   eachStore("セブン-イレブン", s=>{
-    s.note="Oliveクレジットモードは8%。セブンアプリ連携など所定条件達成なら最大11%。三菱UFJカードは7%〜最大20%なので、MDCアプリ表示が8%超なら三菱UFJを優先。PayPayはクレジット最大1.5%／残高最大1.0%。";
+    s.note="Oliveクレジットモードは8%。セブンアプリ連携など所定条件達成なら最大11%。三菱UFJカードは7%〜最大20%なので、MDCアプリ表示が8%超なら三菱UFJを優先。";
   });
-
   eachStore("ローソン", s=>{
-    s.note="Oliveクレジットモード8%と三菱UFJカード7%〜最大20%を比較。MDCアプリ表示が8%超なら三菱UFJを優先。PayPayはクレジット最大1.5%／残高最大1.0%。";
+    s.note="Oliveクレジットモード8%と三菱UFJカード7%〜最大20%を比較。MDCアプリ表示が8%超なら三菱UFJを優先。";
   });
 
-  // 楽天ポイントカード提示＋楽天ペイ残高払いの合計最大2.5%が確認できる店舗。
   ["すき家","吉野家","はま寿司","ココス"].forEach(name=>{
-    eachStore(name, s=>{
-      s.second=RAKUTEN25;
-      s.third=PAYPAY;
-      s.note += " 楽天ポイントカード対象店では、所定条件達成の楽天ペイ残高払いと提示分を合わせて最大2.5%。";
-    });
+    eachStore(name,s=>{ s.second=RAKUTEN_PAY; s.third=PAYPAY; });
   });
 
   eachStore("東急ストア", s=>{
-    s.first=MUFG_TARGET;
-    s.second=RAKUTEN25;
-    s.third=PAYPAY;
-    s.note="三菱UFJカード対象：7%〜最大20%（条件・エントリーあり）。楽天ポイントカード＋楽天ペイ残高払いは条件達成で合計最大2.5%。PayPayはクレジット最大1.5%／残高最大1.0%。";
+    s.first=MUFG_TARGET; s.second=RAKUTEN_PAY; s.third=PAYPAY;
+    s.note="三菱UFJカード対象：7%〜最大20%（条件・エントリーあり）。楽天ペイは支払い分を別表示し、楽天ポイントカードは会計前提示分を別枠表示。";
   });
 
-  ["CoCo壱番屋","ジョリーパスタ","ビッグボーイ","ヴィクトリアステーション","熟成焼肉いちばん","華屋与兵衛","久兵衛屋"].forEach(name=>{
-    eachStore(name, s=>{
-      s.first=RAKUTEN25;
-      s.second=PAYPAY;
-      s.third=SMBC_NORMAL;
-      s.note="楽天ポイントカード提示＋楽天ペイ残高払いは所定条件達成で合計最大2.5%。PayPayはクレジット最大1.5%／残高最大1.0%。通常カードは0.5%目安。";
+  ["ジョリーパスタ","ビッグボーイ","ヴィクトリアステーション","熟成焼肉いちばん","オリーブの丘","華屋与兵衛","久兵衛屋","なか卯","かつ庵","ゼッテリア","タリーズ"].forEach(name=>{
+    eachStore(name,s=>{
+      if(String(s.first).startsWith("PayPay")) s.first=RAKUTEN_PAY;
+      if(String(s.second).includes("PayPay")) s.second=RAKUTEN_PAY;
     });
   });
 
+  eachStore("CoCo壱番屋", s=>{
+    s.first=PAYPAY; s.second=SMBC_NORMAL; s.third="三菱UFJカード通常（0.5%）";
+    s.note="楽天ポイントカードは現在非対応。楽天ペイで支払う場合もポイントカード提示分は付きません。";
+  });
+
   eachStore("オーケー", s=>{
-    s.first=MUFG_TARGET;
-    s.second=OK_CASH;
-    s.third=PAYPAY;
-    s.note="三菱UFJカード対象：7%〜最大20%（条件あり）。オーケークラブは現金払いの食料品（酒類除く）が3/103＝3%相当額割引。PayPayはクレジット最大1.5%／残高最大1.0%。";
+    s.first=MUFG_TARGET; s.second=OK_CASH; s.third=PAYPAY;
+    s.note="三菱UFJカード対象：7%〜最大20%（条件あり）。オーケークラブは現金払いの食料品（酒類除く）が3/103＝3%相当額割引。";
   });
 
   const fresh=STORE_DATA.find(s=>s.store==="フレッシュネスバーガー");
@@ -90,15 +106,25 @@
       first:"Olive クレジットモード スマホタッチ（8%）",
       second:PAYPAY,
       third:SMBC_NORMAL,
-      note:"2026年8月1日から三井住友カード高還元の対象。Oliveクレジットモードのスマホタッチなら8%。PayPayはクレジット最大1.5%／残高最大1.0%。"
+      rakutenPoint:"公式の現行楽天ポイントカード対応を確認できず",
+      note:"2026年8月1日から三井住友カード高還元の対象。Oliveクレジットモードのスマホタッチなら8%。"
     });
   }
 })();
 `;
 
     html=html.replace('setupEmbeddedAppIcons();',patchScript+'\nsetupEmbeddedAppIcons();');
-    html=html.replace('候補を選ぶと、そのお店のおすすめ支払い方法1〜3位をすぐ表示します。','候補を選ぶと、そのお店のおすすめ支払い方法1〜3位をすぐ表示します。各支払い方法に還元率・割引率も併記しています（2026年9月6日時点）。');
-    html=html.replace('店舗候補はOpenStreetMapの登録状況に依存します。','店舗候補はOpenStreetMapの登録状況に依存します。<br><strong>通常時の目安</strong>：PayPay クレジット1.0%〜最大1.5%／残高0.5%〜最大1.0%・楽天ペイ残高 最大1.5%（対象店でポイントカード併用なら合計最大2.5%）・Olive通常0.5%／対象店8%・三菱UFJ通常0.5%／対象店7%〜最大20%・d払い0.5%（dカード設定1.0%）・au PAY 0.5%。');
+
+    html=html.replace(
+      '<div class="note">\n      <strong>備考：</strong>${escapeHtml(store.note)}\n    </div>',
+      '<div class="note" style="background:#fff4d6;">\n      <strong>楽天ポイントカード：</strong>${escapeHtml(store.rakutenPoint || "未確認")}\n    </div>\n\n    <div class="note">\n      <strong>備考：</strong>${escapeHtml(store.note)}\n    </div>'
+    );
+
+    html=html.replace('<th>備考</th>','<th>楽天ポイントカード</th><th>備考</th>');
+    html=html.replace('<td>${escapeHtml(store.note)}</td>','<td>${escapeHtml(store.rakutenPoint || "未確認")}</td><td>${escapeHtml(store.note)}</td>');
+
+    html=html.replace('候補を選ぶと、そのお店のおすすめ支払い方法1〜3位をすぐ表示します。','候補を選ぶと、そのお店のおすすめ支払い方法1〜3位を表示し、その下に楽天ポイントカードの対応状況を別枠で表示します（2026年9月6日時点）。');
+    html=html.replace('店舗候補はOpenStreetMapの登録状況に依存します。','店舗候補はOpenStreetMapの登録状況に依存します。<br><strong>楽天ペイの支払い還元と楽天ポイントカード提示分は別表示です。</strong>');
 
     document.open();
     document.write(html);
