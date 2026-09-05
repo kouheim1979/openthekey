@@ -1,1 +1,0 @@
-Use Git tree aliasing to restore legacy.html to the prior index blob and publish index.new.html as index.html.

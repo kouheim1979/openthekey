@@ -1,1 +1,0 @@
-2026-09-06: payment checker reward assumptions updated. PayPay max 1.5%, Olive credit mode 8% at eligible stores, MUFG eligible stores 7% to max 20% with conditions.
