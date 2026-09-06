@@ -3,18 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>支払いチェッカー 更新中</title>
+<title>支払いチェッカー</title>
 <style>body{font-family:system-ui,-apple-system,sans-serif;margin:0;min-height:100vh;display:grid;place-items:center;background:#fffaf0;color:#171225}main{padding:24px;text-align:center}strong{display:block;font-size:22px;margin-bottom:8px}</style>
 </head>
-<body><main><strong>支払いチェッカーを読み込み中…</strong><span>支払い還元＋提示ポイントを最適化しています。</span></main>
+<body><main><strong>支払いチェッカーを読み込み中…</strong><span>支払い方法と提示ポイントを分けて表示します。</span></main>
 <script>
 (async()=>{
   try{
-    const res=await fetch('./legacy.html?v=20260906-6',{cache:'no-store'});
+    const res=await fetch('./legacy.html?v=20260906-7',{cache:'no-store'});
     if(!res.ok) throw new Error('legacy.html '+res.status);
     let html=await res.text();
 
-    // 支払い方法の基本表示を2026-09-06時点のユーザー設定へ補正。
     html=html.replace(/((?:first|second|third):)"PayPay\/Coke ON Pay"/g,'$1"PayPay（1.5%）/Coke ON Pay"');
     html=html.replace(/((?:first|second|third):)"PayPay"/g,'$1"PayPay（1.5%）"');
     html=html.replace(/((?:first|second|third):)"三井住友カード スマホタッチ\/モバイルオーダー"/g,'$1"Olive クレジットモード スマホタッチ/モバイルオーダー（8%）"');
@@ -25,214 +24,189 @@
     html=html.replace(/((?:first|second|third):)"三菱UFJカード"/g,'$1"三菱UFJカード（12.5%）"');
     html=html.replace(/((?:first|second|third):)"現金＋オーケークラブ"/g,'$1"現金＋オーケークラブ（食料品3%相当割引）"');
 
-    html=html.replaceAll('note:"三井住友対象"','note:"Oliveクレジットモードなら8%（スマホタッチ／対象モバイルオーダー）。通常利用は0.5%。"');
-    html=html.replaceAll('note:"三菱UFJ対象"','note:"三菱UFJカード対象店。あなたのMDCアプリ表示は現在12.5%（2026/9/6確認）。"');
-    html=html.replaceAll('note:"特約対象外"','note:"特約対象外：PayPayは1.5%。三井住友カード・Olive通常0.5%、三菱UFJカード通常0.5%。"');
-    html=html.replace('note:"店頭ではなくモバイルオーダー前提"','note:"スタバはアプリ／App Clip経由のApple PayによるモバイルオーダーでOliveクレジットモード8%。通常利用は0.5%。"');
-
     const patchScript=`
 (function(){
   const PAYPAY="PayPay（1.5%）";
-  const RAKUTEN_PAY="楽天ペイ残高（1.5%）";
+  const RAKUTEN="楽天ペイ残高（1.5%・条件達成時）";
+  const AU="au PAY（0.5%）";
+  const DPAY="d払い（0.5%／dカード設定なら1.0%）";
   const SMBC_NORMAL="三井住友カード／Olive通常（0.5%）";
   const MUFG_NORMAL="三菱UFJカード通常（0.5%）";
-  const MUFG_TARGET="三菱UFJカード（12.5%）";
+  const MUFG="三菱UFJカード（12.5%）";
   const OLIVE8="Olive クレジットモード スマホタッチ（8%）";
-  const OK_CASH="現金＋オーケークラブ（食料品3%相当割引）";
+  const OKCASH="現金＋オーケークラブ（食料品3%相当割引）";
+
+  const uniq=a=>Array.from(new Set(a.filter(Boolean)));
+  const eachStore=(name,fn)=>STORE_DATA.filter(s=>s.store===name).forEach(fn);
+  const eachNames=(names,fn)=>names.forEach(n=>eachStore(n,fn));
 
   STORE_DATA.forEach(s=>{
     s.rakutenPoint="未確認（公式の現行対応を確認できず）";
     s.otherPoints="共通ポイントは未確認";
-    s.pointCombo="提示ポイントの併用情報は未確認";
+    s.pointCombo="提示ポイントと支払い還元は別枠。対応確認済みの店は下に具体例を表示。";
+    s.paymentOptions=uniq([s.first,s.second,s.third]);
   });
 
-  function eachStore(name, fn){ STORE_DATA.filter(s=>s.store===name).forEach(fn); }
-  function eachNames(names, fn){ names.forEach(name=>eachStore(name,fn)); }
+  // 三菱UFJ 12.5%を現在値として使う対象店。
+  eachStore("セブン-イレブン",s=>{
+    s.first=MUFG; s.second=OLIVE8; s.third=PAYPAY;
+    s.paymentOptions=uniq([MUFG,OLIVE8,PAYPAY]);
+    s.rakutenPoint="非対応";
+    s.otherPoints="nanacoポイント／セブンマイル（利用条件は別）";
+    s.pointCombo="支払い還元では三菱UFJ 12.5%を優先。";
+    s.note="MDCアプリ表示12.5%を使用（2026/9/6確認）。";
+  });
+  eachStore("ローソン",s=>{
+    s.first=MUFG; s.second=OLIVE8; s.third=PAYPAY;
+    s.paymentOptions=uniq([MUFG,OLIVE8,PAYPAY,AU,DPAY]);
+    s.rakutenPoint="非対応";
+    s.otherPoints="Ponta または dポイント：約0.5%（0:00〜15:59）／約1.0%（16:00〜23:59）";
+    s.pointCombo="Ponta＋au PAY 0.5%＝約1.0〜1.5%。PayPay 1.5%＋Ponta＝約2.0〜2.5%。三菱UFJ 12.5%＋Ponta＝約13.0〜13.5%。";
+    s.note="MDCアプリ表示12.5%を使用（2026/9/6確認）。";
+  });
+  eachStore("オーケー",s=>{
+    s.first=MUFG; s.second=OKCASH; s.third=PAYPAY;
+    s.paymentOptions=uniq([MUFG,OKCASH,PAYPAY]);
+    s.rakutenPoint="非対応／現行公式対応を確認できず";
+    s.otherPoints="オーケークラブ：現金払いの対象食料品が3%相当割引";
+    s.pointCombo="三菱UFJ 12.5%が対象なら1位。条件外では現金3%相当も比較。";
+  });
 
-  // ---- 楽天ポイント／共通ポイント ----
+  // ジョリーパスタ：PayPayと楽天ペイを置き換えず、両方を残す。
+  eachStore("ジョリーパスタ",s=>{
+    s.first=RAKUTEN;
+    s.second=PAYPAY;
+    s.third=AU;
+    s.paymentOptions=uniq([RAKUTEN,PAYPAY,AU,DPAY,SMBC_NORMAL,MUFG_NORMAL]);
+    s.rakutenPoint="対応：0.5%（200円税込につき1ポイント）";
+    s.otherPoints="dポイント 0.5% または Vポイント 0.5%（楽天・d・Vのいずれか1つ）／JOLLYはレシートQR読取で別に貯まる";
+    s.pointCombo="楽天ポイント提示0.5%＋楽天ペイ1.5%＝2.0%（楽天ペイ条件達成時）。楽天ポイント提示0.5%＋PayPay1.5%＝2.0%。どちらの支払いも候補から消さない。";
+    s.note="公式店舗ページでPayPay・楽天ペイ・au PAY・d払いを確認。楽天ポイント・dポイント・Vポイントにも対応（一部店舗差あり）。";
+  });
+
+  // 楽天ポイント対応の主な店舗。
   const skylark=["ガスト","バーミヤン","しゃぶ葉","ジョナサン","夢庵","から好し","ステーキガスト","むさしの森珈琲","藍屋","とんから亭","chawan","La Ohana","魚屋路","桃菜"];
   eachNames(skylark,s=>{
-    s.rakutenPoint="対応：0.5%（200円税込につき1P）";
-    s.otherPoints="Vポイント 0.5% または dポイント 0.5%（楽天/V/dのいずれか1つ）＋すかいらーくポイント0.5%を同時に貯められる";
-    s.pointCombo="共通ポイント0.5%＋すかいらーくポイント0.5%＝提示分1.0%。さらに支払い還元を上乗せ。Olive 8%利用時は通常合計9.0%相当。";
+    s.rakutenPoint="対応：0.5%（200円税込につき1ポイント）";
+    s.otherPoints="Vポイント0.5% または dポイント0.5%（楽天/V/dのいずれか1つ）＋すかいらーくポイント0.5%";
+    s.pointCombo="共通ポイント0.5%＋すかいらーくポイント0.5%＝提示分1.0%。支払い還元は別に加算。";
   });
 
-  const zensho=["はま寿司","ココス","なか卯","かつ庵","ジョリーパスタ","ビッグボーイ","ヴィクトリアステーション","熟成焼肉いちばん","オリーブの丘","華屋与兵衛","久兵衛屋","ゼッテリア","伝丸"];
+  const zensho=["はま寿司","ココス","なか卯","かつ庵","ビッグボーイ","ヴィクトリアステーション","熟成焼肉いちばん","オリーブの丘","華屋与兵衛","久兵衛屋","ゼッテリア","伝丸"];
   eachNames(zensho,s=>{
-    s.rakutenPoint="対応：0.5%（原則200円税込につき1P・一部店舗除く）";
-    s.otherPoints="dポイント／Vポイントも原則0.5%。楽天・d・Vのいずれか1種類を提示";
-    s.pointCombo="提示ポイント0.5%は支払い還元と別に加算可能。PayPay 1.5%なら通常合計2.0%相当。";
+    s.rakutenPoint="対応：0.5%（原則200円税込につき1ポイント・一部店舗除く）";
+    s.otherPoints="dポイント／Vポイントも原則0.5%（楽天・d・Vのいずれか1種類）";
+    s.pointCombo="提示ポイント0.5%は支払い還元と別に加算。PayPay1.5%なら通常合計2.0%相当。";
   });
 
   eachStore("すき家",s=>{
-    s.rakutenPoint="対応：0.5%（200円税込につき1P）";
-    s.otherPoints="dポイント・Vポイント・Pontaも各0.5%。楽天/d/V/Pontaのいずれか1種類。2026年9月は来店回数に応じ最大15倍キャンペーンあり";
-    s.pointCombo="Ponta提示0.5%＋au PAY 0.5%＝1.0%。PayPay 1.5%＋提示ポイント0.5%＝2.0%。Olive 8%＋提示ポイント0.5%＝8.5%（通常時）。";
+    s.rakutenPoint="対応：0.5%（200円税込につき1ポイント）";
+    s.otherPoints="dポイント・Vポイント・Pontaも各0.5%（いずれか1種類）";
+    s.pointCombo="Ponta0.5%＋au PAY0.5%＝1.0%。PayPay1.5%＋提示ポイント0.5%＝2.0%。";
+    s.paymentOptions=uniq([...s.paymentOptions,PAYPAY,RAKUTEN,AU,DPAY]);
   });
-
   eachStore("ケンタッキー",s=>{
-    s.rakutenPoint="対応：約0.5%（200円税抜につき1P）";
-    s.otherPoints="Pontaも約0.5%（200円税抜につき1P）。楽天とPontaは併用不可でどちらか1つ";
-    s.pointCombo="Ponta約0.5%＋au PAY 0.5%＝約1.0%。PayPay 1.5%＋楽天またはPonta約0.5%＝約2.0%。Olive 8%＋提示ポイントなら約8.5%。";
+    s.rakutenPoint="対応：約0.5%（200円税抜につき1ポイント）";
+    s.otherPoints="Pontaも約0.5%（楽天とPontaはいずれか1つ）";
+    s.pointCombo="Ponta約0.5%＋au PAY0.5%＝約1.0%。PayPay1.5%＋楽天またはPonta約0.5%＝約2.0%。";
   });
-
-  eachStore("ローソン",s=>{
-    s.rakutenPoint="非対応";
-    s.otherPoints="Ponta または dポイント：0:00〜15:59は200円税抜で1P（約0.5%）、16:00〜23:59は2P（約1.0%）";
-    s.pointCombo="Ponta＋au PAY 0.5%＝約1.0%（昼）/約1.5%（夕方以降）。PayPay 1.5%＋Pontaなら約2.0〜2.5%。三菱UFJ 12.5%＋Pontaなら約13.0〜13.5%。";
-  });
-
   eachStore("東急ストア",s=>{
-    s.rakutenPoint="対応：約0.5%（200円税抜につき1P）";
-    s.otherPoints="TOKYU POINT：約0.5%（200円税抜につき1P）。TOKYU POINTと楽天ポイントは両方提示して同時に貯められる";
-    s.pointCombo="楽天約0.5%＋TOKYU POINT約0.5%＝提示分約1.0%。三菱UFJ 12.5%なら通常合計約13.5%相当。";
+    s.first=MUFG; s.second=RAKUTEN; s.third=PAYPAY;
+    s.paymentOptions=uniq([MUFG,RAKUTEN,PAYPAY]);
+    s.rakutenPoint="対応：約0.5%（200円税抜につき1ポイント）";
+    s.otherPoints="TOKYU POINT：約0.5%。楽天ポイントとTOKYU POINTは同時に貯められる";
+    s.pointCombo="楽天約0.5%＋TOKYU POINT約0.5%＝提示分約1.0%。三菱UFJ12.5%なら合計約13.5%相当。";
   });
-
   eachStore("吉野家",s=>{
-    s.rakutenPoint="対応：約0.5%（200円税抜につき1P）";
-    s.otherPoints="現行で確認できた共通ポイントは楽天ポイント";
-    s.pointCombo="楽天ポイント約0.5%は支払いと別に加算可能。PayPay 1.5%なら通常合計約2.0%。";
+    s.rakutenPoint="対応：約0.5%（200円税抜につき1ポイント）";
+    s.otherPoints="楽天ポイント対応";
+    s.pointCombo="楽天ポイント約0.5%を支払い還元に上乗せ可能。PayPay1.5%なら約2.0%。";
   });
-
   eachStore("くら寿司",s=>{
-    s.rakutenPoint="対応：約0.5%（200円税抜につき1P・一部店舗除く）";
-    s.otherPoints="現行で確認できた共通ポイントは楽天ポイント";
+    s.rakutenPoint="対応：約0.5%（200円税抜につき1ポイント・一部店舗除く）";
+    s.otherPoints="楽天ポイント対応";
     s.pointCombo="楽天ポイント約0.5%を支払い還元に上乗せ可能。";
   });
-
   eachStore("タリーズ",s=>{
-    s.rakutenPoint="対応：0.5%（200円税込につき1P）";
-    s.otherPoints="楽天ポイントを提示可能";
-    s.pointCombo="楽天0.5%＋PayPay 1.5%＝通常合計2.0%相当。";
+    s.rakutenPoint="対応：0.5%（200円税込につき1ポイント）";
+    s.otherPoints="楽天ポイント対応";
+    s.pointCombo="楽天0.5%＋PayPay1.5%＝通常合計2.0%相当。";
   });
-
-  eachStore("CoCo壱番屋",s=>{
-    s.rakutenPoint="要確認：楽天公式の個別ページは『進呈・利用終了』表示。店舗一覧には掲載が残るため、店頭確認を推奨";
-    s.otherPoints="共通ポイントは要店頭確認";
-    s.pointCombo="確実に比較できる通常決済ではPayPay 1.5%を基準にする。";
-  });
-
   eachStore("マクドナルド",s=>{
     s.rakutenPoint="非対応：楽天ポイントカードは2024年1月14日で終了";
-    s.otherPoints="dポイントカードも店頭ポイント進呈を終了済み";
-    s.pointCombo="共通ポイント提示の上乗せはなし。支払い還元で比較。";
+    s.otherPoints="dポイントカードの店頭進呈も終了済み";
+    s.pointCombo="提示ポイント上乗せなし。支払い還元で比較。";
   });
   eachStore("丸亀製麺",s=>{
     s.rakutenPoint="非対応：楽天ポイントカードは2024年5月31日で終了";
     s.otherPoints="共通ポイントは現行対応を確認できず";
-    s.pointCombo="提示ポイントの上乗せなしとして支払い還元を比較。";
+    s.pointCombo="提示ポイント上乗せなしとして支払い還元を比較。";
   });
 
-  eachStore("セブン-イレブン",s=>{
-    s.rakutenPoint="非対応";
-    s.otherPoints="nanacoポイント（nanaco等の対象決済で付与）／セブンマイル（アプリ会員コード提示など条件あり）";
-    s.pointCombo="三菱UFJ 12.5%を優先。nanaco系は決済方法依存なので、三菱UFJとの単純二重取りとは別扱い。";
-  });
-  eachStore("ミニストップ",s=>{
-    s.rakutenPoint="非対応";
-    s.otherPoints="WAON POINT（WAON利用時など条件あり）";
-    s.pointCombo="提示型の共通ポイント上乗せは基本なしとして支払い還元を比較。";
-  });
-  eachStore("スタバ",s=>{
-    s.rakutenPoint="非対応";
-    s.otherPoints="Starbucks Rewards（Star付与。共通ポイントではない）";
-    s.pointCombo="Olive対象モバイルオーダー8%を優先。Starbucks Rewardsは別管理。";
-  });
-  eachStore("オーケー",s=>{
-    s.rakutenPoint="非対応／現行公式対応を確認できず";
-    s.otherPoints="オーケークラブ：現金払いの対象食料品が3%相当割引";
-    s.pointCombo="三菱UFJ 12.5%が対象なら1位。対象外条件では現金＋オーケークラブ3%相当も比較。";
-  });
-  eachStore("コカ・コーラ自販機",s=>{
-    s.rakutenPoint="非対応";
-    s.otherPoints="Coke ONスタンプ等（自販機・キャンペーン条件による）";
-    s.pointCombo="Coke ON側特典は決済還元と別枠。";
-  });
-  eachNames(["松屋","松のや","マイカリー食堂","松弁ネット/松屋モバイルオーダー"],s=>{
-    s.rakutenPoint="現行の店頭共通ポイント対応は未確認";
-    s.otherPoints="松弁ネット／モバイルオーダー等の松屋フーズ独自ポイント・キャンペーンは注文方法によりあり";
-    s.pointCombo="店頭では支払い還元を主に比較。モバイルオーダー時は独自ポイントも確認。";
-  });
-
-  // ---- 支払い順位 ----
-  eachStore("セブン-イレブン",s=>{
-    s.first=MUFG_TARGET; s.second=OLIVE8; s.third=PAYPAY;
-    s.note="三菱UFJカードはMDCアプリ表示12.5%（2026/9/6確認）。Oliveは8%。";
-  });
-  eachStore("ローソン",s=>{
-    s.first=MUFG_TARGET; s.second=OLIVE8; s.third=PAYPAY;
-    s.note="三菱UFJカード12.5%を優先。Ponta/dポイントの提示分は別に加算可能。";
-  });
-  ["すき家","吉野家","はま寿司","ココス"].forEach(name=>{
-    eachStore(name,s=>{ s.second=RAKUTEN_PAY; s.third=PAYPAY; });
-  });
-  eachStore("東急ストア",s=>{
-    s.first=MUFG_TARGET; s.second=RAKUTEN_PAY; s.third=PAYPAY;
-    s.note="三菱UFJ 12.5%に、TOKYU POINT＋楽天ポイントの提示分を追加できる。";
-  });
-  eachStore("オーケー",s=>{
-    s.first=MUFG_TARGET; s.second=OK_CASH; s.third=PAYPAY;
-    s.note="三菱UFJカード12.5%。オーケークラブ現金払いは対象食料品3%相当割引。";
-  });
-  eachStore("CoCo壱番屋",s=>{
-    s.first=PAYPAY; s.second=SMBC_NORMAL; s.third=MUFG_NORMAL;
-    s.note="楽天ポイント対応は公式表示に不整合があるため店頭確認。支払いはPayPay 1.5%を基準。";
-  });
-
-  const fresh=STORE_DATA.find(s=>s.store==="フレッシュネスバーガー");
-  if(!fresh){
-    STORE_DATA.push({
-      store:"フレッシュネスバーガー",
-      aliases:["フレッシュネスバーガー","フレッシュネス","freshness burger","freshnessburger"],
-      first:OLIVE8,
-      second:PAYPAY,
-      third:SMBC_NORMAL,
-      rakutenPoint:"未確認（公式の現行対応を確認できず）",
-      otherPoints:"共通ポイントは未確認",
-      pointCombo:"支払い還元を優先して比較。",
-      note:"三井住友カード高還元の対象。"
-    });
-  }
-
-  // PayPayが表示される場所は必ず1.5%を明記する。
+  // PayPayが元データにある店では必ず1.5%表記を候補にも残す。
   STORE_DATA.forEach(s=>{
-    ["first","second","third"].forEach(k=>{
-      const v=String(s[k]||"");
-      if(v.includes("PayPay") && !v.includes("1.5%")){
-        s[k]=v.replace(/PayPay(?!（1\.5%）)/g,"PayPay（1.5%）");
-      }
-    });
+    s.first=String(s.first).replace(/^PayPay(?:（[^）]*）)?$/,PAYPAY);
+    s.second=String(s.second).replace(/^PayPay(?:（[^）]*）)?$/,PAYPAY);
+    s.third=String(s.third).replace(/^PayPay(?:（[^）]*）)?$/,PAYPAY);
+    s.paymentOptions=uniq((s.paymentOptions||[s.first,s.second,s.third]).map(x=>String(x).replace(/^PayPay(?:（[^）]*）)?$/,PAYPAY)));
   });
-})();
 
-function paymentConditionSummary(store){
-  const methods=[store.first,store.second,store.third].join(" ");
-  const out=[];
-  if(methods.includes("楽天ペイ残高")){
-    out.push("楽天ペイ1.5%：適用月の前々月16日〜前月15日に、対象の楽天ポイントカードを2回以上提示し、1ポイント以上獲得。未達なら最大1.0%。");
-  }
-  if(methods.includes("三菱UFJカード（12.5%）")){
-    out.push("三菱UFJ：MDCアプリ表示は現在12.5%（2026/9/6 08:59確認）。プログラム参加には三菱UFJ銀行を支払口座に設定＋MDCアプリからエントリー。基本7%に各条件達成分が上乗せ。");
-  }
-  if(methods.includes("Olive クレジットモード")){
-    out.push("Olive 8%：対象店舗でクレジットモードをスマホのタッチ決済、または対象モバイルオーダーで利用。");
-  }
-  return out.join(" / ");
-}
+  window.paymentConditionSummary=function(store){
+    const text=[store.first,store.second,store.third,...(store.paymentOptions||[])].join(" ");
+    const out=[];
+    if(text.includes("楽天ペイ残高")) out.push("楽天ペイ1.5%：適用月の前々月16日〜前月15日に、対象の楽天ポイントカードを2回以上提示し、それぞれ1ポイント以上獲得。未達なら最大1.0%。");
+    if(text.includes("三菱UFJカード（12.5%）")) out.push("三菱UFJ：MDCアプリの現在表示12.5%を使用。支払口座を三菱UFJ銀行に設定＋MDCアプリからエントリー等のプログラム条件あり。");
+    if(text.includes("Olive クレジットモード")) out.push("Olive8%：対象店舗でクレジットモードをスマホのタッチ決済、または対象モバイルオーダーで利用。");
+    return out.join(" / ")||"特別な達成条件なし";
+  };
+
+  renderPayment=function(store,context=null){
+    lastSelectedStore=store;
+    const metaLines=[];
+    if(context&&context.source==="geo"){
+      metaLines.push('現在地から約'+context.distance+'m');
+      if(context.brandCount>1) metaLines.push('同ブランド候補：'+context.brandCount+'店舗');
+      if(context.osmName&&context.osmName!==store.store) metaLines.push('地図上の名称：'+context.osmName);
+    }
+    const metaHtml=metaLines.length?'<div class="meta">'+metaLines.map(escapeHtml).join('<br>')+'</div>':'<div class="meta">手入力または一覧から選択</div>';
+    const options=uniq(store.paymentOptions||[store.first,store.second,store.third]);
+    const optionHtml=options.map(x=>'<span style="display:inline-block;margin:4px 6px 4px 0;padding:7px 10px;border:2px solid #171225;border-radius:999px;background:#fff;font-weight:900;">'+escapeHtml(x)+'</span>').join('');
+    $('result').innerHTML='\
+      <div class="store-head"><h3 class="store-name">'+escapeHtml(store.store)+'</h3>'+metaHtml+'</div>\
+      <div class="rank-grid">\
+        <div class="rank-card r1"><div class="rank-label">🥇 1位</div><div class="pay-name">'+escapeHtml(store.first)+'</div></div>\
+        <div class="rank-card r2"><div class="rank-label">🥈 2位</div><div class="pay-name">'+escapeHtml(store.second)+'</div></div>\
+        <div class="rank-card r3"><div class="rank-label">🥉 3位</div><div class="pay-name">'+escapeHtml(store.third)+'</div></div>\
+      </div>\
+      <div class="note" style="background:#f8f8ff;"><strong>使える主な支払い候補（順位外も含む）：</strong><div style="margin-top:7px;">'+optionHtml+'</div></div>\
+      <div class="note" style="background:#e7f7ff;"><strong>還元条件：</strong>'+escapeHtml(paymentConditionSummary(store))+'</div>\
+      <div class="note" style="background:#fff4d6;"><strong>楽天ポイントカード：</strong>'+escapeHtml(store.rakutenPoint||"未確認")+'</div>\
+      <div class="note" style="background:#eefbea;"><strong>その他のポイント：</strong>'+escapeHtml(store.otherPoints||"未確認")+'</div>\
+      <div class="note" style="background:#ffeaf5;"><strong>ポイント＋支払いの組み合わせ：</strong>'+escapeHtml(store.pointCombo||"未確認")+'</div>\
+      <div class="note"><strong>備考：</strong>'+escapeHtml(store.note)+'</div>';
+    show($('resultPanel'));
+    $('resultPanel').scrollIntoView({behavior:'smooth',block:'start'});
+  };
+
+  renderAllTable=function(){
+    const tbody=$('storeTable').querySelector('tbody');
+    tbody.innerHTML=STORE_DATA.map(store=>'\
+      <tr><td>'+escapeHtml(store.store)+'</td><td>'+escapeHtml(store.first)+'</td><td>'+escapeHtml(store.second)+'</td><td>'+escapeHtml(store.third)+'</td><td>'+escapeHtml(store.rakutenPoint||"未確認")+'</td><td>'+escapeHtml(store.otherPoints||"未確認")+'</td><td>'+escapeHtml(store.note)+'</td></tr>').join('');
+  };
+
+  copyResult=async function(){
+    if(!lastSelectedStore){setStatus('コピーする結果がありません。先に店舗を選んでください。','error');return;}
+    const s=lastSelectedStore;
+    const text=['店舗：'+s.store,'1位：'+s.first,'2位：'+s.second,'3位：'+s.third,'楽天ポイント：'+s.rakutenPoint,'その他ポイント：'+s.otherPoints,'組み合わせ：'+s.pointCombo,'備考：'+s.note].join('\n');
+    try{await navigator.clipboard.writeText(text);setStatus('結果をコピーしました。','ok');}catch(e){setStatus('コピーに失敗しました。','error');}
+  };
+})();
 `;
 
     html=html.replace('setupEmbeddedAppIcons();',patchScript+'\nsetupEmbeddedAppIcons();');
-
-    html=html.replace(
-      '<div class="note">\n      <strong>備考：</strong>${escapeHtml(store.note)}\n    </div>',
-      '<div class="note" style="background:#e7f7ff;">\n      <strong>還元条件：</strong>${escapeHtml(paymentConditionSummary(store) || "特別な達成条件なし")}\n    </div>\n\n    <div class="note" style="background:#fff4d6;">\n      <strong>楽天ポイントカード：</strong>${escapeHtml(store.rakutenPoint || "未確認")}\n    </div>\n\n    <div class="note" style="background:#eefbea;">\n      <strong>その他のポイント：</strong>${escapeHtml(store.otherPoints || "未確認")}\n    </div>\n\n    <div class="note" style="background:#ffeaf5;">\n      <strong>ポイント＋支払いの組み合わせ：</strong>${escapeHtml(store.pointCombo || "未確認")}\n    </div>\n\n    <div class="note">\n      <strong>備考：</strong>${escapeHtml(store.note)}\n    </div>'
-    );
-
     html=html.replace('<th>備考</th>','<th>楽天ポイント</th><th>その他ポイント</th><th>備考</th>');
-    html=html.replace('<td>${escapeHtml(store.note)}</td>','<td>${escapeHtml(store.rakutenPoint || "未確認")}</td><td>${escapeHtml(store.otherPoints || "未確認")}</td><td>${escapeHtml(store.note)}</td>');
-
-    html=html.replace('候補を選ぶと、そのお店のおすすめ支払い方法1〜3位をすぐ表示します。','候補を選ぶと、おすすめ支払い方法1〜3位に加え、楽天ポイント・Ponta・d・Vなどの提示ポイントと、支払いとの併用例を別々に表示します（2026年9月6日時点）。');
-    html=html.replace('店舗候補はOpenStreetMapの登録状況に依存します。','店舗候補はOpenStreetMapの登録状況に依存します。<br><strong>PayPayは表示箇所すべて1.5%。提示ポイントは支払い還元とは別枠で表示し、併用できる組み合わせも案内します。</strong>');
+    html=html.replace('候補を選ぶと、そのお店のおすすめ支払い方法1〜3位をすぐ表示します。','候補を選ぶと、1〜3位だけでなく利用できる主な支払い候補も表示します。楽天ペイと楽天ポイントカードは別項目です。');
+    html=html.replace('店舗候補はOpenStreetMapの登録状況に依存します。','店舗候補はOpenStreetMapの登録状況に依存します。<br><strong>PayPayは1.5%で統一。楽天ペイとPayPayを置き換えず、両方使える店では両方表示します。</strong>');
 
     document.open();
     document.write(html);
