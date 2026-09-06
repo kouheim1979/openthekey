@@ -1,1 +1,0 @@
-Light UI restored; current-location search and PayPay-over-Rakuten tie-break retained.
