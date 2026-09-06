@@ -1,0 +1,24 @@
+{
+  "name": "いまのお店の最適支払いチェッカー",
+  "short_name": "支払い",
+  "description": "現在地から近くのお店を選び、最適な支払い方法を表示するアプリ",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#fffaf0",
+  "theme_color": "#ff4fa3",
+  "icons": [
+    {
+      "src": "./icons/payment-checker-v2-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/payment-checker-v2-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

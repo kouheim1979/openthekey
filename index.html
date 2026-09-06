@@ -8,9 +8,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="支払いチェッカー">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link id="dynamicFavicon" rel="icon" type="image/svg+xml" href="">
-<link id="dynamicAppleTouchIcon" rel="apple-touch-icon" href="">
-<link id="dynamicManifest" rel="manifest" href="">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/payment-checker-v2-32.png">
+<link rel="icon" type="image/svg+xml" sizes="any" href="./icons/payment-checker-v2.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/payment-checker-v2-180.png">
+<link rel="manifest" href="./manifest.webmanifest?v=20260907-icons2">
 <style>
 :root{--ink:#171225;--muted:#605873;--paper:#fffaf0;--white:#fff;--pink:#ff4fa3;--yellow:#ffe45c;--blue:#4ac7ff;--green:#60f09b;--purple:#8c6cff;--red:#ff6b6b;--shadow:4px 4px 0 var(--ink);--shadow-sm:2px 2px 0 var(--ink);--radius:20px;color-scheme:light}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:12px}html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",sans-serif;color:var(--ink)}body{background:radial-gradient(circle at 12% 10%,#ff4fa329 0 90px,transparent 92px),radial-gradient(circle at 90% 12%,#4ac7ff26 0 120px,transparent 122px),linear-gradient(135deg,#fff5fb,#f4fbff 46%,#fff9df)}button,input,select,summary{font:inherit}button,summary{touch-action:manipulation;cursor:pointer;-webkit-tap-highlight-color:transparent}button{color:var(--ink)}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #6742dd;outline-offset:3px}button:disabled{opacity:.65;cursor:wait}button{transition:transform .08s ease,box-shadow .08s ease}button:active{transform:translate(2px,2px);box-shadow:none}.hidden{display:none!important}
@@ -20,11 +21,12 @@
 @media(max-width:380px){.app{padding:10px 11px 22px}.panel{padding:10px}.hero{padding:12px}.hero-tag{display:none}.loc-row{grid-template-columns:minmax(0,1fr) 92px}.btn{font-size:13px}.rank-card{padding:8px 9px}.pay-name{font-size:15px}.r1 .pay-name{font-size:21px}.rank-hint{font-size:10px}.point-head{flex-wrap:wrap;gap:3px}.point-pill{font-size:12px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}button{transition:none}}
 .owners-setting{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 10px;border:2px solid var(--ink);border-radius:14px;background:#ffd6eb}.owners-setting label{font-size:14px;font-weight:850}.owners-setting select{margin-left:auto;min-height:40px;max-width:100%;border:2px solid var(--ink);border-radius:10px;background:white;padding:5px 8px;font-size:16px;color:var(--ink)}.owners-setting small{flex-basis:100%;font-size:12px;color:var(--muted)}
+.badge{gap:6px}.app-mark{display:block;flex:0 0 auto;border-radius:6px}
 </style>
 </head>
 <body>
-<div class="app" data-ui-version="20260906-layout1" data-data-version="20260907-location1">
-<header class="hero"><span class="badge">👛 支払いチェッカー</span><span class="hero-tag">現在地 × 支払い最適化</span><h1>いまのお店、何で払う？</h1></header>
+<div class="app" data-ui-version="20260907-icons2" data-data-version="20260907-location1">
+<header class="hero"><span class="badge"><img class="app-mark" src="./icons/payment-checker-v2-192.png" width="24" height="24" alt="" decoding="async">支払いチェッカー</span><span class="hero-tag">現在地 × 支払い最適化</span><h1>いまのお店、何で払う？</h1></header>
 <section class="panel search-panel" aria-label="お店を探す">
 <form id="searchForm" class="search-form" role="search"><label class="field-label" for="manualSearch">店舗名で検索</label><div class="search-row"><div class="search-box"><input id="manualSearch" class="input" type="search" autocomplete="off" enterkeyhint="search" placeholder="例：ジョリパ、セブン"><button id="inputClearBtn" type="button" class="clear-input" aria-label="検索文字を消す">×</button></div><button class="btn search-submit" type="submit" aria-label="店舗を検索"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></svg></button><button id="resultGeoBtn" type="button" class="btn primary result-geo" aria-label="現在地から探す">🧭</button></div></form>
 <div class="loc-row"><button id="geoBtn" class="btn primary" type="button">🧭 現在地から探す</button><div class="radius-box"><label for="radiusSelect" class="sr-only">現在地検索の半径</label><select id="radiusSelect" aria-label="現在地検索の半径"><option value="120">120m</option><option value="250" selected>250m</option><option value="500">500m</option><option value="800">800m</option></select></div></div>
@@ -37,9 +39,9 @@
 <footer class="footer">店舗・利用方法で還元条件が異なります。<br>位置情報は周辺検索にのみ使用。店舗情報：OpenStreetMap<br><span>133店舗・ブランド · 更新 2026.09.07</span></footer>
 </div>
 <noscript><p>店舗検索にはJavaScriptが必要です。</p></noscript>
-<script defer src="./audit-data-20260906.js?v=20260907-location1" integrity="sha384-E5+0NpzGjeObPxzh0QeDl8xyTs6j3HWxuk3MteFbNjbtX2Iw2Cb7ooeKIFRvIfHW" onerror="var e=document.getElementById('status');if(e){e.className='status error';e.textContent='ファイルを読み込めません。通信状態を確認して再読み込みしてください。';}"></script>
-<script defer src="./local-stores-20260907.js?v=20260907-location1" integrity="sha384-4DmTcOWWOA0Aqk51fyfbvAZWQiHgAnhA8Dh3Tt+qfFd+kmpS1p0EJ+ilPOgnvE9d" onerror="var e=document.getElementById('status');if(e){e.className='status error';e.textContent='追加店舗データを読み込めません。再読み込みしてください。';}"></script>
-<script defer src="./location-search-20260907.js?v=20260907-location1" integrity="sha384-TKsTXX3vGrxIrclgUfUQmClyoHvt0x26BuykjPdJMrc+fEDWZbSfuNdgTL1pgrXZ"></script>
-<script defer src="./checker-20260907.js?v=20260907-location1" integrity="sha384-61BE5cCi5qQJRqlllXQz2zl95TiO9U43p41yI4mByQayqDMQYtyBvRlGw+bVeMv/" onerror="var e=document.getElementById('status');if(e){e.className='status error';e.textContent='ファイルを読み込めません。通信状態を確認して再読み込みしてください。';}"></script>
+<script defer src="./audit-data-20260906.js?v=20260907-icons2" integrity="sha384-E5+0NpzGjeObPxzh0QeDl8xyTs6j3HWxuk3MteFbNjbtX2Iw2Cb7ooeKIFRvIfHW" onerror="var e=document.getElementById('status');if(e){e.className='status error';e.textContent='ファイルを読み込めません。通信状態を確認して再読み込みしてください。';}"></script>
+<script defer src="./local-stores-20260907.js?v=20260907-icons2" integrity="sha384-4DmTcOWWOA0Aqk51fyfbvAZWQiHgAnhA8Dh3Tt+qfFd+kmpS1p0EJ+ilPOgnvE9d" onerror="var e=document.getElementById('status');if(e){e.className='status error';e.textContent='追加店舗データを読み込めません。再読み込みしてください。';}"></script>
+<script defer src="./location-search-20260907.js?v=20260907-icons2" integrity="sha384-TKsTXX3vGrxIrclgUfUQmClyoHvt0x26BuykjPdJMrc+fEDWZbSfuNdgTL1pgrXZ"></script>
+<script defer src="./checker-20260907.js?v=20260907-icons2" integrity="sha384-SgpUFuX1E1RpDbbel1z7Qwd0OO2iehu7z/RreAKTZz4k9ZucjS6fyL1kQUhS1+2e" onerror="var e=document.getElementById('status');if(e){e.className='status error';e.textContent='ファイルを読み込めません。通信状態を確認して再読み込みしてください。';}"></script>
 </body>
 </html>
