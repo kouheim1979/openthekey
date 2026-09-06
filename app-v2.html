@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f3f4f8">
+<title>支払いチェッカー</title>
+<style>
+:root{
+  --bg:#f3f4f8;--surface:rgba(255,255,255,.82);--card:#fff;--ink:#0f1115;--muted:#757b86;
+  --line:rgba(15,17,21,.08);--shadow:0 16px 42px rgba(16,24,40,.10);--blue:#4f6df5;
+}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI","Hiragino Sans","Yu Gothic",sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}body{padding-bottom:max(16px,env(safe-area-inset-bottom))}button,input{font:inherit}button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}.app{width:min(700px,100%);margin:0 auto;padding:0 13px 18px}.glassbar{position:sticky;top:0;z-index:30;padding:8px 0 7px;background:linear-gradient(180deg,rgba(243,244,248,.98) 72%,rgba(243,244,248,0));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}.titlebar{height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 3px 6px}.brand{font-size:17px;font-weight:850;letter-spacing:-.035em}.version{font-size:10px;color:#9298a3;font-weight:750}.searchrow{display:grid;grid-template-columns:1fr 48px;gap:8px}.searchshell{height:50px;display:flex;align-items:center;gap:9px;padding:0 14px;border:1px solid rgba(15,17,21,.06);background:rgba(255,255,255,.94);border-radius:18px;box-shadow:0 7px 20px rgba(31,41,55,.06)}.searchshell svg{width:18px;height:18px;color:#8b9099;flex:0 0 auto}.search{border:0;outline:0;background:transparent;width:100%;font-size:15px;font-weight:680;color:var(--ink);min-width:0}.search::placeholder{color:#a0a5ae;font-weight:620}.geobtn{height:50px;border:0;border-radius:18px;background:#101216;color:white;display:grid;place-items:center;box-shadow:0 8px 18px rgba(15,17,21,.18);cursor:pointer}.geobtn svg{width:20px;height:20px}.status{display:none;margin:6px 3px 0;font-size:11px;line-height:1.45;font-weight:700;color:#6e7480}.status.show{display:block}.status.error{color:#c7283c}.status.ok{color:#14805e}.candidatewrap{display:flex;gap:7px;overflow-x:auto;padding:7px 1px 1px;scrollbar-width:none}.candidatewrap:empty{display:none}.candidatewrap::-webkit-scrollbar{display:none}.candidate{flex:0 0 auto;border:0;background:rgba(255,255,255,.88);box-shadow:inset 0 0 0 1px var(--line);border-radius:999px;padding:8px 11px;color:#343840;font-size:11.5px;font-weight:780;white-space:nowrap;cursor:pointer}.candidate b{font-weight:850;color:#0f1115}.candidate small{margin-left:4px;color:#8b9099}.welcome{padding:18px 3px 4px}.heroCopy{padding:20px 3px 14px}.heroKicker{font-size:12px;color:#7b818c;font-weight:780;margin-bottom:5px}.heroTitle{font-size:30px;line-height:1.12;letter-spacing:-.055em;font-weight:880;margin:0;max-width:500px}.heroTitle span{background:linear-gradient(100deg,#111318 10%,#4f6df5 80%);-webkit-background-clip:text;background-clip:text;color:transparent}.heroSub{font-size:13px;line-height:1.7;color:#858b95;font-weight:620;margin-top:9px}.quicklabel{font-size:10px;text-transform:uppercase;letter-spacing:.11em;color:#969ba5;font-weight:850;margin:12px 3px 7px}.quick{display:flex;gap:8px;overflow-x:auto;padding:1px 1px 8px;scrollbar-width:none}.quick::-webkit-scrollbar{display:none}.quick button{flex:0 0 auto;border:0;background:#fff;border-radius:15px;padding:10px 12px;font-size:11.5px;font-weight:800;color:#353942;box-shadow:0 5px 16px rgba(30,41,59,.05),inset 0 0 0 1px var(--line);cursor:pointer}.hintcard{margin-top:8px;border-radius:22px;padding:14px 15px;background:linear-gradient(135deg,rgba(255,255,255,.90),rgba(255,255,255,.62));border:1px solid rgba(255,255,255,.9);box-shadow:0 14px 38px rgba(24,32,50,.06);display:flex;gap:11px;align-items:center}.hinticon{width:38px;height:38px;border-radius:13px;background:#111318;color:#fff;display:grid;place-items:center;flex:0 0 auto}.hinticon svg{width:18px}.hintmain{font-size:12px;font-weight:820}.hintsub{font-size:10.5px;color:#8a909a;font-weight:650;margin-top:2px}.result{display:none;padding-top:5px}.result.show{display:block}.sheet{background:#fff;border-radius:28px;padding:13px;box-shadow:var(--shadow),inset 0 0 0 1px rgba(15,17,21,.04)}.storehead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:3px 2px 11px}.storeeyebrow{font-size:10px;font-weight:850;color:#8b919b;letter-spacing:.07em}.storename{font-size:22px;line-height:1.15;font-weight:880;letter-spacing:-.045em;margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:76vw}.reset{border:0;background:#f2f3f6;color:#6f7580;border-radius:12px;padding:7px 9px;font-size:10.5px;font-weight:800;cursor:pointer}.payhero{--brand:#4f6df5;position:relative;overflow:hidden;border-radius:22px;padding:16px;background:linear-gradient(138deg,#0c0d10 0%,#171a20 58%,#20242d 100%);color:#fff;min-height:132px;box-shadow:0 14px 30px rgba(0,0,0,.18)}.payhero:after{content:"";position:absolute;width:160px;height:160px;border-radius:50%;right:-55px;top:-70px;background:var(--brand);filter:blur(2px);opacity:.55}.paytop{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between}.bestpill{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:999px;background:rgba(255,255,255,.12);font-size:9px;letter-spacing:.08em;font-weight:900}.rate{font-size:30px;font-weight:920;letter-spacing:-.055em}.method{position:relative;z-index:2;font-size:23px;font-weight:900;letter-spacing:-.045em;margin-top:21px;line-height:1.08}.methodsub{position:relative;z-index:2;font-size:10.5px;color:rgba(255,255,255,.64);font-weight:680;margin-top:5px}.rankrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.rankcard{background:#f6f7fa;border-radius:18px;padding:11px 12px;min-width:0}.ranklabel{font-size:9.5px;color:#8d939d;font-weight:900;letter-spacing:.05em}.rankmethod{display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-top:3px}.rankname{font-size:13px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rankrate{font-size:14px;font-weight:900;white-space:nowrap}.section{margin-top:9px}.sectionhead{display:flex;align-items:center;justify-content:space-between;margin:0 2px 6px}.sectiontitle{font-size:10px;color:#858b95;font-weight:900;letter-spacing:.06em}.sectionnote{font-size:9.5px;color:#a0a5ae;font-weight:700}.points{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}.points::-webkit-scrollbar{display:none}.point{flex:0 0 auto;border-radius:999px;padding:7px 10px;font-size:10.5px;font-weight:830;background:#f5f6f8;color:#424750}.point.rakuten{background:#fff1f2;color:#a3182b}.point.ponta{background:#fff5df;color:#a76600}.point.dpoint{background:#fff0f1;color:#c11a2d}.point.vpoint{background:#eef8f5;color:#08725c}.point.storep{background:#f0f1ff;color:#4b57b8}.point strong{font-weight:920}.combo{margin-top:8px;border-radius:18px;padding:11px 12px;background:linear-gradient(135deg,#eef1ff,#f7f5ff);display:flex;gap:9px;align-items:flex-start}.comboicon{width:28px;height:28px;border-radius:10px;background:#fff;color:#5368e9;display:grid;place-items:center;flex:0 0 auto;font-weight:900}.combolabel{font-size:9.5px;color:#6674b9;font-weight:900;letter-spacing:.05em}.combotext{font-size:11px;line-height:1.5;color:#3f486c;font-weight:720;margin-top:2px}details{margin-top:8px;border-top:1px solid #eef0f3;padding-top:2px}summary{list-style:none;cursor:pointer;padding:9px 2px 5px;display:flex;align-items:center;justify-content:space-between;font-size:10.5px;color:#7d838d;font-weight:850}summary::-webkit-details-marker{display:none}summary:after{content:"＋";font-size:17px;font-weight:500}details[open] summary:after{content:"−"}.detailbody{display:grid;gap:7px;padding:2px 0 2px}.detail{border-radius:14px;background:#f7f8fa;padding:9px 10px}.detail h4{font-size:9px;letter-spacing:.06em;color:#9298a2;margin:0 0 4px;font-weight:900}.detail p{font-size:10.5px;line-height:1.55;color:#5d6470;margin:0;font-weight:680}.paychips{display:flex;flex-wrap:wrap;gap:5px}.paychip{border-radius:9px;background:white;box-shadow:inset 0 0 0 1px #e7e9ed;padding:6px 7px;font-size:9.5px;color:#555b65;font-weight:760}.footer{padding:10px 4px 0;font-size:9px;line-height:1.5;text-align:center;color:#a0a5ae}.hidden{display:none!important}
+@media(max-width:430px){.app{padding-left:10px;padding-right:10px}.titlebar{height:34px}.searchshell,.geobtn{height:46px;border-radius:16px}.heroCopy{padding-top:15px}.heroTitle{font-size:27px}.sheet{border-radius:24px;padding:11px}.payhero{min-height:122px;padding:14px;border-radius:20px}.method{font-size:21px;margin-top:18px}.rate{font-size:27px}.rankcard{padding:9px 10px}.combo{padding:9px 10px}.footer{display:none}}
+@media(max-height:760px) and (max-width:500px){.titlebar{display:none}.glassbar{padding-top:6px}.welcome{padding-top:8px}.heroCopy{padding:10px 3px 8px}.heroTitle{font-size:24px}.heroSub{display:none}.hintcard{display:none}.sheet{padding:9px}.storehead{padding-bottom:7px}.payhero{min-height:108px;padding:12px}.method{font-size:19px;margin-top:12px}.rate{font-size:25px}.rankrow{margin-top:6px}.section{margin-top:7px}.combo{margin-top:6px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="glassbar">
+    <div class="titlebar"><div class="brand">支払いチェッカー</div><div class="version">UPDATED 09.06</div></div>
+    <div class="searchrow">
+      <label class="searchshell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="search" class="search" type="search" autocomplete="off" placeholder="店名を検索  例：ジョリパ、セブン">
+      </label>
+      <button id="geo" class="geobtn" aria-label="現在地から探す"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+    </div>
+    <div id="status" class="status"></div>
+    <div id="candidates" class="candidatewrap"></div>
+  </header>
+
+  <main>
+    <section id="welcome" class="welcome">
+      <div class="heroCopy">
+        <div class="heroKicker">PAYMENT COMPASS</div>
+        <h1 class="heroTitle">その店で、<span>いちばん得な払い方</span>だけ。</h1>
+        <div class="heroSub">店名を入れるか、現在地ボタンをタップ。支払いと提示ポイントを分けて、すぐ比較します。</div>
+      </div>
+      <div class="quicklabel">Quick access</div>
+      <div id="quick" class="quick"></div>
+      <div class="hintcard">
+        <div class="hinticon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/></svg></div>
+        <div><div class="hintmain">上位3つ＋提示ポイントまで1画面</div><div class="hintsub">細かい条件や4位以下は「詳細」だけに収納</div></div>
+      </div>
+    </section>
+    <section id="result" class="result"></section>
+    <div class="footer">還元率は利用条件・店舗・キャンペーンで変わる場合があります。三菱UFJ対象店はMDCアプリ表示12.5%を現在値として使用。</div>
+  </main>
+</div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const PAYPAY="PayPay",RAKUTEN="楽天ペイ残高",AU="au PAY",DPAY="d払い",MUFG="三菱UFJカード",OLIVE="Olive クレジットモード";
+const OVERPASS=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
+const QUICK=["セブン-イレブン","ローソン","ジョリーパスタ","すき家","オーケー"];
+const EXTRA_ALIASES={"ジョリーパスタ":["ジョリパ"],"セブン-イレブン":["セブン"],"オーケー":["OK","オケ"],"マクドナルド":["マック","マクド"],"ケンタッキー":["ケンタ"]};
+const FALLBACK=[
+ {store:"セブン-イレブン",aliases:["セブン","セブンイレブン"],first:"三井住友カード スマホタッチ",second:"三菱UFJカード",third:"PayPay",note:"三井住友・三菱UFJどちらも対象"},
+ {store:"ローソン",aliases:["ローソン","lawson"],first:"三井住友カード スマホタッチ",second:"三菱UFJカード",third:"PayPay",note:"三井住友・三菱UFJどちらも対象"},
+ {store:"ミニストップ",aliases:["ミニストップ"],first:"三井住友カード スマホタッチ",second:"PayPay",third:"三菱UFJカード通常",note:"三井住友対象"},
+ {store:"マクドナルド",aliases:["マクドナルド","マック","マクド"],first:"三井住友カード スマホタッチ/モバイルオーダー",second:"PayPay",third:"三菱UFJカード通常",note:"三井住友対象"},
+ {store:"ケンタッキー",aliases:["ケンタッキー","ケンタ","kfc"],first:"三井住友カード スマホタッチ/モバイルオーダー",second:"PayPay",third:"三菱UFJカード通常",note:"三井住友対象"},
+ {store:"吉野家",aliases:["吉野家","吉牛"],first:"三井住友カード スマホタッチ/モバイルオーダー",second:"PayPay",third:"三菱UFJカード通常",note:"三井住友対象"},
+ {store:"すき家",aliases:["すき家","すきや"],first:"三井住友カード スマホタッチ/モバイルオーダー",second:"PayPay",third:"三菱UFJカード通常",note:"三井住友対象"},
+ {store:"ガスト",aliases:["ガスト"],first:"三井住友カード スマホタッチ",second:"PayPay",third:"三菱UFJカード通常",note:"三井住友対象"},
+ {store:"バーミヤン",aliases:["バーミヤン","バミ"],first:"三井住友カード スマホタッチ",second:"PayPay",third:"三菱UFJカード通常",note:"三井住友対象"},
+ {store:"しゃぶ葉",aliases:["しゃぶ葉","しゃぶよう"],first:"三井住友カード スマホタッチ",second:"PayPay",third:"三菱UFJカード通常",note:"三井住友対象"},
+ {store:"はま寿司",aliases:["はま寿司","はま"],first:"三井住友カード スマホタッチ",second:"PayPay",third:"三菱UFJカード通常",note:"三井住友対象"},
+ {store:"ココス",aliases:["ココス","cocos"],first:"三井住友カード スマホタッチ",second:"PayPay",third:"三菱UFJカード通常",note:"三井住友対象"},
+ {store:"くら寿司",aliases:["くら寿司","くら"],first:"三菱UFJカード",second:"PayPay",third:"三井住友カード通常",note:"三菱UFJ対象"},
+ {store:"スシロー",aliases:["スシロー"],first:"三菱UFJカード",second:"PayPay",third:"三井住友カード通常",note:"三菱UFJ対象"},
+ {store:"松屋",aliases:["松屋","まつや"],first:"三菱UFJカード",second:"PayPay",third:"三井住友カード通常",note:"三菱UFJ対象"},
+ {store:"オーケー",aliases:["オーケー","OK","オーケーストア"],first:"三菱UFJカード",second:"PayPay",third:"現金＋オーケークラブ",note:"三菱UFJ対象"},
+ {store:"東急ストア",aliases:["東急ストア","東急"],first:"三菱UFJカード",second:"PayPay",third:"三井住友カード通常",note:"三菱UFJ対象"},
+ {store:"CoCo壱番屋",aliases:["CoCo壱番屋","ココイチ"],first:"PayPay",second:"三井住友カード通常",third:"三菱UFJカード通常",note:"特約対象外"},
+ {store:"丸亀製麺",aliases:["丸亀製麺","丸亀"],first:"PayPay",second:"三井住友カード通常",third:"三菱UFJカード通常",note:"特約対象外"},
+ {store:"タリーズ",aliases:["タリーズ","タリ"],first:"PayPay",second:"三井住友カード通常",third:"三菱UFJカード通常",note:"特約対象外"},
+ {store:"ジョリーパスタ",aliases:["ジョリーパスタ","ジョリパ"],first:"PayPay",second:"三井住友カード通常",third:"三菱UFJカード通常",note:"特約対象外"}
+];
+let STORES=[];
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));}
+function norm(v){return String(v||"").normalize("NFKC").toLowerCase().replace(/[ー‐-‒–—―\-−\s　・･'’`]/g,"").replace(/株式会社|有限会社|合同会社|店$/g,"").trim();}
+function uniq(a){return Array.from(new Set((a||[]).filter(Boolean)));}
+function point(name,rate,note="",kind=""){return{name,rate,note,kind};}
+function pay(name,rate,extra=""){return `${name}（${rate}${extra?"・"+extra:"}）`;}
+function numericRate(v){const m=String(v||"").match(/(12\.5|11|8|3|1\.5|1\.0|0\.5)%/);return m?Number(m[1]):0;}
+function rateLabel(v){const m=String(v||"").match(/(?:12\.5|11|8|3|1\.5|1\.0|0\.5)%/);return m?m[0]:"";}
+function shortPay(v){return String(v||"").replace(/（[^）]*）/g,"").replace(/Olive クレジットモード(?: スマホタッチ\/モバイルオーダー| スマホタッチ| モバイルオーダー)?/,"Olive").replace("三井住友カード／Olive通常","Olive通常").replace("楽天ペイ残高","楽天ペイ").replace("現金＋オーケークラブ","現金＋OKクラブ").trim();}
+function normalizePay(v){const s=String(v||"");if(/^PayPay/.test(s))return pay(PAYPAY,"1.5%");if(s==="三菱UFJカード")return pay(MUFG,"12.5%");if(s==="三菱UFJカード通常")return pay("三菱UFJカード通常","0.5%");if(s.includes("三井住友カード スマホタッチ")||s.includes("三井住友カード モバイルオーダー"))return pay(OLIVE,"8%");if(s==="三井住友カード通常")return pay("三井住友カード／Olive通常","0.5%");if(s==="現金＋オーケークラブ")return "現金＋オーケークラブ（食料品3%相当割引）";return s;}
+function sortPayments(list){return list.map((v,i)=>({v:normalizePay(v),i})).sort((a,b)=>numericRate(b.v)-numericRate(a.v)||a.i-b.i).map(x=>x.v);}
+function addAliases(s){s.aliases=uniq([s.store,...(s.aliases||[]),...(EXTRA_ALIASES[s.store]||[])]);}
+function pointKind(name){const s=String(name);if(s.includes("楽天"))return"rakuten";if(s.includes("Ponta"))return"ponta";if(s==="d"||s.includes("dポイント"))return"dpoint";if(s==="V"||s.includes("Vポイント"))return"vpoint";return"storep";}
+function brandColor(v){const s=String(v);if(s.includes("PayPay"))return"#ff1744";if(s.includes("楽天"))return"#c40024";if(s.includes("三菱UFJ"))return"#b51f36";if(s.includes("Olive"))return"#00a77b";if(s.includes("au PAY"))return"#f58220";if(s.includes("d払い"))return"#e42335";return"#5968ef";}
+function decorate(src){const s={...src};addAliases(s);s.first=normalizePay(s.first);s.second=normalizePay(s.second);s.third=normalizePay(s.third);s.options=uniq([s.first,s.second,s.third]);s.points=[];s.combo="提示ポイントがある場合は、支払い還元とは別に加算できます。";s.conditions=[];
+ const skylark=["ガスト","バーミヤン","しゃぶ葉","ジョナサン","夢庵","から好し","ステーキガスト","むさしの森珈琲","藍屋","とんから亭","chawan","La Ohana","魚屋路","桃菜"];
+ const zensho=["はま寿司","ココス","なか卯","かつ庵","ビッグボーイ","ヴィクトリアステーション","熟成焼肉いちばん","オリーブの丘","華屋与兵衛","久兵衛屋","ゼッテリア","伝丸"];
+ if(skylark.includes(s.store)){s.points=[point("楽天","0.5%","いずれか1つ","rakuten"),point("d","0.5%","いずれか1つ","dpoint"),point("V","0.5%","いずれか1つ","vpoint"),point("すかいらーく","0.5%","併用可","storep")];s.combo="共通ポイント0.5%＋すかいらーくポイント0.5%で提示分1.0%。そこに支払い還元を加算。";}
+ if(zensho.includes(s.store)){s.points=[point("楽天","0.5%","いずれか1つ","rakuten"),point("d","0.5%","いずれか1つ","dpoint"),point("V","0.5%","いずれか1つ","vpoint")];s.combo="提示ポイント0.5%＋支払い還元。PayPay 1.5%なら合計2.0%相当。";}
+ if(s.store==="セブン-イレブン"){s.options=[pay(MUFG,"12.5%"),pay(OLIVE,"8%"),pay(PAYPAY,"1.5%")];s.points=[point("nanaco / マイル","別条件","決済・アプリ条件","storep")];s.combo="支払い還元だけなら三菱UFJ 12.5%が最優先。";s.conditions=["三菱UFJ：MDCアプリ表示12.5%（2026/9/6確認）。","Olive：対象のスマホタッチ等で8%。"]}
+ if(s.store==="ローソン"){s.options=[pay(MUFG,"12.5%"),pay(OLIVE,"8%"),pay(PAYPAY,"1.5%"),pay(AU,"0.5%"),pay(DPAY,"0.5%")];s.points=[point("Ponta","約0.5〜1.0%","時間帯で変動","ponta"),point("d","約0.5〜1.0%","どちらか1つ","dpoint")];s.combo="PayPay1.5%＋Pontaなら約2.0〜2.5%。三菱UFJ12.5%＋Pontaなら約13.0〜13.5%。";s.conditions=["三菱UFJ：MDCアプリ表示12.5%（2026/9/6確認）。","Olive：対象のスマホタッチ等で8%。"]}
+ if(s.store==="オーケー"){s.options=[pay(MUFG,"12.5%"),"現金＋オーケークラブ（食料品3%相当割引）",pay(PAYPAY,"1.5%")];s.points=[point("OKクラブ","3%相当","対象食料品・現金","storep")];s.combo="三菱UFJ対象なら12.5%を優先。対象外なら現金＋OKクラブも比較。";}
+ if(s.store==="東急ストア"){s.options=[pay(MUFG,"12.5%"),pay(RAKUTEN,"1.5%","条件達成時"),pay(PAYPAY,"1.5%")];s.points=[point("楽天","約0.5%","200円税抜=1P","rakuten"),point("TOKYU","約0.5%","楽天と併用可","storep")];s.combo="楽天＋TOKYUで提示分約1.0%。三菱UFJ12.5%なら合計約13.5%相当。";}
+ if(s.store==="ジョリーパスタ"){s.options=[pay(RAKUTEN,"1.5%","条件達成時"),pay(PAYPAY,"1.5%"),pay(DPAY,"1.0%","dカード設定時"),pay(AU,"0.5%"),pay("三井住友カード／Olive通常","0.5%"),pay("三菱UFJカード通常","0.5%")];s.points=[point("楽天","0.5%","いずれか1つ","rakuten"),point("d","0.5%","いずれか1つ","dpoint"),point("V","0.5%","いずれか1つ","vpoint"),point("JOLLY","別制度","レシートQR","storep")];s.combo="楽天0.5%＋楽天ペイ1.5%＝2.0%。楽天0.5%＋PayPay1.5%でも2.0%。";s.conditions=["楽天ペイ1.5%：前月判定期間に対象の楽天ポイントカードを2回以上提示してポイント獲得。未達時は最大1.0%。"]}
+ if(s.store==="すき家"){s.options=uniq([...s.options,pay(PAYPAY,"1.5%"),pay(RAKUTEN,"1.5%","条件達成時"),pay(AU,"0.5%"),pay(DPAY,"0.5%")]);s.points=[point("楽天","0.5%","いずれか1つ","rakuten"),point("Ponta","0.5%","いずれか1つ","ponta"),point("d","0.5%","いずれか1つ","dpoint"),point("V","0.5%","いずれか1つ","vpoint")];s.combo="PayPay1.5%＋提示ポイント0.5%＝2.0%。Ponta＋au PAYなら1.0%。";}
+ if(s.store==="ケンタッキー"){s.points=[point("楽天","約0.5%","どちらか1つ","rakuten"),point("Ponta","約0.5%","どちらか1つ","ponta")];s.combo="PayPay1.5%＋楽天またはPonta約0.5%＝約2.0%。";}
+ if(s.store==="吉野家"){s.points=[point("楽天","約0.5%","200円税抜=1P","rakuten")];s.combo="楽天約0.5%＋PayPay1.5%なら約2.0%。";}
+ if(s.store==="くら寿司"){s.points=[point("楽天","約0.5%","200円税抜=1P","rakuten")];s.combo="楽天ポイント提示分を支払い還元に上乗せ。";}
+ if(s.store==="タリーズ"){s.points=[point("楽天","0.5%","200円税込=1P","rakuten")];s.combo="楽天0.5%＋PayPay1.5%なら合計2.0%。";}
+ if(s.store==="マクドナルド"){s.points=[point("楽天 / d","終了","店頭進呈終了","storep")];s.combo="共通ポイント提示の上乗せなし。支払い還元で比較。";}
+ if(s.store==="丸亀製麺"){s.points=[point("楽天","終了","2024/5/31終了","storep")];s.combo="提示ポイント上乗せなしとして比較。";}
+ if(s.options.some(x=>String(x).includes("Olive クレジットモード（8%）")))s.conditions.push("Olive 8%：対象店でクレジットモードのスマホタッチ等を利用。");
+ if(s.options.some(x=>String(x).includes("三菱UFJカード（12.5%）")))s.conditions.push("三菱UFJ：MDCアプリ表示の現在値12.5%を使用。対象店・条件を満たす場合。");
+ s.options=sortPayments(uniq(s.options));[s.first,s.second,s.third]=[s.options[0]||"—",s.options[1]||"—",s.options[2]||"—"];return s;
+}
+function mergeStores(raw){const map=new Map();for(const r of raw){const e=decorate(r);if(!map.has(e.store))map.set(e.store,e);else map.get(e.store).aliases=uniq([...map.get(e.store).aliases,...e.aliases]);}return[...map.values()];}
+async function loadFullStores(){const r=await fetch("./legacy.html?v=20260906-stable",{cache:"no-store"});if(!r.ok)throw new Error("legacy");const text=await r.text();const marker="const STORE_DATA =",m=text.indexOf(marker),a=text.indexOf("[",m),b=text.indexOf("];",a);if(m<0||a<0||b<0)throw new Error("format");const raw=Function('"use strict";return ('+text.slice(a,b+1)+')')();if(!Array.isArray(raw))throw new Error("data");return raw;}
+function findMatches(q){const n=norm(q);if(!n)return[];const out=[];for(const s of STORES){let score=0;for(const a of s.aliases){const x=norm(a);if(!x)continue;if(n===x)score=Math.max(score,100);else if(x.includes(n)||n.includes(x))score=Math.max(score,n.length>=2?70:30);}if(score)out.push({store:s,score});}return out.sort((a,b)=>b.score-a.score).slice(0,9);}
+function setStatus(msg,type=""){const e=$("status");e.textContent=msg;e.className="status"+(msg?" show":"")+(type?" "+type:"");}
+function renderCandidates(items,geo=false){const box=$("candidates");box.innerHTML="";for(const item of items){const s=geo?item.store:item;if(!s)continue;const b=document.createElement("button");b.className="candidate";b.innerHTML=`<b>${esc(s.store)}</b>${geo&&item.distance!=null?`<small>${item.distance}m</small>`:""}`;b.onclick=()=>renderResult(s,geo?item:null);box.appendChild(b);}}
+function pointHtml(points){if(!points||!points.length)return'<span class="point">提示ポイントなし / 未確認</span>';return points.map(p=>`<span class="point ${p.kind||pointKind(p.name)}">${esc(p.name)} <strong>${esc(p.rate)}</strong>${p.note?` · ${esc(p.note)}`:""}</span>`).join("");}
+function renderResult(s,ctx=null){$("welcome").classList.add("hidden");$("candidates").innerHTML="";const context=ctx&&ctx.distance!=null?`現在地から約${ctx.distance}m`:"検索結果";const detailPayments=s.options.map(v=>`<span class="paychip">${esc(v)}</span>`).join("");const cond=s.conditions.length?s.conditions.join(" "):"特別な達成条件なし。キャンペーンや店舗条件は会計前に確認してください。";const brand=brandColor(s.first);$("result").innerHTML=`
+ <div class="sheet">
+  <div class="storehead"><div><div class="storeeyebrow">BEST PAYMENT · ${esc(context)}</div><div class="storename">${esc(s.store)}</div></div><button id="reset" class="reset">別の店</button></div>
+  <div class="payhero" style="--brand:${brand}"><div class="paytop"><span class="bestpill">BEST CHOICE</span><span class="rate">${esc(rateLabel(s.first))}</span></div><div class="method">${esc(shortPay(s.first))}</div><div class="methodsub">現在の設定で最も高い還元を優先</div></div>
+  <div class="rankrow"><div class="rankcard"><div class="ranklabel">SECOND</div><div class="rankmethod"><span class="rankname">${esc(shortPay(s.second))}</span><span class="rankrate">${esc(rateLabel(s.second))}</span></div></div><div class="rankcard"><div class="ranklabel">THIRD</div><div class="rankmethod"><span class="rankname">${esc(shortPay(s.third))}</span><span class="rankrate">${esc(rateLabel(s.third))}</span></div></div></div>
+  <div class="section"><div class="sectionhead"><div class="sectiontitle">会計前に提示</div><div class="sectionnote">支払いとは別</div></div><div class="points">${pointHtml(s.points)}</div></div>
+  <div class="combo"><div class="comboicon">＋</div><div><div class="combolabel">BEST COMBINATION</div><div class="combotext">${esc(s.combo)}</div></div></div>
+  <details><summary>条件とその他の支払い</summary><div class="detailbody"><div class="detail"><h4>還元条件</h4><p>${esc(cond)}</p></div><div class="detail"><h4>使える主な支払い候補</h4><div class="paychips">${detailPayments}</div></div><div class="detail"><h4>備考</h4><p>${esc(s.note||"—")}</p></div></div></details>
+ </div>`;$("result").classList.add("show");$("reset").onclick=()=>{$("search").value="";$("result").classList.remove("show");$("welcome").classList.remove("hidden");setStatus("");$("search").focus();};setStatus("");}
+function renderQuick(){const q=$("quick");q.innerHTML="";for(const name of QUICK){const b=document.createElement("button");b.textContent=name;b.onclick=()=>{const hit=STORES.find(s=>s.store===name);if(hit)renderResult(hit);};q.appendChild(b);}}
+function hav(a,b,c,d){const R=6371000,r=x=>x*Math.PI/180,dl=r(c-a),dn=r(d-b),x=Math.sin(dl/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dn/2)**2;return 2*R*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+function matchStoreText(text){const n=norm(text);let best=null;for(const s of STORES){for(const a of s.aliases){const x=norm(a);if(!x)continue;let score=0;if(n===x)score=100;else if(n.includes(x))score=80;else if(x.includes(n)&&n.length>=2)score=55;if(score&&(!best||score>best.score))best={store:s,score};}}return best;}
+async function fetchNearby(lat,lng,radius=350){const q=`[out:json][timeout:18];(node(around:${radius},${lat},${lng})["name"];way(around:${radius},${lat},${lng})["name"];relation(around:${radius},${lat},${lng})["name"];);out center tags;`;let last;for(const url of OVERPASS){try{const c=new AbortController(),t=setTimeout(()=>c.abort(),11000),r=await fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:q,signal:c.signal});clearTimeout(t);if(!r.ok)throw new Error("api");return await r.json();}catch(e){last=e;}}throw last||new Error("nearby");}
+function nearbyCandidates(json,lat,lng){const map=new Map();for(const el of json.elements||[]){const tags=el.tags||{},txt=[tags.name,tags["name:ja"],tags.brand,tags.operator].filter(Boolean).join(" / "),m=matchStoreText(txt);if(!m)continue;const la=typeof el.lat==="number"?el.lat:el.center?.lat,lo=typeof el.lon==="number"?el.lon:el.center?.lon;if(typeof la!=="number"||typeof lo!=="number")continue;const d=Math.round(hav(lat,lng,la,lo)),old=map.get(m.store.store);if(!old||d<old.distance)map.set(m.store.store,{store:m.store,distance:d});}return[...map.values()].sort((a,b)=>a.distance-b.distance).slice(0,10);}
+
+// 主要店ですぐ起動。全店舗データは裏で補完するので、読み込み待ちで止まらない。
+STORES=mergeStores(FALLBACK);renderQuick();setStatus("");
+loadFullStores().then(raw=>{STORES=mergeStores(raw);renderQuick();}).catch(()=>{setStatus("主要店舗データで起動中。店名検索はそのまま使えます。","ok");});
+
+$("search").addEventListener("input",e=>{const q=e.target.value.trim();if(!q){$("candidates").innerHTML="";setStatus("");return;}const hits=findMatches(q);renderCandidates(hits.map(x=>x.store));setStatus(hits.length?"":"該当する登録店がありません",hits.length?"":"error");if(hits.length===1&&hits[0].score===100)renderResult(hits[0].store);});
+$("geo").addEventListener("click",()=>{if(!navigator.geolocation){setStatus("この端末では位置情報を使えません","error");return;}setStatus("近くの対象店を探しています…");navigator.geolocation.getCurrentPosition(async p=>{try{const items=nearbyCandidates(await fetchNearby(p.coords.latitude,p.coords.longitude),p.coords.latitude,p.coords.longitude);renderCandidates(items,true);setStatus(items.length?`${items.length}件見つかりました。店を選んでください。`:"近くに登録対象店が見つかりませんでした",items.length?"ok":"error");}catch(e){setStatus("周辺店舗の取得に失敗しました。店名検索を使ってください。","error");}},()=>setStatus("位置情報を取得できませんでした。店名検索を使ってください。","error"),{enableHighAccuracy:true,timeout:12000,maximumAge:30000});});
+</script>
+</body>
+</html>
