@@ -1,0 +1,128 @@
+try {
+
+"use strict";
+function buildAppIconSvg(){return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect x="28" y="28" width="456" height="456" rx="104" fill="#fffaf0" stroke="#171225" stroke-width="22"/><circle cx="112" cy="112" r="52" fill="#ffe45c" stroke="#171225" stroke-width="14"/><circle cx="405" cy="112" r="42" fill="#4ac7ff" stroke="#171225" stroke-width="14"/><circle cx="404" cy="402" r="54" fill="#60f09b" stroke="#171225" stroke-width="14"/><rect x="104" y="176" width="304" height="190" rx="42" fill="#ff4fa3" stroke="#171225" stroke-width="18"/><path d="M134 210 C150 166,212 148,270 160 C326 171,372 162,390 136 L390 224 L134 224 Z" fill="#ffe45c" stroke="#171225" stroke-width="18" stroke-linejoin="round"/><rect x="250" y="242" width="186" height="92" rx="28" fill="#4ac7ff" stroke="#171225" stroke-width="18"/><circle cx="380" cy="288" r="14" fill="#fffaf0" stroke="#171225" stroke-width="8"/><rect x="138" y="252" width="118" height="42" rx="20" fill="#fffaf0" stroke="#171225" stroke-width="10"/><text x="197" y="281" text-anchor="middle" font-size="34" font-weight="900" font-family="Arial,'Hiragino Sans','Yu Gothic',sans-serif" fill="#171225">Pay</text><circle cx="376" cy="156" r="52" fill="#ffe45c" stroke="#171225" stroke-width="14"/><text x="376" y="177" text-anchor="middle" font-size="52" font-weight="900" font-family="Arial,sans-serif" fill="#171225">¥</text><circle cx="112" cy="112" r="54" fill="#ffe45c" stroke="#171225" stroke-width="14"/><circle cx="415" cy="115" r="44" fill="#4ac7ff" stroke="#171225" stroke-width="14"/><circle cx="410" cy="402" r="54" fill="#60f09b" stroke="#171225" stroke-width="14"/><path d="M258 78c-72 0-130 56-130 125 0 89 130 224 130 224s130-135 130-224c0-69-58-125-130-125z" fill="#ff4fa3" stroke="#171225" stroke-width="18" stroke-linejoin="round"/><circle cx="258" cy="202" r="46" fill="#ffffff" stroke="#171225" stroke-width="16"/><rect x="142" y="275" width="248" height="126" rx="28" fill="#4ac7ff" stroke="#171225" stroke-width="16"/><rect x="142" y="306" width="248" height="28" fill="#171225"/><rect x="172" y="352" width="74" height="22" rx="11" fill="#fffaf0" stroke="#171225" stroke-width="8"/><rect x="264" y="352" width="86" height="22" rx="11" fill="#ffe45c" stroke="#171225" stroke-width="8"/><circle cx="364" cy="150" r="52" fill="#ffe45c" stroke="#171225" stroke-width="14"/><text x="364" y="170" text-anchor="middle" font-size="58" font-weight="900" font-family="Arial,sans-serif" fill="#171225">1</text><text x="258" y="230" text-anchor="middle" font-size="52" font-weight="900" font-family="Arial,'Hiragino Sans','Yu Gothic',sans-serif" fill="#171225">払</text></svg>`;}
+function svgToDataUri(svg){return "data:image/svg+xml;charset=UTF-8,"+encodeURIComponent(svg);}
+function makePngIconDataUrl(size){return new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>{try{const canvas=document.createElement("canvas");canvas.width=size;canvas.height=size;const ctx=canvas.getContext("2d");ctx.clearRect(0,0,size,size);ctx.drawImage(img,0,0,size,size);resolve(canvas.toDataURL("image/png"));}catch(err){reject(err);}};img.onerror=()=>reject(new Error("アイコン画像の生成に失敗しました。"));img.src=svgToDataUri(buildAppIconSvg());});}
+async function setupEmbeddedAppIcons(){try{const favicon=document.getElementById("dynamicFavicon");if(favicon)favicon.href=svgToDataUri(buildAppIconSvg());const icon192=await makePngIconDataUrl(192),icon512=await makePngIconDataUrl(512);const appleIcon=document.getElementById("dynamicAppleTouchIcon");if(appleIcon)appleIcon.href=icon512;const manifest={name:"いまのお店の最適支払いチェッカー",short_name:"支払い",description:"現在地から近くのお店を選び、最適な支払い方法を表示するアプリ",start_url:".",scope:".",display:"standalone",background_color:"#fffaf0",theme_color:"#ff4fa3",icons:[{src:icon192,sizes:"192x192",type:"image/png",purpose:"any maskable"},{src:icon512,sizes:"512x512",type:"image/png",purpose:"any maskable"}]};const link=document.getElementById("dynamicManifest");if(link)link.href=URL.createObjectURL(new Blob([JSON.stringify(manifest,null,2)],{type:"application/manifest+json"}));}catch(err){console.warn("埋め込みアプリアイコンの設定に失敗しました:",err);}}
+"use strict";
+// Verified acceptance and personal comparison rates are separate data.
+const AUDIT=window.PAYMENT_AUDIT_DATA;
+if(!AUDIT||!Array.isArray(AUDIT.rows))throw new Error('店舗データを読み込めません。ページを再読み込みしてください。');
+const MF_COND='三菱UFJ 12.5%はMDCアプリで確認した設定値。三菱UFJ銀行の支払口座・MDCエントリーと各加算条件が前提。対象店の合計利用額は毎月16日〜翌月15日に5万円まで（超過分は通常0.5%）。家族カード利用分も含め枠を確認。グローバルポイントを1P=5円相当で交換する評価で、キャッシュバック1P=4円なら設定12.5%は10.0%相当。カードブランド・対象店舗・決済方式を確認してください。';
+const MF_MODE='三菱UFJ：カード現物の対象決済、または対応店で対象のApple Pay（QUICPay）。スマホのVisa／Mastercardタッチやグローバルポイント Wallet払いは対象外。チャージ・オンライン専用店では各店の別条件に従ってください。';
+const OLIVE_COND='Olive 8%：クレジットモードの対象スマホタッチ決済。現物カードのタッチ・差し込み・iDは8%対象外。一般の三井住友カード7%と区別しています。モバイルオーダーは公式の対象ブランド・指定方式に限ります。';
+const RP_COND='楽天ペイ1.5%：楽天キャッシュを支払元にし、適用月の前々月16日〜前月15日に対象アプリの楽天ポイントカードを2回以上提示して各回1ポイント以上獲得。未達時は1.0%。プラスチックカード提示等は判定対象外。ポイント進呈対象外店・商品は除きます。提示ポイントそのものは別欄で、1.5%に自動で含まれるわけではありません。';
+const PP_COND='PayPayは指定の1.5%を比較用設定値として使用。全員一律ではないため実際のPayPayステップ・支払元・対象商品をアプリで確認。同率の楽天ペイより先に表示します。';
+const DP_COND='d払い：残高等の対象支払元は0.5%、dカードを支払元に設定すると計1.0%。dカード以外のクレジットカードを支払元にした場合、d払い自体のポイントは0%（カード会社の特典は別）。この一覧は0.5%を基本比較値にしています。';
+const AU_COND='au PAY：通常は200円税込につき1Pで0.5%。チャージ元カードや特定料金プラン等の加算は別条件なので自動加算しません。Pontaの提示分と決済分を区別します。';
+function method(n,r,x,conditions,src,rankable=true){return{n,r,x,conditions,src,rankable};}
+const METHODS={
+ paypay:method('PayPay','1.5%','指定の還元率',[PP_COND],['ppstep']),
+ rakuten:method('楽天ペイ','1.5%','楽天キャッシュ・条件達成時',[RP_COND],['rprate','rpex']),
+ dpay:method('d払い','0.5%','残高等／dカード設定なら1.0%',[DP_COND],['dprate','dpcard']),
+ aupay:method('au PAY','0.5%','通常の決済ポイント',[AU_COND],['aurate']),
+ olive:method('Olive','8%','クレジットモード・スマホタッチ',[OLIVE_COND],['sm']),
+ mufg:method('三菱UFJカード','12.5%','対象決済・5万円枠内',[MF_COND,MF_MODE],['mf']),
+ card:method('Olive通常','0.5%','保有カードの通常還元を比較',['カード通常0.5%は保有カードの設定。カードを使えることと、8%／12.5%の指定方式で使えることは別です。'],['sm']),
+ famipay:method('FamiPay','0.5%','通常の決済分',['ファミマの対象商品をFamiPayで支払うと200円税込につき1ポイント。楽天・d・Vの提示分は1種類だけ別途。チャージ元カードや期間限定特典は含めません。'],['fap']),
+ waon:method('電子マネーWAON','1.0%','会員登録済み・対象商品',['会員登録済みWAONは対象店で通常1.0%、未登録は0.5%。提示型WAON POINTカードとは別の決済制度です。'],['msw']),
+ okCash:method('OKクラブ＋現金','約3%割引','対象食料品のみ',['対象食料品の3/103割引。カード・QR決済との二重取り不可。ポイントではなく値引きで、全商品・支払総額の一律3%ではありません。'],['ok']),
+ suicaRegistered:method('登録済みSuica','0.5%','JRE POINTに事前登録',['JRE POINTに登録したSuicaで対象商品を支払うと200円税込につき1ポイント。カード・バーコードの提示だけでは貯まりません。チャージ元カード特典は含めません。'],['nd']),
+ mufgOnline:method('三菱UFJカード','12.5%','公式オンラインに直接カード登録',[MF_COND,'対象公式サイト／アプリのカード払い専用。店舗レジや別アプリ経由、QR決済にカードを登録した場合とは区別します。'],['mf']),
+ mufgRecurring:method('三菱UFJカード','12.5%','対象の会費支払い',[MF_COND,'カーブスの対象会費をカード払いする場合の比較。通常の店頭決済候補ではありません。'],['mf','mfnew']),
+ mufgStar:method('三菱UFJカード','12.5%','スタバカードへオンラインチャージ',[MF_COND,'スターバックスカードへの指定オンラインチャージが対象。店頭チャージ・Apple Pay経由のチャージ・直接店頭払いは高還元対象外。'],['mf','mfnew']),
+ oliveStar:method('Olive','8%','Apple Payでモバイルオーダー',[OLIVE_COND,'スタバのアプリ／App ClipからApple Payでモバイルオーダー。スタバカードへのチャージ、店頭タッチと混同しないでください。'],['sm']),
+ mufgCoke:method('三菱UFJカード','12.5%','対象自販機・対象カードの登録',[MF_COND,'対象自販機の指定カード決済、Coke ON Pay／Passへの対象カード直接登録などが条件。Apple Pay経由のCoke ON決済は除外。'],['mf']),
+ paypayCoke:method('PayPay','1.5%','Coke ON Pay対応機・指定還元率',[PP_COND,'Coke ON Pay対応自販機でPayPayが選べる場合のみ。スタンプは別制度で、円換算還元率に含めません。'],['pp']),
+ rakutenCard:method('楽天ペイ（カード）','1.0%','支払元に楽天カードを設定',['楽天ペイの支払元を楽天カードに設定したコード・QR払いのカード還元。楽天キャッシュ払いとは異なり、その1.5%とは合算しません。'],['rpex']),
+ paypayReview:method('PayPay','要確認','通常設定1.5%・店別の還元注記あり',[PP_COND,'NewDaysの公式案内にポイント等の対象外注記があります。適用範囲を確定できていないため、1.5%を確定したおすすめ順位には使用しません。'],['nd'],false),
+ rakutenReview:method('楽天ペイ','要確認','楽天キャッシュの店別進呈を確認',[RP_COND,'決済対応は確認していますが、残高払いの店別ポイント進呈条件が未確定。1.5%を確定したおすすめ順位には使用しません。'],['rpex'],false)
+};
+function combinationFor(store){
+ const name=store.store, best=store.payments.filter(p=>p.rankable).sort(paymentOrder)[0];
+ if(!best)return '支払方法が未確認のため、還元率による順位は確定していません。店頭表示をご確認ください。';
+ if(name==='ファミリーマート')return '楽天・d・Vのどれか0.5% ＋ PayPay 1.5% ＝ 計2.0%目安。楽天ペイも条件達成なら同率。';
+ if(name==='オーケー')return '三菱UFJの対象決済12.5%と、対象食料品の現金割引を比較。現金割引はカード・QRへ重ねて加算しません。';
+ if(name==='ミニストップ')return 'Olive 8%／PayPay 1.5%に、現金向けWAON POINT提示分を加算しません。電子マネーWAONの決済分も別です。';
+ if(name==='NewDays')return 'Suica払いのJRE POINTは決済条件付き。PayPay払いにJREの提示ポイントを上乗せする計算はしません。';
+ if(name==='セイコーマート')return 'カード決済の還元とクラブポイントは別制度。クラブポイントを1P＝1円と決めつけて加算しません。';
+ if(name==='スタバ')return '三菱UFJのオンラインチャージ12.5%と、Oliveの指定モバイルオーダー8%は別ルート。合算しません。';
+ if(name==='コカ・コーラ自販機'||store.audit.scope!=='店頭')return '表示の対象ルートで支払う場合のみ。決済手段を重ねたり、別サービスのスタンプを円換算して足したりしません。';
+ if(name==='ココス')return '対象店では共通ポイント1種類0.5%を別途。富山・石川・福井・岐阜・滋賀・奈良・京都の対象外店には加算しません。';
+ if(['ローソン','ナチュラルローソン','ローソン・スリーエフ'].includes(name))return 'Pontaかdを1種類提示。200円税抜ごと昼1P／16時以降2P ＋ 決済還元。au PAYの自動加算と手動提示を二重計上しません。';
+ if(name==='ローソンストア100')return '通常ローソンの夕方2倍は適用しません。Ponta・dとも200円税抜ごと1P。両方は加算せず1種類を選びます。';
+ if(name==='東急ストア')return '対象条件下で楽天とTOKYUの両方を提示。各200円税抜ごと1P ＋ 決済還元。税込支払額に一律1%を足す計算ではありません。';
+ if(name==='ベルマート')return 'TOKAI STATION POINT対象店でアプリ提示（110円税込ごと1P）＋決済還元。支店・対象外商品の確認が必要です。';
+ const active=store.points.filter(p=>typeof p.base==='number');
+ const single=active.filter(p=>p.x!=='併用可'),extra=active.filter(p=>p.x==='併用可');
+ if(active.length){const add=(single.length?Math.max(...single.map(p=>p.base)):0)+extra.reduce((s,p)=>s+p.base,0);const total=configuredRate(best.r)+add;return '提示ポイント'+add.toFixed(1)+'%（共通ポイントは1種類）＋ '+best.n+' '+best.r+' ＝ 計'+total.toFixed(1)+'%目安。各条件と端数処理によって変わります。';}
+ if(store.points.some(p=>p.r.startsWith('税抜')))return 'ポイントカードを対象条件で提示してから支払い。提示分は税抜金額を基準に付くため、税込決済還元率との単純合計は目安にも誤差があります。';
+ if(store.points.some(p=>p.r.includes('終了')))return '終了したポイントカードの提示分は加算しません。支払方法のポイントは別に比較します。';
+ return '提示ポイントの進呈率・併用条件が未確認の項目は、合計還元率に加算しません。';
+}
+const STORE_DATA=AUDIT.rows.map(row=>{
+ const [name,aliases,payIdx,pointIdx,src,notes,missing,status,pointStatus,scope]=row;
+ const payments=AUDIT.pay[payIdx].map(p=>{const def=METHODS[p.id];if(!def)throw new Error('未定義の支払い方式：'+p.id);return{...def,id:p.id,x:[p.x,def.x].filter(Boolean).join('・')};});
+ const sourceKeys=Array.from(new Set([...src,...payments.flatMap(p=>p.src)])).filter(k=>k!=='sky'||AUDIT.points[pointIdx].some(p=>p.n==='すかいらーく'));
+ const store={store:name,aliases:Array.from(new Set([name,...aliases])),payments,points:AUDIT.points[pointIdx].map(p=>({...p})),conditions:Array.from(new Set(payments.flatMap(p=>p.conditions))),note:notes.map(i=>AUDIT.text[i]).join(' '),audit:{date:AUDIT.date,status:AUDIT.text[status],pointStatus:AUDIT.text[pointStatus],scope,missing:missing.map(i=>AUDIT.text[i]),sources:sourceKeys}};
+ const top=payments.filter(p=>p.rankable).sort(paymentOrder);[store.first,store.second,store.third]=[0,1,2].map(i=>top[i]?paymentLabel(top[i]):'確認済み候補なし');store.combination=combinationFor(store);return store;
+});
+function auditDetails(store){const a=store.audit;return '<div class="note"><h4>確認状況 · '+escapeHtml(a.date)+'</h4><p>'+escapeHtml(a.status)+'／'+escapeHtml(a.scope)+'</p><p>提示ポイント：'+escapeHtml(a.pointStatus)+'</p><p>ブランド・公式店舗例の確認です。全国すべての支店の実機確認ではありません。</p>'+a.missing.map(t=>'<p>'+escapeHtml(t)+'</p>').join('')+'<p>期間限定キャンペーン・クーポン・チャージ元特典は自動加算しません。税抜／税込、対象外商品、端数処理により実際の還元は変わります。</p><h4>公式の確認先</h4>'+a.sources.filter(k=>AUDIT.sources[k]).map(k=>{const [title,url]=AUDIT.sources[k];return '<p><a href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(title)+'</a></p>';}).join('')+'</div>';}
+
+const OVERPASS_ENDPOINTS=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
+const $=id=>document.getElementById(id);
+let lastSelectedStore=null;
+function candidateGroupKey(matchStore){return matchStore.store;}
+function normalizeText(value){return String(value||"").normalize("NFKC").toLowerCase().replace(/[ー‐-‒–—―\-−\s　・･'’`]/g,"").replace(/株式会社|有限会社|合同会社|店$/g,"").trim();}
+function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[ch]));}
+function setStatus(message,type="info"){const el=$("status");el.className="status "+type+(message?"":" hidden");el.innerHTML=message;}
+function show(el){el.classList.remove("hidden");}
+function hide(el){el.classList.add("hidden");}
+function haversineMeters(lat1,lon1,lat2,lon2){const R=6371000,toRad=deg=>deg*Math.PI/180,dLat=toRad(lat2-lat1),dLon=toRad(lon2-lon1),a=Math.sin(dLat/2)**2+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+function matchStoreFromText(text){const target=normalizeText(text);if(!target)return null;let best=null;for(const store of STORE_DATA){if(store.audit.scope!=='店頭')continue;for(const alias of store.aliases){const a=normalizeText(alias);if(a.length<3&&a!==normalizeText(store.store))continue;let score=0;if(target===a)score=1000+a.length;else if(target.includes(a))score=100+a.length;if(score&&(!best||score>best.score))best={store,score,alias};}}return best;}
+function readOsmName(tags){return[tags["name:ja"],tags.name,tags.brand].filter(Boolean).join(" / ");}
+function buildOverpassQuery(lat,lng,radius){return `[out:json][timeout:25];(node(around:${radius},${lat},${lng})["name"];way(around:${radius},${lat},${lng})["name"];relation(around:${radius},${lat},${lng})["name"];);out center tags;`;}
+async function fetchOverpass(lat,lng,radius){const query=buildOverpassQuery(lat,lng,radius);let lastError=null;for(const endpoint of OVERPASS_ENDPOINTS){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),14000);try{const res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:query,signal:controller.signal});if(!res.ok)throw new Error("Overpass API error: "+res.status);return await res.json();}catch(err){lastError=err;}finally{clearTimeout(timer);}}throw lastError||new Error("周辺店舗データの取得に失敗しました。");}
+function buildCandidatesFromOsm(osmJson,currentLat,currentLng){const groups=new Map(),seen=new Set();for(const el of osmJson.elements||[]){const tags=el.tags||{},nameText=readOsmName(tags),match=matchStoreFromText(nameText);if(!match)continue;const lat=typeof el.lat==="number"?el.lat:el.center?.lat,lng=typeof el.lon==="number"?el.lon:el.center?.lon;if(typeof lat!=="number"||typeof lng!=="number")continue;const distance=Math.round(haversineMeters(currentLat,currentLng,lat,lng)),seenKey=`${el.type}-${el.id}-${match.store.store}`;if(seen.has(seenKey))continue;seen.add(seenKey);const groupKey=candidateGroupKey(match.store),osmName=tags.name||tags.brand||match.store.store,item={osmName,distance,lat,lng,score:match.score};if(!groups.has(groupKey)){groups.set(groupKey,{source:"geo",store:match.store,distance,lat,lng,score:match.score,matches:[item]});}else{const g=groups.get(groupKey);g.matches.push(item);if(distance<g.distance){g.distance=distance;g.lat=lat;g.lng=lng;}g.score=Math.max(g.score,match.score);}}const candidates=Array.from(groups.values()).map(g=>{g.matches.sort((a,b)=>a.distance-b.distance);g.osmName=g.matches[0]?.osmName||g.store.store;g.brandCount=g.matches.length;return g;});candidates.sort((a,b)=>a.distance!==b.distance?a.distance-b.distance:b.score-a.score);return candidates.slice(0,18);}
+function renderCandidates(candidates,titlePrefix="候補"){
+ const panel=$("candidatePanel"),bubbles=$("bubbles");bubbles.innerHTML="";if(!candidates.length){hide(panel);return;}
+ $("candidateHeading").textContent=(titlePrefix.includes("現在地")?"近くのお店":"候補店舗")+" · "+candidates.length+"件";
+ hide($("quickPanel"));hide($("allPanel"));hide($("resultPanel"));document.body.classList.remove("has-result");
+ for(const c of candidates){const btn=document.createElement("button");btn.className="bubble";btn.type="button";const extra=c.source==="geo"?'<span class="dist">'+escapeHtml(c.distance)+'m</span>':'<span aria-hidden="true">→</span>';const osm=c.source==="geo"&&c.osmName&&c.osmName!==c.store.store?'<small>'+escapeHtml(c.osmName)+'</small>':'';btn.innerHTML='<span>'+escapeHtml(c.store.store)+osm+'</span>'+extra;btn.addEventListener("click",()=>renderPayment(c.store,c));bubbles.appendChild(btn);}show(panel);
+}
+function configuredRate(label){const match=String(label).match(/(\d+(?:\.\d+)?)%/);return match?Number(match[1]):0;}
+function paymentOrder(a,b){const difference=configuredRate(b.r)-configuredRate(a.r);if(difference)return difference;return (a.n==='PayPay'?0:a.n==='楽天ペイ'?1:2)-(b.n==='PayPay'?0:b.n==='楽天ペイ'?1:2);}
+function paymentLabel(payment){return payment.n+'（'+payment.r+(payment.x?'・'+payment.x:'')+'）';}
+function renderPayment(store,context=null){
+ cancelGeo();lastSelectedStore=store;$("manualSearch").value=store.store;document.activeElement?.blur();document.body.classList.add("has-result");hide($("candidatePanel"));hide($("quickPanel"));hide($("allPanel"));setStatus("");
+ const allPayments=store.payments.slice().sort(paymentOrder);const payments=allPayments.filter(p=>p.rankable);
+ const meta=context&&context.source==="geo"?'現在地から約'+context.distance+'m'+(context.osmName&&context.osmName!==store.store?' · '+context.osmName:''):'お会計のおすすめ';
+ const ranks=payments.slice(0,3).map((p,i)=>{const tied=i>0&&configuredRate(p.r)===configuredRate(payments[0].r);return '<div class="rank-card r'+(i+1)+'"><div class="rank-top"><span class="rank-label">'+['🥇 1位','🥈 2位','🥉 3位'][i]+'</span><span class="rank-hint">'+(i===0?'おすすめ':tied?'同じ還元率':'')+'</span></div><div class="pay-main"><span class="pay-name">'+escapeHtml(p.n)+'</span><strong class="pay-rate">'+escapeHtml(p.r||'要確認')+'</strong></div>'+(p.x?'<div class="pay-extra">'+escapeHtml(p.x)+'</div>':'')+'</div>';}).join('');
+ const pts=store.points.map(p=>'<span class="point-pill">'+escapeHtml(p.n)+' <strong>'+escapeHtml(p.r)+'</strong>'+(p.x?' · '+escapeHtml(p.x):'')+'</span>').join('');
+ const single=store.points.filter(p=>['楽天','d','V','Ponta','WAON POINT'].includes(p.n)).length>1;
+ $("result").innerHTML=`<div class="store-head"><div><h3 class="store-name">${escapeHtml(store.store)}</h3><div class="meta">${escapeHtml(meta)}${store.audit.status!=='ブランド条件確認'?' · '+escapeHtml(store.audit.status):''}</div></div><button id="changeStoreBtn" type="button" class="btn ghost small">店を変える</button></div><div class="rank-grid">${ranks||'<div class="note">支払方法を確認中です。未確認の還元率では順位を付けません。</div>'}</div><section class="point-box"><div class="point-head"><h4>会計前に提示</h4><small>${single?'共通ポイントは1種類':'支払いポイントとは別'}</small></div><div class="point-pills">${pts||'<span class="micro">'+escapeHtml(store.audit.pointStatus)+'</span>'}</div>${store.points.some(p=>p.x==='併用可')?'<p class="point-foot">「併用可」の店舗ポイントは別に貯められます。</p>':''}</section><div class="combo"><strong>＋ ポイントと支払いの組み合わせ</strong><p>${escapeHtml(store.combination)}</p></div><details class="more"><summary>還元条件・ほかの支払い</summary><div class="note"><h4>還元条件</h4>${store.conditions.map(c=>'<p>'+escapeHtml(c)+'</p>').join('')||'店舗・利用方法ごとの条件をご確認ください。'}</div><div class="note"><h4>使える主な支払い候補</h4><div class="pay-options">${allPayments.map(p=>'<div class="pay-option"><span>'+escapeHtml(p.n)+(p.x?'<small>'+escapeHtml(p.x)+'</small>':'')+'</span><strong>'+escapeHtml(p.r||'要確認')+'</strong></div>').join('')}</div></div><div class="note"><h4>備考</h4>${escapeHtml(store.note)}</div>${auditDetails(store)}<div class="detail-tools"><button id="copyBtn" type="button" class="btn ghost small">結果をコピー</button><button id="resultListBtn" type="button" class="btn secondary small">登録店一覧</button></div></details>`;
+ show($("resultPanel"));$("changeStoreBtn").onclick=()=>{clearView();$("manualSearch").focus();};$("copyBtn").onclick=copyResult;$("resultListBtn").onclick=openStoreList;rememberStore(store.store);window.scrollTo({top:0,behavior:"auto"});
+}
+function searchManual(keyword){const q=normalizeText(keyword);if(!q)return[];const results=[];for(const store of STORE_DATA){const haystack=normalizeText([store.store,...store.aliases].join(" "));if(haystack.includes(q))results.push({source:"manual",store});}return results;}
+let geoRequest=0;
+function cancelGeo(){geoRequest++;const b=$("geoBtn");if(b){b.disabled=false;b.textContent="🧭 現在地から探す";}}
+async function handleGeoSearch(){
+ if(!("geolocation" in navigator)){setStatus("このブラウザでは位置情報を利用できません。店舗名で検索してください。","error");return;}
+ cancelGeo();const request=geoRequest;$("geoBtn").disabled=true;$("geoBtn").textContent="📍 現在地を取得中…";$("manualSearch").blur();hide($("resultPanel"));hide($("allPanel"));hide($("quickPanel"));hide($("candidatePanel"));document.body.classList.remove("has-result");const radius=Number($("radiusSelect").value||250);setStatus("位置情報の利用を許可してください。","info");
+ const done=()=>{if(request===geoRequest){$("geoBtn").disabled=false;$("geoBtn").textContent="🧭 現在地から探す";}};
+ navigator.geolocation.getCurrentPosition(async pos=>{if(request!==geoRequest)return;const lat=pos.coords.latitude,lng=pos.coords.longitude;try{$("geoBtn").textContent="📡 お店を検索中…";setStatus('半径'+radius+'mのお店を探しています…',"info");const osmJson=await fetchOverpass(lat,lng,radius);if(request!==geoRequest)return;const candidates=buildCandidatesFromOsm(osmJson,lat,lng);if(!candidates.length){setStatus("候補が見つかりませんでした。検索半径を広げるか、店名を入力してください。","error");show($("quickPanel"));return;}setStatus("");renderCandidates(candidates,"現在地候補");}catch(err){if(request===geoRequest){setStatus("周辺店舗を取得できませんでした。再試行するか、店舗名で検索してください。","error");show($("quickPanel"));}}finally{done();}},err=>{if(request!==geoRequest)return;const messages={1:"位置情報が許可されていません。ブラウザのサイト設定を確認するか、店舗名で検索してください。",2:"現在地を特定できませんでした。店舗名検索はそのまま使えます。",3:"位置情報取得がタイムアウトしました。もう一度お試しください。"};setStatus(messages[err.code]||"位置情報を取得できませんでした。","error");done();show($("quickPanel"));},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
+}
+function renderAllTable(){const target=$("storeList");target.innerHTML="";for(const store of STORE_DATA){const btn=document.createElement("button");btn.type="button";btn.className="bubble";const p=store.payments.filter(p=>p.rankable).sort(paymentOrder)[0]||{n:"支払方法",r:"確認中"};btn.innerHTML='<span>'+escapeHtml(store.store)+'</span><strong>'+escapeHtml(p.n)+'<br>'+escapeHtml(p.r||'要確認')+'</strong>';btn.onclick=()=>renderPayment(store);target.appendChild(btn);}}
+function openStoreList(){cancelGeo();hide($("resultPanel"));hide($("candidatePanel"));hide($("quickPanel"));document.body.classList.remove("has-result");$("manualSearch").value="";setStatus("");renderAllTable();show($("allPanel"));window.scrollTo({top:0,behavior:"auto"});}
+function clearView(){cancelGeo();$("manualSearch").value="";hide($("candidatePanel"));hide($("resultPanel"));hide($("allPanel"));document.body.classList.remove("has-result");lastSelectedStore=null;setStatus("");renderQuick();show($("quickPanel"));window.scrollTo({top:0,behavior:"auto"});}
+async function copyResult(){if(!lastSelectedStore){setStatus("コピーする結果がありません。先に店舗を選んでください。","error");return;}const text=[`店舗：${lastSelectedStore.store}`,`1位：${lastSelectedStore.first}`,`2位：${lastSelectedStore.second}`,`3位：${lastSelectedStore.third}`,`提示ポイント：${lastSelectedStore.points.map(p=>p.n+' '+p.r).join(' ／ ')||'なし／未確認'}`,`組み合わせ：${lastSelectedStore.combination}`,`還元条件：${lastSelectedStore.conditions.join(' ')}`,`備考：${lastSelectedStore.note}`].join("\n");try{await navigator.clipboard.writeText(text);setStatus("結果をコピーしました。","ok");}catch(err){setStatus("コピーに失敗しました。ブラウザの制限により使えない場合があります。","error");}}
+const RECENT_KEY="payment-checker-recent-stores";
+function recentStores(){try{const a=JSON.parse(localStorage.getItem(RECENT_KEY)||'[]');return Array.isArray(a)?a.filter(n=>typeof n==='string').slice(0,5):[];}catch(_){return[];}}
+function rememberStore(name){try{localStorage.setItem(RECENT_KEY,JSON.stringify([name,...recentStores().filter(n=>n!==name)].slice(0,5)));}catch(_){}renderQuick();}
+function renderQuick(){const names=Array.from(new Set([...recentStores(),"ファミリーマート","セブン-イレブン","ローソン","ジョリーパスタ","オーケー"])).slice(0,5);const box=$("quickStores");box.innerHTML="";for(const name of names){const store=STORE_DATA.find(s=>s.store===name);if(!store)continue;const btn=document.createElement('button');btn.type='button';btn.className='bubble';btn.textContent=name;btn.onclick=()=>renderPayment(store);box.appendChild(btn);}}
+function runManualSearch(submit=false){cancelGeo();const keyword=$("manualSearch").value.trim();hide($("resultPanel"));document.body.classList.remove("has-result");if(!keyword){hide($("candidatePanel"));hide($("allPanel"));setStatus("");show($("quickPanel"));return;}const results=searchManual(keyword),q=normalizeText(keyword);results.sort((a,b)=>Number(b.store.aliases.some(x=>normalizeText(x)===q))-Number(a.store.aliases.some(x=>normalizeText(x)===q)));if(submit&&(results.length===1||(results[0]&&results[0].store.aliases.some(x=>normalizeText(x)===q)))){renderPayment(results[0].store);return;}if(!results.length){hide($("candidatePanel"));hide($("allPanel"));show($("quickPanel"));setStatus("該当する店舗がありません。短い名前や別名でもお試しください。","error");return;}setStatus("");renderCandidates(results,"検索候補");}
+function setupEvents(){$("geoBtn").onclick=handleGeoSearch;$("resultGeoBtn").onclick=handleGeoSearch;$("clearBtn").onclick=clearView;$("listModeBtn").onclick=openStoreList;$("manualSearch").addEventListener("input",()=>runManualSearch());$("searchForm").onsubmit=e=>{e.preventDefault();runManualSearch(true);};$("inputClearBtn").onclick=()=>{clearView();$("manualSearch").focus();};$("showAllBtn").onclick=openStoreList;$("hideAllBtn").onclick=clearView;}
+setupEmbeddedAppIcons();setupEvents();renderAllTable();renderQuick();setStatus("");window.PAYMENT_CHECKER_READY=true;
+
+} catch (error) { const e=document.getElementById("status");if(e){e.className="status error";e.textContent="起動できませんでした。再読み込みしてください。 "+error.message;}console.error(error); }
