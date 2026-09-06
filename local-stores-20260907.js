@@ -5,6 +5,12 @@
   if (!a || !Array.isArray(a.rows)) throw new Error('基本店舗データがありません');
   const date = '2026-09-07';
   const sources = {
+    maruetsuPay: ['マルエツ：支払い・提示ポイントの公式FAQ', 'https://www.maruetsu.co.jp/contact/faq/'],
+    maruetsuPoint: ['マルエツ：WAON POINTの通常進呈と対象決済', 'https://www.maruetsu.co.jp/wp-content/uploads/2026/09/20260902_2.pdf'],
+    maruetsuV: ['マルエツ：Vポイントサービス終了', 'https://www.maruetsu.co.jp/vpoint/'],
+    aeonOwners: ['イオン：オーナーズカード返金率・利用上限', 'https://www.aeon.info/ir/stock/benefit/'],
+    aeonOwnersPay: ['イオン：優待の対象支払い・対象外店舗', 'https://www.aeon.info/ir/stock/benefit/card/'],
+    aeonOwnersFaq: ['イオン：AEON Payと優待の対象外条件', 'https://www.aeon.info/ir/stock/benefit/faq/'],
     aeonShop: ['AEON Pay：コード決済が使えるお店', 'https://www.aeon.co.jp/service/lp/aeonpay/shop/'],
     aeonRate: ['AEON Pay：通常のポイント', 'https://www.aeon.co.jp/service/lp/aeonpay/feature/'],
     aeonGroup: ['AEON Pay：200円で2ポイントの対象店・支払方式', 'https://faq.aeon.co.jp/faq/show/6781'],
@@ -48,7 +54,7 @@
       return {name:paymentNames[id],state:ok ? '確認済み（対象店・対象商品）' : ((options.checks || {})[id] || '未確認（非対応とは断定しません）')};
     });
     a.rows.push([name,aliases,pi,qi,sourceKeys,[text(note)],[],text(options.status || '店舗・決済条件確認'),text(options.pointStatus || (points.length?'提示条件は下記参照':'提示ポイントは未確認')),options.scope || '店頭']);
-    a.storeMeta[name] = {date,combination,checks,pointCaption:options.pointCaption,pointHeading:options.pointHeading,partial:!!options.partial,notice:options.notice || '',scopeHint:options.scopeHint || '支店・対象商品・決済方式は店頭表示もご確認ください。',conditions:options.conditions || [],matchRequired:options.matchRequired || '',excludeTerms:options.excludeTerms || []};
+    a.storeMeta[name] = {date,combination,checks,pointCaption:options.pointCaption,pointHeading:options.pointHeading,partial:!!options.partial,aeonOwners:!!options.aeonOwners,notice:options.notice || '',scopeHint:options.scopeHint || '支店・対象商品・決済方式は店頭表示もご確認ください。',conditions:options.conditions || [],matchRequired:options.matchRequired || '',excludeTerms:options.excludeTerms || []};
   }
   function augment(names, id, sourceKeys) {
     for (const name of names) {
@@ -61,6 +67,12 @@
     }
   }
   const qr = ['paypay','rakuten','dpay','aupay'];
+  add('マルエツ',['まるえつ','maruetsu','マルエツ中川駅前','マルエツ中川駅前店','マルエツ港北ニュータウン','マルエツプチ','maruetsu petit','リンコス','lincos'],['paypay','aeonGroup','dpay','aupay','card','cash'],[
+    {n:'WAON POINT',r:'税抜0.5%',x:'会計前にカード・会員コード提示'}
+  ],['maruetsuPay','maruetsuPoint','maruetsuV','aeonGroup','aeonOwnersPay'],
+  '魚悦糀谷店を除く対象店舗・商品。楽天Edy対応と楽天ペイ対応は別です。楽天ペイ・FamiPayは今回の公式決済一覧で確認できず、順位には入れていません。Vポイントの提示サービスは終了。イオンのオーナーズカードはマルエツでは対象外です。',
+  'WAON POINTを提示してからPayPay 1.5%。提示分は200円税抜で1P、決済分は別枠です。AEON Payは対象コード払い1.0%＋提示分。楽天ポイント・dポイント・Pontaの提示分は確認できていないため加算しません。',
+  {pointCaption:'提示分と決済分は別々',checks:{rakuten:'公式一覧で未確認（楽天Edyとは別）',famipay:'バーコード対応は未確認'},excludeTerms:['魚悦'],conditions:['マルエツのWAON POINT提示分は対象の決済方法すべてで進呈。税込の決済還元率と税抜の提示率を一律2.0%などと合計しません。店舗専用カードの日別割引・キャンペーンは通常順位に含めません。'],scopeHint:'マルエツ・マルエツプチ・リンコスの対象レジ。魚悦糀谷店は除外。Scan&Goやオンラインは別の条件です。'});
   add('ベルク',['belc','ベルクフォルテ','ベルク北山田','ベルク都筑'],[...qr,'card','cash','belcMoney'],[
     {n:'ベルクカード',r:'税抜0.5%',x:'QR・他社カード等'},
     {n:'ベルクカード',r:'税抜1.0%',x:'現金・ベルクペイ等'}
@@ -134,9 +146,9 @@
   for (const row of [
     ['イオン',['AEON','イオン横浜新吉田','イオン横浜新吉田店']],
     ['イオンスタイル',['AEON STYLE','イオンスタイル横浜高田','イオンスタイル横浜高田店']]
-  ]) add(row[0],row[1],['aeonGroup'],aeonPoints,['aeonShop','aeonGroup'],aeonNote,
-    'AEON Payのコード払い1.0%に、同じWAON POINTを提示分として二重に足しません。お客さま感謝デーなどの日別特典・オーナーズ特典は別確認です。',
-    {pointHeading:'ポイントの扱い',pointCaption:'決済ポイントの二重加算なし',partial:true,scopeHint:'イオンの直営売場を想定。モール内の専門店へは適用しません。'});
+  ]) add(row[0],row[1],['aeonGroup','cash'],aeonPoints,['aeonShop','aeonGroup','aeonOwners','aeonOwnersPay','aeonOwnersFaq'],aeonNote,
+    'オーナーズカードを会計前に提示。返金率を選ぶと、対象決済に限り優待分を加えて比較します。WAON POINTの決済分を提示分として重ねません。',
+    {aeonOwners:true,pointHeading:'ポイントの扱い',pointCaption:'決済ポイントの二重加算なし',partial:true,scopeHint:'イオンの直営売場を想定。モール内の専門店へは適用しません。',conditions:['株主優待は現金・WAON・イオンマークのカード・対象AEON Payなど指定の支払いが条件です。PayPayや他社カードへ優待分は加算しません。','オーナーズカードを支払い前に提示。家族カード利用分を含む半年100万円までが返金対象。AEON PayのWAON POINT充当分、地域キャンペーンを経由する支払いは優待対象外です。','返金率は権利確定時の株数による1・2・3・4・5・7%。画面の3%は仮設定です。実際の返金率へ変更できます。日別の感謝デー割引は自動加算しません。']});
   const welciaPoints=[{n:'WAON POINT',r:'税抜1.0%',x:'会員提示・対象商品'},{n:'V',r:'税抜0.5%',x:'会員連携で併用可'}];
   for (const row of [
     ['ハックドラッグ',['HAC','ハック','ハックドラッグ港北東急SC','ハックドラッグ都筑阪急']],
@@ -162,7 +174,7 @@
   augment(['オーケー','東急ストア','三和・フードワン','近商ストア'], 'famipay', ['smartCode','famiGeneral']);
   augment(['ミニストップ'], 'aeonGroup', ['aeonShop','aeonGroup']);
   augment(['ローソン','ナチュラルローソン','ローソンストア100','セイコーマート','アオキスーパー','スシロー','CoCo壱番屋','かっぱ寿司','くら寿司','フレッシュネスバーガー','ガスト','バーミヤン','しゃぶ葉','夢庵','ジョナサン','ステーキガスト','むさしの森珈琲','から好し','藍屋','とんから亭','La Ohana','魚屋路','桃菜','グラッチェガーデンズ','八郎そば','ゆめあん食堂','すき家','はま寿司','ココス','なか卯','ジョリーパスタ','ビッグボーイ','ヴィクトリアステーション','華屋与兵衛','熟成焼肉いちばん','かつ庵','オリーブの丘','久兵衛屋','伝丸','ゼッテリア','一風堂','ドトール','エクセルシオール','丸亀製麺','松屋','松のや','吉野家'], 'aeonpay', ['aeonShop','aeonRate']);
-  a.localUpdate = {date,added:20,total:a.rows.length};
+  a.localUpdate = {date,added:21,total:a.rows.length};
   a.settings.aeonPay = 0.5; a.settings.aeonPayGroup = 1; a.settings.famiPay = 0.5;
   window.PAYMENT_LOCAL_READY = true;
 })();
