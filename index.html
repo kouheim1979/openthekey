@@ -6,355 +6,48 @@
 <meta name="theme-color" content="#f7f8fb">
 <title>支払いチェッカー</title>
 <style>
-:root{
-  --bg:#f4f6f9;
-  --card:#ffffff;
-  --ink:#172033;
-  --sub:#687386;
-  --line:#e5e9f0;
-  --accent:#2563eb;
-  --accent-soft:#eef4ff;
-  --good:#087a55;
-  --good-soft:#eaf8f2;
-  --warn:#8a5a00;
-  --warn-soft:#fff6df;
-  --shadow:0 8px 28px rgba(25,39,70,.08);
-  --radius:20px;
-}
-*{box-sizing:border-box}
-html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
-body{padding-bottom:max(18px,env(safe-area-inset-bottom))}
-button,input,select{font:inherit}
-button{touch-action:manipulation}
-.app{width:min(720px,100%);margin:0 auto;padding:0 14px 18px}
-.topbar{position:sticky;top:0;z-index:20;background:rgba(244,246,249,.94);backdrop-filter:blur(18px);padding:10px 0 9px}
-.brandrow{display:flex;align-items:center;justify-content:space-between;margin:0 2px 8px}
-.brand{display:flex;align-items:center;gap:9px;font-weight:900;letter-spacing:-.03em}
-.brandmark{width:34px;height:34px;border-radius:11px;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:17px;box-shadow:0 5px 14px rgba(25,39,70,.18)}
-.updated{font-size:11px;color:var(--sub);font-weight:700}
-.searchrow{display:grid;grid-template-columns:1fr 46px;gap:8px}
-.searchbox{height:48px;border:1px solid var(--line);border-radius:15px;background:#fff;padding:0 14px;font-weight:750;color:var(--ink);outline:none;box-shadow:0 3px 10px rgba(25,39,70,.04)}
-.searchbox:focus{border-color:#a9c1ff;box-shadow:0 0 0 4px rgba(37,99,235,.09)}
-.iconbtn{height:48px;border:0;border-radius:15px;background:var(--accent);color:#fff;font-size:19px;font-weight:900;box-shadow:0 6px 15px rgba(37,99,235,.20);cursor:pointer}
-.iconbtn:active{transform:translateY(1px)}
-.status{min-height:22px;padding:5px 3px 0;font-size:12px;line-height:1.45;color:var(--sub);font-weight:700}
-.status.error{color:#b42318}.status.ok{color:var(--good)}
-.candidates{display:flex;gap:7px;overflow:auto;padding:7px 1px 3px;scrollbar-width:none}.candidates::-webkit-scrollbar{display:none}
-.candidate{flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 11px;font-size:12px;font-weight:850;color:var(--ink);cursor:pointer;white-space:nowrap}
-.candidate .distance{color:var(--sub);margin-left:4px;font-weight:700}
-.empty{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:26px 22px;text-align:center;box-shadow:var(--shadow)}
-.empty .emoji{font-size:34px;margin-bottom:8px}.empty h2{font-size:18px;margin:0 0 7px}.empty p{font-size:13px;line-height:1.7;color:var(--sub);margin:0}
-.result{display:none;margin-top:9px}.result.show{display:block}
-.resultcard{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:15px;box-shadow:var(--shadow)}
-.storeline{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
-.storemeta{min-width:0}.eyebrow{font-size:11px;font-weight:900;letter-spacing:.08em;color:var(--accent);text-transform:uppercase}.storename{margin:2px 0 0;font-size:23px;line-height:1.2;letter-spacing:-.045em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.context{font-size:11px;color:var(--sub);font-weight:700;margin-top:3px}
-.newbtn{border:0;background:#f1f3f7;color:var(--sub);border-radius:12px;padding:8px 10px;font-size:12px;font-weight:850;cursor:pointer;white-space:nowrap}
-.best{display:grid;grid-template-columns:46px 1fr auto;gap:10px;align-items:center;background:linear-gradient(135deg,#172033,#253552);color:#fff;border-radius:18px;padding:13px 13px;margin-bottom:9px}
-.rankbadge{height:42px;width:42px;border-radius:13px;background:#fff;color:var(--ink);display:grid;place-items:center;font-size:12px;font-weight:950;line-height:1.05;text-align:center}.bestmethod{font-size:17px;font-weight:900;line-height:1.25;letter-spacing:-.025em}.bestrate{font-size:22px;font-weight:950;white-space:nowrap;letter-spacing:-.04em}.bestsub{font-size:10px;color:#cbd5e1;margin-top:3px;font-weight:700}
-.secondary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px}.mini{border:1px solid var(--line);background:#fafbfc;border-radius:15px;padding:10px 11px;min-width:0}.minilabel{font-size:10px;color:var(--sub);font-weight:900}.minimethod{font-size:13px;font-weight:850;line-height:1.3;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.minirate{font-weight:950;color:var(--ink)}
-.pointbox{border:1px solid #dcebe5;background:var(--good-soft);border-radius:16px;padding:10px 11px;margin-bottom:8px}.pointtitle{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:900;color:var(--good);margin-bottom:6px}.pointchips{display:flex;gap:6px;overflow:auto;scrollbar-width:none}.pointchips::-webkit-scrollbar{display:none}.chip{flex:0 0 auto;background:#fff;border:1px solid #d6e8df;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:850;color:#315548}.chip.none{color:var(--sub);border-color:var(--line)}
-.combobox{display:flex;align-items:flex-start;gap:9px;background:var(--accent-soft);border:1px solid #dbe7ff;border-radius:16px;padding:10px 11px}.comboicon{width:28px;height:28px;border-radius:9px;background:#fff;display:grid;place-items:center;flex:0 0 auto}.combotext{font-size:12px;line-height:1.48;font-weight:780;color:#29446e}.combotext strong{color:var(--accent)}
-details{margin-top:9px;border-top:1px solid var(--line);padding-top:5px}summary{list-style:none;cursor:pointer;padding:8px 2px 3px;font-size:12px;font-weight:900;color:var(--sub);display:flex;align-items:center;justify-content:space-between}summary::-webkit-details-marker{display:none}summary:after{content:"＋";font-size:18px;font-weight:600}details[open] summary:after{content:"−"}.detailsbody{padding:7px 1px 1px;display:grid;gap:8px}.detailrow{background:#f8f9fb;border-radius:13px;padding:9px 10px}.detailtitle{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--sub);font-weight:900;margin-bottom:4px}.detailtext{font-size:11px;line-height:1.55;font-weight:700;color:#465266}.payments{display:flex;flex-wrap:wrap;gap:5px}.paychip{background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 8px;font-size:10.5px;font-weight:800;color:#465266}
-.footer{font-size:10px;color:#8a94a6;text-align:center;line-height:1.55;padding:13px 4px 0}
-.loading{opacity:.55;pointer-events:none}
-@media(max-width:430px){
-  .app{padding-left:11px;padding-right:11px}.topbar{padding-top:8px}.brandrow{margin-bottom:6px}.brandmark{width:31px;height:31px}.updated{font-size:10px}.searchbox,.iconbtn{height:44px}.resultcard{padding:12px;border-radius:20px}.storename{font-size:21px}.best{padding:11px}.bestmethod{font-size:15.5px}.bestrate{font-size:20px}.secondary{gap:6px}.mini{padding:8px 9px}.pointbox,.combobox{padding:9px 10px}.footer{padding-top:9px}
-}
-@media(max-height:720px) and (max-width:500px){
-  .brandrow{display:none}.topbar{padding-top:6px}.status{padding-top:3px}.result{margin-top:5px}.resultcard{padding:10px}.storeline{margin-bottom:7px}.best{margin-bottom:6px;padding:9px 10px}.rankbadge{width:38px;height:38px}.secondary{margin-bottom:6px}.pointbox{margin-bottom:6px}.pointtitle{margin-bottom:4px}.footer{display:none}
-}
+:root{--bg:#f4f6f9;--card:#fff;--ink:#172033;--sub:#687386;--line:#e5e9f0;--accent:#2563eb;--accent-soft:#eef4ff;--good:#087a55;--good-soft:#eaf8f2;--shadow:0 8px 28px rgba(25,39,70,.08)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",system-ui,sans-serif;background:var(--bg);color:var(--ink)}body{padding-bottom:max(18px,env(safe-area-inset-bottom))}button,input{font:inherit}button{touch-action:manipulation}.app{width:min(720px,100%);margin:0 auto;padding:0 14px 18px}.topbar{position:sticky;top:0;z-index:20;background:rgba(244,246,249,.94);backdrop-filter:blur(18px);padding:10px 0 9px}.brandrow{display:flex;align-items:center;justify-content:space-between;margin:0 2px 8px}.brand{display:flex;align-items:center;gap:9px;font-weight:900;letter-spacing:-.03em}.brandmark{width:34px;height:34px;border-radius:11px;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:17px;box-shadow:0 5px 14px rgba(25,39,70,.18)}.updated{font-size:11px;color:var(--sub);font-weight:700}.searchrow{display:grid;grid-template-columns:1fr 46px;gap:8px}.searchbox{height:48px;border:1px solid var(--line);border-radius:15px;background:#fff;padding:0 14px;font-weight:750;color:var(--ink);outline:none;box-shadow:0 3px 10px rgba(25,39,70,.04)}.searchbox:focus{border-color:#a9c1ff;box-shadow:0 0 0 4px rgba(37,99,235,.09)}.iconbtn{height:48px;border:0;border-radius:15px;background:var(--accent);color:#fff;font-size:19px;font-weight:900;box-shadow:0 6px 15px rgba(37,99,235,.20);cursor:pointer}.status{min-height:22px;padding:5px 3px 0;font-size:12px;line-height:1.45;color:var(--sub);font-weight:700}.status.error{color:#b42318}.status.ok{color:var(--good)}.candidates{display:flex;gap:7px;overflow:auto;padding:7px 1px 3px;scrollbar-width:none}.candidates::-webkit-scrollbar{display:none}.candidate{flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 11px;font-size:12px;font-weight:850;color:var(--ink);cursor:pointer;white-space:nowrap}.candidate .distance{color:var(--sub);margin-left:4px;font-weight:700}.empty{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:26px 22px;text-align:center;box-shadow:var(--shadow)}.empty .emoji{font-size:34px;margin-bottom:8px}.empty h2{font-size:18px;margin:0 0 7px}.empty p{font-size:13px;line-height:1.7;color:var(--sub);margin:0}.result{display:none;margin-top:9px}.result.show{display:block}.resultcard{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:15px;box-shadow:var(--shadow)}.storeline{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}.storemeta{min-width:0}.eyebrow{font-size:11px;font-weight:900;letter-spacing:.08em;color:var(--accent)}.storename{margin:2px 0 0;font-size:23px;line-height:1.2;letter-spacing:-.045em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.context{font-size:11px;color:var(--sub);font-weight:700;margin-top:3px}.newbtn{border:0;background:#f1f3f7;color:var(--sub);border-radius:12px;padding:8px 10px;font-size:12px;font-weight:850;cursor:pointer;white-space:nowrap}.best{display:grid;grid-template-columns:46px 1fr auto;gap:10px;align-items:center;background:linear-gradient(135deg,#172033,#253552);color:#fff;border-radius:18px;padding:13px;margin-bottom:9px}.rankbadge{height:42px;width:42px;border-radius:13px;background:#fff;color:var(--ink);display:grid;place-items:center;font-size:12px;font-weight:950;line-height:1.05;text-align:center}.bestmethod{font-size:17px;font-weight:900;line-height:1.25;letter-spacing:-.025em}.bestrate{font-size:22px;font-weight:950;white-space:nowrap;letter-spacing:-.04em}.bestsub{font-size:10px;color:#cbd5e1;margin-top:3px;font-weight:700}.secondary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px}.mini{border:1px solid var(--line);background:#fafbfc;border-radius:15px;padding:10px 11px;min-width:0}.minilabel{font-size:10px;color:var(--sub);font-weight:900}.minimethod{font-size:13px;font-weight:850;line-height:1.3;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.minirate{font-weight:950}.pointbox{border:1px solid #dcebe5;background:var(--good-soft);border-radius:16px;padding:10px 11px;margin-bottom:8px}.pointtitle{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:900;color:var(--good);margin-bottom:6px}.pointchips{display:flex;gap:6px;overflow:auto;scrollbar-width:none}.pointchips::-webkit-scrollbar{display:none}.chip{flex:0 0 auto;background:#fff;border:1px solid #d6e8df;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:850;color:#315548}.chip.none{color:var(--sub);border-color:var(--line)}.combobox{display:flex;align-items:flex-start;gap:9px;background:var(--accent-soft);border:1px solid #dbe7ff;border-radius:16px;padding:10px 11px}.comboicon{width:28px;height:28px;border-radius:9px;background:#fff;display:grid;place-items:center;flex:0 0 auto}.combotext{font-size:12px;line-height:1.48;font-weight:780;color:#29446e}.combotext strong{color:var(--accent)}details{margin-top:9px;border-top:1px solid var(--line);padding-top:5px}summary{list-style:none;cursor:pointer;padding:8px 2px 3px;font-size:12px;font-weight:900;color:var(--sub);display:flex;align-items:center;justify-content:space-between}summary::-webkit-details-marker{display:none}summary:after{content:"＋";font-size:18px;font-weight:600}details[open] summary:after{content:"−"}.detailsbody{padding:7px 1px 1px;display:grid;gap:8px}.detailrow{background:#f8f9fb;border-radius:13px;padding:9px 10px}.detailtitle{font-size:10px;letter-spacing:.06em;color:var(--sub);font-weight:900;margin-bottom:4px}.detailtext{font-size:11px;line-height:1.55;font-weight:700;color:#465266}.payments{display:flex;flex-wrap:wrap;gap:5px}.paychip{background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 8px;font-size:10.5px;font-weight:800;color:#465266}.footer{font-size:10px;color:#8a94a6;text-align:center;line-height:1.55;padding:13px 4px 0}.loading{opacity:.55;pointer-events:none}
+@media(max-width:430px){.app{padding-left:11px;padding-right:11px}.topbar{padding-top:8px}.brandrow{margin-bottom:6px}.brandmark{width:31px;height:31px}.updated{font-size:10px}.searchbox,.iconbtn{height:44px}.resultcard{padding:12px;border-radius:20px}.storename{font-size:21px}.best{padding:11px}.bestmethod{font-size:15.5px}.bestrate{font-size:20px}.secondary{gap:6px}.mini{padding:8px 9px}.pointbox,.combobox{padding:9px 10px}.footer{padding-top:9px}}
+@media(max-height:720px) and (max-width:500px){.brandrow{display:none}.topbar{padding-top:6px}.status{padding-top:3px}.result{margin-top:5px}.resultcard{padding:10px}.storeline{margin-bottom:7px}.best{margin-bottom:6px;padding:9px 10px}.rankbadge{width:38px;height:38px}.secondary{margin-bottom:6px}.pointbox{margin-bottom:6px}.pointtitle{margin-bottom:4px}.footer{display:none}}
 </style>
 </head>
 <body>
 <div class="app">
   <div class="topbar">
-    <div class="brandrow">
-      <div class="brand"><div class="brandmark">¥</div><span>支払いチェッカー</span></div>
-      <div class="updated">2026.09.06</div>
-    </div>
-    <div class="searchrow">
-      <input id="search" class="searchbox" type="search" autocomplete="off" placeholder="店名を入力  例：ジョリパ、セブン">
-      <button id="geo" class="iconbtn" aria-label="現在地から探す">⌖</button>
-    </div>
-    <div id="status" class="status">店名を入れるか、右の現在地ボタンを押してください。</div>
-    <div id="candidates" class="candidates"></div>
+    <div class="brandrow"><div class="brand"><div class="brandmark">¥</div><span>支払いチェッカー</span></div><div class="updated">2026.09.06</div></div>
+    <div class="searchrow"><input id="search" class="searchbox" type="search" autocomplete="off" placeholder="店名を入力  例：ジョリパ、セブン"><button id="geo" class="iconbtn" aria-label="現在地から探す">⌖</button></div>
+    <div id="status" class="status">店舗データを読み込んでいます…</div><div id="candidates" class="candidates"></div>
   </div>
-
-  <section id="empty" class="empty">
-    <div class="emoji">💳</div>
-    <h2>いま使う支払いだけ、すぐ確認</h2>
-    <p>1位〜3位、提示ポイント、組み合わせを<br>スマホ1画面で判断できるようにしました。</p>
-  </section>
-
+  <section id="empty" class="empty"><div class="emoji">💳</div><h2>いま使う支払いだけ、すぐ確認</h2><p>1位〜3位、提示ポイント、組み合わせを<br>スマホ1画面で判断できるようにしました。</p></section>
   <section id="result" class="result"></section>
-
   <div class="footer">還元率はキャンペーン・利用条件・店舗によって変わる場合があります。三菱UFJ対象店はMDCアプリ表示の12.5%を現在値として使用。</div>
 </div>
 <script>
 "use strict";
-
-const $=id=>document.getElementById(id);
-const PAYPAY="PayPay";
-const RAKUTEN="楽天ペイ残高";
-const AU="au PAY";
-const DPAY="d払い";
-const MUFG="三菱UFJカード";
-const OLIVE="Olive クレジットモード";
-const OVERPASS=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
-let STORES=[];
-
+const $=id=>document.getElementById(id),PAYPAY="PayPay",RAKUTEN="楽天ペイ残高",AU="au PAY",DPAY="d払い",MUFG="三菱UFJカード",OLIVE="Olive クレジットモード";
+const OVERPASS=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter"];let STORES=[];
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));}
 function norm(v){return String(v||"").normalize("NFKC").toLowerCase().replace(/[ー‐-‒–—―\-−\s　・･'’`]/g,"").replace(/株式会社|有限会社|合同会社|店$/g,"").trim();}
-function uniq(a){return Array.from(new Set((a||[]).filter(Boolean)));}
-function setStatus(msg,type=""){const el=$("status");el.textContent=msg;el.className="status "+type;}
-function rateFromLabel(label){
-  const s=String(label||"");
-  if(s.includes("12.5%")) return "12.5%";
-  if(s.includes("11%")) return "11%";
-  if(s.includes("8%")) return "8%";
-  if(s.includes("3%")) return "3%";
-  if(s.includes("1.5%")) return "1.5%";
-  if(s.includes("1.0%")) return "1.0%";
-  if(s.includes("0.5%")) return "0.5%";
-  return "";
-}
-function shortMethod(label){
-  return String(label||"")
-    .replace(/（[^）]*）/g,"")
-    .replace("Olive クレジットモード スマホタッチ/モバイルオーダー","Olive")
-    .replace("Olive クレジットモード スマホタッチ","Olive")
-    .replace("Olive クレジットモード モバイルオーダー","Olive")
-    .replace("三菱UFJカード通常","三菱UFJ通常")
-    .replace("三井住友カード／Olive通常","Olive通常")
-    .replace("現金＋オーケークラブ","現金＋OKクラブ")
-    .replace("楽天ペイ残高","楽天ペイ")
-    .trim();
-}
-function normalizePayment(label){
-  const s=String(label||"");
-  if(/^PayPay/.test(s)) return "PayPay（1.5%）";
-  if(s==="三菱UFJカード") return "三菱UFJカード（12.5%）";
-  if(s==="三菱UFJカード通常") return "三菱UFJカード通常（0.5%）";
-  if(s.includes("三井住友カード スマホタッチ")||s.includes("三井住友カード モバイルオーダー")) return "Olive クレジットモード（8%）";
-  if(s==="三井住友カード通常") return "三井住友カード／Olive通常（0.5%）";
-  if(s==="現金＋オーケークラブ") return "現金＋オーケークラブ（食料品3%相当割引）";
-  return s;
-}
-function payment(name,rate,extra=""){return `${name}（${rate}${extra?"・"+extra:"}）`;}
-function point(name,rate,note=""){return {name,rate,note};}
-
-async function loadLegacyData(){
-  const res=await fetch("./legacy.html?v=20260906-data",{cache:"no-store"});
-  if(!res.ok) throw new Error("店舗データを読み込めませんでした");
-  const text=await res.text();
-  const marker="const STORE_DATA = [";
-  const m=text.indexOf(marker);
-  if(m<0) throw new Error("店舗データ形式を確認できませんでした");
-  const start=m+"const STORE_DATA = ".length;
-  const end=text.indexOf("\n];",start);
-  if(end<0) throw new Error("店舗データの終端を確認できませんでした");
-  const expr=text.slice(start,end+2);
-  const raw=Function('"use strict";return ('+expr+');')();
-  return raw.map(enhanceStore);
-}
-
-function enhanceStore(src){
-  const s={...src};
-  s.first=normalizePayment(s.first);s.second=normalizePayment(s.second);s.third=normalizePayment(s.third);
-  s.options=uniq([s.first,s.second,s.third]);
-  s.points=[];
-  s.combo="提示ポイントがある場合は、支払い還元とは別に加算できます。";
-  s.conditions=[];
-  s.aliases=uniq([s.store,...(s.aliases||[])]);
-
-  if(s.first.includes("Olive")) s.conditions.push("Olive 8%：対象店でクレジットモードのスマホタッチ、または対象モバイルオーダーを利用。 ");
-  if(s.first.includes("三菱UFJカード（12.5%）")||s.second.includes("三菱UFJカード（12.5%）")) s.conditions.push("三菱UFJ：MDCアプリ表示の現在値12.5%を使用。対象店・プログラム条件を満たす場合。 ");
-
-  const skylark=["ガスト","バーミヤン","しゃぶ葉","ジョナサン","夢庵","から好し","ステーキガスト","むさしの森珈琲","藍屋","とんから亭","chawan","La Ohana","魚屋路","桃菜"];
-  const zensho=["はま寿司","ココス","なか卯","かつ庵","ジョリーパスタ","ビッグボーイ","ヴィクトリアステーション","熟成焼肉いちばん","オリーブの丘","華屋与兵衛","久兵衛屋","ゼッテリア","伝丸"];
-
-  if(skylark.includes(s.store)){
-    s.points=[point("楽天 / d / V","0.5%","いずれか1つ"),point("すかいらーくP","0.5%","併用可")];
-    s.combo="共通ポイント0.5%＋すかいらーくポイント0.5%＝提示分1.0%。そこに支払い還元を加算。";
-  }
-  if(zensho.includes(s.store)){
-    s.points=[point("楽天 / d / V","0.5%","いずれか1つ")];
-    s.combo="提示ポイント0.5%＋支払い還元。PayPay 1.5%なら合計2.0%相当。";
-  }
-
-  if(s.store==="セブン-イレブン"){
-    s.first=payment(MUFG,"12.5%");s.second=payment(OLIVE,"8%");s.third=payment(PAYPAY,"1.5%");
-    s.options=uniq([s.first,s.second,s.third]);
-    s.points=[point("nanaco / セブンマイル","別条件","決済方法・アプリ条件あり")];
-    s.combo="支払いだけで比較すると、現在は三菱UFJ 12.5%が最優先。";
-    s.conditions=["三菱UFJ：MDCアプリ表示12.5%（2026/9/6確認）。","Olive 8%：対象のスマホタッチ等を利用。"];
-  }
-  if(s.store==="ローソン"){
-    s.first=payment(MUFG,"12.5%");s.second=payment(OLIVE,"8%");s.third=payment(PAYPAY,"1.5%");
-    s.options=uniq([s.first,s.second,s.third,payment(AU,"0.5%"),payment(DPAY,"0.5%")]);
-    s.points=[point("Ponta / d","約0.5〜1.0%","時間帯で変動・いずれか1つ")];
-    s.combo="PayPay 1.5%＋Pontaなら約2.0〜2.5%。三菱UFJ 12.5%＋Pontaなら約13.0〜13.5%。";
-    s.conditions=["三菱UFJ：MDCアプリ表示12.5%（2026/9/6確認）。","Olive 8%：対象のスマホタッチ等を利用。"];
-  }
-  if(s.store==="オーケー"){
-    s.first=payment(MUFG,"12.5%");s.second="現金＋オーケークラブ（食料品3%相当割引）";s.third=payment(PAYPAY,"1.5%");
-    s.options=uniq([s.first,s.second,s.third]);
-    s.points=[point("オーケークラブ","3%相当","対象食料品・現金払い")];
-    s.combo="三菱UFJ対象なら12.5%を優先。対象外なら現金＋オーケークラブ3%相当も比較。";
-  }
-  if(s.store==="東急ストア"){
-    s.first=payment(MUFG,"12.5%");s.second=payment(RAKUTEN,"1.5%","条件達成時");s.third=payment(PAYPAY,"1.5%");
-    s.options=uniq([s.first,s.second,s.third]);
-    s.points=[point("楽天","約0.5%","200円税抜=1P"),point("TOKYU POINT","約0.5%","楽天と併用可")];
-    s.combo="楽天ポイント＋TOKYU POINTで提示分約1.0%。三菱UFJ 12.5%なら合計約13.5%相当。";
-  }
-  if(s.store==="ジョリーパスタ"){
-    s.first=payment(RAKUTEN,"1.5%","条件達成時");s.second=payment(PAYPAY,"1.5%");s.third=payment(AU,"0.5%");
-    s.options=uniq([s.first,s.second,s.third,payment(DPAY,"0.5%","dカード設定なら1.0%"),"三井住友カード／Olive通常（0.5%）","三菱UFJカード通常（0.5%）"]);
-    s.points=[point("楽天 / d / V","0.5%","いずれか1つ"),point("JOLLY","別制度","レシートQR")];
-    s.combo="楽天ポイント0.5%＋楽天ペイ1.5%＝2.0%。楽天ポイント0.5%＋PayPay1.5%でも2.0%。";
-    s.conditions=["楽天ペイ1.5%：前月判定期間に対象の楽天ポイントカードを2回以上提示してポイント獲得。未達時は最大1.0%。"];
-  }
-  if(s.store==="すき家"){
-    s.points=[point("楽天 / d / V / Ponta","0.5%","いずれか1つ")];
-    s.options=uniq([...s.options,payment(PAYPAY,"1.5%"),payment(RAKUTEN,"1.5%","条件達成時"),payment(AU,"0.5%"),payment(DPAY,"0.5%")]);
-    s.combo="Ponta0.5%＋au PAY0.5%＝1.0%。PayPay1.5%＋提示ポイント0.5%＝2.0%。";
-  }
-  if(s.store==="ケンタッキー"){
-    s.points=[point("楽天 / Ponta","約0.5%","いずれか1つ")];
-    s.combo="Ponta約0.5%＋au PAY0.5%＝約1.0%。PayPay1.5%＋提示ポイントなら約2.0%。";
-  }
-  if(s.store==="吉野家"){
-    s.points=[point("楽天","約0.5%","200円税抜=1P")];
-    s.combo="楽天ポイント約0.5%＋PayPay1.5%なら約2.0%。";
-  }
-  if(s.store==="くら寿司"){
-    s.points=[point("楽天","約0.5%","200円税抜=1P")];
-    s.combo="楽天ポイント提示分を支払い還元に上乗せ。";
-  }
-  if(s.store==="タリーズ"){
-    s.points=[point("楽天","0.5%","200円税込=1P")];
-    s.combo="楽天0.5%＋PayPay1.5%なら合計2.0%。";
-  }
-  if(s.store==="マクドナルド"){
-    s.points=[point("楽天 / d","終了","店頭ポイント進呈は終了")];
-    s.combo="共通ポイント提示の上乗せなし。支払い還元で比較。";
-  }
-  if(s.store==="丸亀製麺"){
-    s.points=[point("楽天","終了","2024/5/31終了")];
-    s.combo="提示ポイント上乗せなしとして支払い還元を比較。";
-  }
-
-  // PayPayが候補にあるときは必ず1.5%表記。
-  s.first=normalizePayment(s.first);s.second=normalizePayment(s.second);s.third=normalizePayment(s.third);
-  s.options=uniq((s.options||[]).map(normalizePayment));
-  if([s.first,s.second,s.third].some(x=>String(x).startsWith("PayPay"))&&!s.options.some(x=>String(x).startsWith("PayPay"))) s.options.push(payment(PAYPAY,"1.5%"));
-  return s;
-}
-
-function findMatches(q){
-  const n=norm(q);if(!n)return[];
-  const scored=[];
-  for(const s of STORES){
-    let best=0;
-    for(const a of s.aliases){
-      const x=norm(a);if(!x)continue;
-      if(n===x)best=Math.max(best,100);else if(x.includes(n)||n.includes(x))best=Math.max(best,n.length>=2?70:35);
-    }
-    if(best)scored.push({store:s,score:best});
-  }
-  return scored.sort((a,b)=>b.score-a.score).slice(0,10);
-}
-
-function renderCandidates(items,geo=false){
-  const box=$("candidates");box.innerHTML="";
-  for(const item of items){
-    const b=document.createElement("button");b.className="candidate";
-    const s=item.store||item;
-    b.innerHTML=esc(s.store)+(geo&&item.distance!=null?`<span class="distance">${item.distance}m</span>`:"");
-    b.onclick=()=>renderResult(s,item);
-    box.appendChild(b);
-  }
-}
-
-function primaryPointText(s){
-  if(!s.points||!s.points.length)return "提示ポイントなし / 未確認";
-  return s.points.map(p=>`${p.name} ${p.rate}`).join(" ＋ ");
-}
-function renderResult(s,context=null){
-  $("empty").style.display="none";
-  $("candidates").innerHTML="";
-  const ctx=context&&context.distance!=null?`現在地から約${context.distance}m`:"検索結果";
-  const points=(s.points&&s.points.length?s.points:[point("提示ポイント","なし / 未確認")]);
-  const pointHtml=points.map(p=>`<span class="chip ${p.rate.includes("終了")||p.rate.includes("なし")?"none":""}">${esc(p.name)} <b>${esc(p.rate)}</b>${p.note?` · ${esc(p.note)}`:""}</span>`).join("");
-  const detailPayments=uniq(s.options||[s.first,s.second,s.third]).map(x=>`<span class="paychip">${esc(x)}</span>`).join("");
-  const cond=(s.conditions&&s.conditions.length?s.conditions.join(" "):"特別な達成条件なし。キャンペーンや店舗条件は会計前に確認してください。");
-  $("result").innerHTML=`
-    <div class="resultcard">
-      <div class="storeline">
-        <div class="storemeta"><div class="eyebrow">いま使うなら</div><h2 class="storename">${esc(s.store)}</h2><div class="context">${esc(ctx)}</div></div>
-        <button class="newbtn" id="newSearch">別の店</button>
-      </div>
-      <div class="best">
-        <div class="rankbadge">BEST<br>1</div>
-        <div><div class="bestmethod">${esc(shortMethod(s.first))}</div><div class="bestsub">おすすめ1位</div></div>
-        <div class="bestrate">${esc(rateFromLabel(s.first))}</div>
-      </div>
-      <div class="secondary">
-        <div class="mini"><div class="minilabel">2位</div><div class="minimethod">${esc(shortMethod(s.second))} <span class="minirate">${esc(rateFromLabel(s.second))}</span></div></div>
-        <div class="mini"><div class="minilabel">3位</div><div class="minimethod">${esc(shortMethod(s.third))} <span class="minirate">${esc(rateFromLabel(s.third))}</span></div></div>
-      </div>
-      <div class="pointbox"><div class="pointtitle">● 会計前に提示</div><div class="pointchips">${pointHtml}</div></div>
-      <div class="combobox"><div class="comboicon">＋</div><div class="combotext"><strong>組み合わせ目安</strong><br>${esc(s.combo)}</div></div>
-      <details>
-        <summary>条件・その他の支払い</summary>
-        <div class="detailsbody">
-          <div class="detailrow"><div class="detailtitle">還元条件</div><div class="detailtext">${esc(cond)}</div></div>
-          <div class="detailrow"><div class="detailtitle">使える主な支払い候補</div><div class="payments">${detailPayments}</div></div>
-          <div class="detailrow"><div class="detailtitle">備考</div><div class="detailtext">${esc(s.note||"—")}</div></div>
-        </div>
-      </details>
-    </div>`;
-  $("result").classList.add("show");
-  $("newSearch").onclick=()=>{$("search").focus();$("search").select();};
-  setStatus(`${s.store} を表示中`,"ok");
-}
-
-function hav(lat1,lon1,lat2,lon2){const R=6371000,r=x=>x*Math.PI/180,dLat=r(lat2-lat1),dLon=r(lon2-lon1);const a=Math.sin(dLat/2)**2+Math.cos(r(lat1))*Math.cos(r(lat2))*Math.sin(dLon/2)**2;return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
-function matchStoreText(text){const n=norm(text);let best=null;for(const s of STORES){for(const a of s.aliases){const x=norm(a);if(!x)continue;let score=0;if(n===x)score=100;else if(n.includes(x))score=80;else if(x.includes(n)&&n.length>=2)score=55;if(score&&(!best||score>best.score))best={store:s,score};}}return best;}
-async function fetchNearby(lat,lng,radius=350){
-  const q=`[out:json][timeout:18];(node(around:${radius},${lat},${lng})["name"];way(around:${radius},${lat},${lng})["name"];relation(around:${radius},${lat},${lng})["name"];);out center tags;`;
-  let err;
-  for(const url of OVERPASS){try{const c=new AbortController(),t=setTimeout(()=>c.abort(),12000);const r=await fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:q,signal:c.signal});clearTimeout(t);if(!r.ok)throw new Error("周辺検索エラー");return await r.json();}catch(e){err=e;}}
-  throw err||new Error("周辺店舗を取得できませんでした");
-}
-function nearbyCandidates(json,lat,lng){
-  const map=new Map();
-  for(const el of json.elements||[]){const tags=el.tags||{},txt=[tags.name,tags["name:ja"],tags.brand,tags.operator].filter(Boolean).join(" /");const m=matchStoreText(txt);if(!m)continue;const la=typeof el.lat==="number"?el.lat:el.center?.lat,lo=typeof el.lon==="number"?el.lon:el.center?.lon;if(typeof la!=="number"||typeof lo!=="number")continue;const d=Math.round(hav(lat,lng,la,lo));const old=map.get(m.store.store);if(!old||d<old.distance)map.set(m.store.store,{store:m.store,distance:d});}
-  return [...map.values()].sort((a,b)=>a.distance-b.distance).slice(0,10);
-}
-
-$("search").addEventListener("input",e=>{
-  const q=e.target.value.trim();
-  if(!q){$("candidates").innerHTML="";setStatus("店名を入れるか、右の現在地ボタンを押してください。");return;}
-  const hits=findMatches(q);renderCandidates(hits.map(x=>x.store));setStatus(hits.length?`${hits.length}件の候補`:"該当する登録店がありません",hits.length?"":"error");
-  if(hits.length===1&&hits[0].score===100)renderResult(hits[0].store);
-});
-$("geo").addEventListener("click",()=>{
-  if(!navigator.geolocation){setStatus("この端末では位置情報を使えません","error");return;}
-  document.body.classList.add("loading");setStatus("現在地から近い対象店を探しています…");
-  navigator.geolocation.getCurrentPosition(async p=>{
-    try{const items=nearbyCandidates(await fetchNearby(p.coords.latitude,p.coords.longitude),p.coords.latitude,p.coords.longitude);renderCandidates(items,true);setStatus(items.length?`${items.length}件見つかりました。店を選んでください。`:"近くに登録対象店が見つかりませんでした",items.length?"ok":"error");}
-    catch(e){setStatus("周辺店舗の取得に失敗しました。店名検索を使ってください。","error");}
-    finally{document.body.classList.remove("loading");}
-  },()=>{document.body.classList.remove("loading");setStatus("位置情報を取得できませんでした。店名検索を使ってください。","error");},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
-});
-
-(async()=>{
-  try{STORES=await loadLegacyData();setStatus("店名を入れるか、右の現在地ボタンを押してください。");}
-  catch(e){setStatus("店舗データの読み込みに失敗しました。再読み込みしてください。","error");console.error(e);}
-})();
+function uniq(a){return Array.from(new Set((a||[]).filter(Boolean)));}function setStatus(msg,type=""){const el=$("status");el.textContent=msg;el.className="status "+type;}
+function rateFromLabel(label){const s=String(label||"");for(const r of ["12.5%","11%","8%","3%","1.5%","1.0%","0.5%"])if(s.includes(r))return r;return "";}
+function shortMethod(label){return String(label||"").replace(/（[^）]*）/g,"").replace("Olive クレジットモード スマホタッチ/モバイルオーダー","Olive").replace("Olive クレジットモード スマホタッチ","Olive").replace("Olive クレジットモード モバイルオーダー","Olive").replace("Olive クレジットモード","Olive").replace("三菱UFJカード通常","三菱UFJ通常").replace("三井住友カード／Olive通常","Olive通常").replace("現金＋オーケークラブ","現金＋OKクラブ").replace("楽天ペイ残高","楽天ペイ").trim();}
+function normalizePayment(label){const s=String(label||"");if(/^PayPay/.test(s))return "PayPay（1.5%）";if(s==="三菱UFJカード")return "三菱UFJカード（12.5%）";if(s==="三菱UFJカード通常")return "三菱UFJカード通常（0.5%）";if(s.includes("三井住友カード スマホタッチ")||s.includes("三井住友カード モバイルオーダー"))return "Olive クレジットモード（8%）";if(s==="三井住友カード通常")return "三井住友カード／Olive通常（0.5%）";if(s==="現金＋オーケークラブ")return "現金＋オーケークラブ（食料品3%相当割引）";return s;}
+function payment(name,rate,extra=""){return `${name}（${rate}${extra?"・"+extra:"}）`;}function point(name,rate,note=""){return{name,rate,note};}
+async function loadLegacyData(){const res=await fetch("./legacy.html?v=20260906-data",{cache:"no-store"});if(!res.ok)throw new Error("店舗データを読み込めませんでした");const text=await res.text(),marker="const STORE_DATA = [",m=text.indexOf(marker);if(m<0)throw new Error("店舗データ形式を確認できませんでした");const start=m+"const STORE_DATA = ".length,end=text.indexOf("\n];",start);if(end<0)throw new Error("店舗データの終端を確認できませんでした");const raw=Function('"use strict";return ('+text.slice(start,end+2)+');')();const map=new Map();for(const item of raw){const e=enhanceStore(item);if(!map.has(e.store))map.set(e.store,e);else map.get(e.store).aliases=uniq([...map.get(e.store).aliases,...e.aliases]);}return[...map.values()];}
+function enhanceStore(src){const s={...src};s.first=normalizePayment(s.first);s.second=normalizePayment(s.second);s.third=normalizePayment(s.third);s.options=uniq([s.first,s.second,s.third]);s.points=[];s.combo="提示ポイントがある場合は、支払い還元とは別に加算できます。";s.conditions=[];s.aliases=uniq([s.store,...(s.aliases||[])]);if(s.first.includes("Olive"))s.conditions.push("Olive 8%：対象店でクレジットモードのスマホタッチ、または対象モバイルオーダーを利用。");if(s.first.includes("三菱UFJカード（12.5%）")||s.second.includes("三菱UFJカード（12.5%）"))s.conditions.push("三菱UFJ：MDCアプリ表示の現在値12.5%を使用。対象店・プログラム条件を満たす場合。");
+const skylark=["ガスト","バーミヤン","しゃぶ葉","ジョナサン","夢庵","から好し","ステーキガスト","むさしの森珈琲","藍屋","とんから亭","chawan","La Ohana","魚屋路","桃菜"],zensho=["はま寿司","ココス","なか卯","かつ庵","ジョリーパスタ","ビッグボーイ","ヴィクトリアステーション","熟成焼肉いちばん","オリーブの丘","華屋与兵衛","久兵衛屋","ゼッテリア","伝丸"];
+if(skylark.includes(s.store)){s.points=[point("楽天 / d / V","0.5%","いずれか1つ"),point("すかいらーくP","0.5%","併用可")];s.combo="共通ポイント0.5%＋すかいらーくポイント0.5%＝提示分1.0%。そこに支払い還元を加算。";}if(zensho.includes(s.store)){s.points=[point("楽天 / d / V","0.5%","いずれか1つ")];s.combo="提示ポイント0.5%＋支払い還元。PayPay 1.5%なら合計2.0%相当。";}
+if(s.store==="セブン-イレブン"){s.first=payment(MUFG,"12.5%");s.second=payment(OLIVE,"8%");s.third=payment(PAYPAY,"1.5%");s.options=uniq([s.first,s.second,s.third]);s.points=[point("nanaco / セブンマイル","別条件","決済方法・アプリ条件あり")];s.combo="支払いだけで比較すると、現在は三菱UFJ 12.5%が最優先。";s.conditions=["三菱UFJ：MDCアプリ表示12.5%（2026/9/6確認）。","Olive 8%：対象のスマホタッチ等を利用。"];}if(s.store==="ローソン"){s.first=payment(MUFG,"12.5%");s.second=payment(OLIVE,"8%");s.third=payment(PAYPAY,"1.5%");s.options=uniq([s.first,s.second,s.third,payment(AU,"0.5%"),payment(DPAY,"0.5%")]);s.points=[point("Ponta / d","約0.5〜1.0%","時間帯で変動・いずれか1つ")];s.combo="PayPay 1.5%＋Pontaなら約2.0〜2.5%。三菱UFJ 12.5%＋Pontaなら約13.0〜13.5%。";s.conditions=["三菱UFJ：MDCアプリ表示12.5%（2026/9/6確認）。","Olive 8%：対象のスマホタッチ等を利用。"];}if(s.store==="オーケー"){s.first=payment(MUFG,"12.5%");s.second="現金＋オーケークラブ（食料品3%相当割引）";s.third=payment(PAYPAY,"1.5%");s.options=uniq([s.first,s.second,s.third]);s.points=[point("オーケークラブ","3%相当","対象食料品・現金払い")];s.combo="三菱UFJ対象なら12.5%を優先。対象外なら現金＋オーケークラブ3%相当も比較。";}if(s.store==="東急ストア"){s.first=payment(MUFG,"12.5%");s.second=payment(RAKUTEN,"1.5%","条件達成時");s.third=payment(PAYPAY,"1.5%");s.options=uniq([s.first,s.second,s.third]);s.points=[point("楽天","約0.5%","200円税抜=1P"),point("TOKYU POINT","約0.5%","楽天と併用可")];s.combo="楽天ポイント＋TOKYU POINTで提示分約1.0%。三菱UFJ 12.5%なら合計約13.5%相当。";}
+if(s.store==="ジョリーパスタ"){s.first=payment(RAKUTEN,"1.5%","条件達成時");s.second=payment(PAYPAY,"1.5%");s.third=payment(AU,"0.5%");s.options=uniq([s.first,s.second,s.third,payment(DPAY,"0.5%","dカード設定なら1.0%"),"三井住友カード／Olive通常（0.5%）","三菱UFJカード通常（0.5%）"]);s.points=[point("楽天 / d / V","0.5%","いずれか1つ"),point("JOLLY","別制度","レシートQR")];s.combo="楽天ポイント0.5%＋楽天ペイ1.5%＝2.0%。楽天ポイント0.5%＋PayPay1.5%でも2.0%。";s.conditions=["楽天ペイ1.5%：前月判定期間に対象の楽天ポイントカードを2回以上提示してポイント獲得。未達時は最大1.0%。"];}if(s.store==="すき家"){s.points=[point("楽天 / d / V / Ponta","0.5%","いずれか1つ")];s.options=uniq([...s.options,payment(PAYPAY,"1.5%"),payment(RAKUTEN,"1.5%","条件達成時"),payment(AU,"0.5%"),payment(DPAY,"0.5%")]);s.combo="Ponta0.5%＋au PAY0.5%＝1.0%。PayPay1.5%＋提示ポイント0.5%＝2.0%。";}if(s.store==="ケンタッキー"){s.points=[point("楽天 / Ponta","約0.5%","いずれか1つ")];s.combo="Ponta約0.5%＋au PAY0.5%＝約1.0%。PayPay1.5%＋提示ポイントなら約2.0%。";}if(s.store==="吉野家"){s.points=[point("楽天","約0.5%","200円税抜=1P")];s.combo="楽天ポイント約0.5%＋PayPay1.5%なら約2.0%。";}if(s.store==="くら寿司"){s.points=[point("楽天","約0.5%","200円税抜=1P")];s.combo="楽天ポイント提示分を支払い還元に上乗せ。";}if(s.store==="タリーズ"){s.points=[point("楽天","0.5%","200円税込=1P")];s.combo="楽天0.5%＋PayPay1.5%なら合計2.0%。";}if(s.store==="マクドナルド"){s.points=[point("楽天 / d","終了","店頭ポイント進呈は終了")];s.combo="共通ポイント提示の上乗せなし。支払い還元で比較。";}if(s.store==="丸亀製麺"){s.points=[point("楽天","終了","2024/5/31終了")];s.combo="提示ポイント上乗せなしとして支払い還元を比較。";}
+s.first=normalizePayment(s.first);s.second=normalizePayment(s.second);s.third=normalizePayment(s.third);s.options=uniq((s.options||[]).map(normalizePayment));if([s.first,s.second,s.third].some(x=>String(x).startsWith("PayPay"))&&!s.options.some(x=>String(x).startsWith("PayPay")))s.options.push(payment(PAYPAY,"1.5%"));return s;}
+function findMatches(q){const n=norm(q);if(!n)return[];const scored=[];for(const s of STORES){let best=0;for(const a of s.aliases){const x=norm(a);if(!x)continue;if(n===x)best=Math.max(best,100);else if(x.includes(n)||n.includes(x))best=Math.max(best,n.length>=2?70:35);}if(best)scored.push({store:s,score:best});}return scored.sort((a,b)=>b.score-a.score).slice(0,10);}
+function renderCandidates(items,geo=false){const box=$("candidates");box.innerHTML="";for(const item of items){const isGeo=item&&typeof item.store==="object",s=isGeo?item.store:item;if(!s||typeof s!=="object")continue;const b=document.createElement("button");b.className="candidate";b.innerHTML=esc(s.store)+(geo&&isGeo&&item.distance!=null?`<span class="distance">${item.distance}m</span>`:"");b.onclick=()=>renderResult(s,isGeo?item:null);box.appendChild(b);}}
+function renderResult(s,context=null){$("empty").style.display="none";$("candidates").innerHTML="";const ctx=context&&context.distance!=null?`現在地から約${context.distance}m`:"検索結果",points=s.points&&s.points.length?s.points:[point("提示ポイント","なし / 未確認")],pointHtml=points.map(p=>`<span class="chip ${p.rate.includes("終了")||p.rate.includes("なし")?"none":""}">${esc(p.name)} <b>${esc(p.rate)}</b>${p.note?` · ${esc(p.note)}`:""}</span>`).join(""),detailPayments=uniq(s.options||[s.first,s.second,s.third]).map(x=>`<span class="paychip">${esc(x)}</span>`).join(""),cond=s.conditions&&s.conditions.length?s.conditions.join(" "):"特別な達成条件なし。キャンペーンや店舗条件は会計前に確認してください。";$("result").innerHTML=`<div class="resultcard"><div class="storeline"><div class="storemeta"><div class="eyebrow">いま使うなら</div><h2 class="storename">${esc(s.store)}</h2><div class="context">${esc(ctx)}</div></div><button class="newbtn" id="newSearch">別の店</button></div><div class="best"><div class="rankbadge">BEST<br>1</div><div><div class="bestmethod">${esc(shortMethod(s.first))}</div><div class="bestsub">おすすめ1位</div></div><div class="bestrate">${esc(rateFromLabel(s.first))}</div></div><div class="secondary"><div class="mini"><div class="minilabel">2位</div><div class="minimethod">${esc(shortMethod(s.second))} <span class="minirate">${esc(rateFromLabel(s.second))}</span></div></div><div class="mini"><div class="minilabel">3位</div><div class="minimethod">${esc(shortMethod(s.third))} <span class="minirate">${esc(rateFromLabel(s.third))}</span></div></div></div><div class="pointbox"><div class="pointtitle">● 会計前に提示</div><div class="pointchips">${pointHtml}</div></div><div class="combobox"><div class="comboicon">＋</div><div class="combotext"><strong>組み合わせ目安</strong><br>${esc(s.combo)}</div></div><details><summary>条件・その他の支払い</summary><div class="detailsbody"><div class="detailrow"><div class="detailtitle">還元条件</div><div class="detailtext">${esc(cond)}</div></div><div class="detailrow"><div class="detailtitle">使える主な支払い候補</div><div class="payments">${detailPayments}</div></div><div class="detailrow"><div class="detailtitle">備考</div><div class="detailtext">${esc(s.note||"—")}</div></div></div></details></div>`;$("result").classList.add("show");$("newSearch").onclick=()=>{$("search").focus();$("search").select();};setStatus(`${s.store} を表示中`,"ok");}
+function hav(lat1,lon1,lat2,lon2){const R=6371000,r=x=>x*Math.PI/180,dLat=r(lat2-lat1),dLon=r(lon2-lon1),a=Math.sin(dLat/2)**2+Math.cos(r(lat1))*Math.cos(r(lat2))*Math.sin(dLon/2)**2;return 2*R*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}function matchStoreText(text){const n=norm(text);let best=null;for(const s of STORES){for(const a of s.aliases){const x=norm(a);if(!x)continue;let score=0;if(n===x)score=100;else if(n.includes(x))score=80;else if(x.includes(n)&&n.length>=2)score=55;if(score&&(!best||score>best.score))best={store:s,score};}}return best;}async function fetchNearby(lat,lng,radius=350){const q=`[out:json][timeout:18];(node(around:${radius},${lat},${lng})["name"];way(around:${radius},${lat},${lng})["name"];relation(around:${radius},${lat},${lng})["name"];);out center tags;`;let err;for(const url of OVERPASS){try{const c=new AbortController(),t=setTimeout(()=>c.abort(),12000),r=await fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},body:q,signal:c.signal});clearTimeout(t);if(!r.ok)throw new Error("周辺検索エラー");return await r.json();}catch(e){err=e;}}throw err||new Error("周辺店舗を取得できませんでした");}function nearbyCandidates(json,lat,lng){const map=new Map();for(const el of json.elements||[]){const tags=el.tags||{},txt=[tags.name,tags["name:ja"],tags.brand,tags.operator].filter(Boolean).join(" /"),m=matchStoreText(txt);if(!m)continue;const la=typeof el.lat==="number"?el.lat:el.center?.lat,lo=typeof el.lon==="number"?el.lon:el.center?.lon;if(typeof la!=="number"||typeof lo!=="number")continue;const d=Math.round(hav(lat,lng,la,lo)),old=map.get(m.store.store);if(!old||d<old.distance)map.set(m.store.store,{store:m.store,distance:d});}return[...map.values()].sort((a,b)=>a.distance-b.distance).slice(0,10);}
+$("search").addEventListener("input",e=>{const q=e.target.value.trim();if(!q){$("candidates").innerHTML="";setStatus("店名を入れるか、右の現在地ボタンを押してください。");return;}const hits=findMatches(q);renderCandidates(hits.map(x=>x.store));setStatus(hits.length?`${hits.length}件の候補`:"該当する登録店がありません",hits.length?"":"error");if(hits.length===1&&hits[0].score===100)renderResult(hits[0].store);});
+$("geo").addEventListener("click",()=>{if(!navigator.geolocation){setStatus("この端末では位置情報を使えません","error");return;}document.body.classList.add("loading");setStatus("現在地から近い対象店を探しています…");navigator.geolocation.getCurrentPosition(async p=>{try{const items=nearbyCandidates(await fetchNearby(p.coords.latitude,p.coords.longitude),p.coords.latitude,p.coords.longitude);renderCandidates(items,true);setStatus(items.length?`${items.length}件見つかりました。店を選んでください。`:"近くに登録対象店が見つかりませんでした",items.length?"ok":"error");}catch(e){setStatus("周辺店舗の取得に失敗しました。店名検索を使ってください。","error");}finally{document.body.classList.remove("loading");}},()=>{document.body.classList.remove("loading");setStatus("位置情報を取得できませんでした。店名検索を使ってください。","error");},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});});
+(async()=>{try{STORES=await loadLegacyData();setStatus("店名を入れるか、右の現在地ボタンを押してください。");}catch(e){setStatus("店舗データの読み込みに失敗しました。再読み込みしてください。","error");console.error(e);}})();
 </script>
 </body>
 </html>
