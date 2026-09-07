@@ -77,15 +77,22 @@ function readOwnerSetting(){try{const raw=localStorage.getItem(OWNER_KEY);const 
 let ownerSetting=readOwnerSetting();
 function couponNorm(v){return String(v||'').toLowerCase().normalize('NFKC').replace(/[\s　・･\-‐‑–—ー()（）]/g,'').replace(/ホールディングス|hd|株式会社|有限会社/g,'');}
 function couponPaymentProvider(p){const n=String(p&&p.n||'');if(n==='PayPay')return'paypay';if(n==='Olive'||n==='Olive通常'||n.includes('三井住友カード'))return'vpass';return'';}
-function couponOfferFor(store,p){
- const provider=couponPaymentProvider(p);if(!provider)return null;
+function couponStoreOffer(store,provider){
  const names=[store.store,...(store.aliases||[])].map(couponNorm).filter(Boolean);
  const offers=(COUPON_FEED.offers||[]).filter(o=>o.provider===provider);
  const exact=offers.filter(o=>names.includes(couponNorm(o.brand)));
  const pool=exact.length?exact:offers.filter(o=>{const b=couponNorm(o.brand);return b.length>=4&&names.some(n=>n.length>=4&&(n.includes(b)||b.includes(n)));});
  return pool.sort((a,b)=>(Number(b.rate)||0)-(Number(a.rate)||0))[0]||null;
 }
-function refreshCouponBonus(store){for(const p of store.payments){p.autoCouponRate=0;p.autoCoupon=null;const o=couponOfferFor(store,p);if(o){p.autoCouponRate=Math.max(0,Number(o.rate)||0);p.autoCoupon=o;}}}
+function couponOfferFor(store,p){const provider=couponPaymentProvider(p);return provider?couponStoreOffer(store,provider):null;}
+function refreshCouponBonus(store){
+ store.payments=store.payments.filter(p=>p.id!=='vpassCouponCard');
+ const vpass=couponStoreOffer(store,'vpass');
+ if(vpass&&!store.payments.some(p=>couponPaymentProvider(p)==='vpass')){
+  store.payments.push({...METHODS.card,id:'vpassCouponCard',n:'三井住友カード / Olive',r:'0.5%',x:'Vクーポン対象カード利用・通常還元0.5%設定',conditions:[...METHODS.card.conditions,'VクーポンをVpassで獲得後、対象カードで利用する場合。'],src:['sm'],rankable:true});
+ }
+ for(const p of store.payments){p.autoCouponRate=0;p.autoCoupon=null;const o=couponOfferFor(store,p);if(o){p.autoCouponRate=Math.max(0,Number(o.rate)||0);p.autoCoupon=o;}}
+}
 function comparisonRate(payment){return configuredRate(payment.r)+(payment.ownerRate||0)+(payment.autoCouponRate||0);}
 function comparisonLabel(payment){return payment.ownerRate||payment.autoCouponRate?comparisonRate(payment).toFixed(1)+'%':payment.r;}
 function refreshStoreSummary(store){
