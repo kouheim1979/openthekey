@@ -1,17 +1,17 @@
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 import urllib.request, re, html, json, subprocess, shutil
+from paypay_public import parse_super, parse_lyp, active
 
 JST = timezone(timedelta(hours=9))
 UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Safari/537.36'
 SOURCES = {
     'vpass': 'https://www.smbc-card.com/camp/vcoupon/index.jsp',
-    'paypay': 'https://paypay.ne.jp/event/jumbo-coupon/',
+    'paypay-softbank': 'https://paypay.ne.jp/event/super-paypay-coupon/',
+    'paypay-lyp': 'https://premium.yahoo.co.jp/benefit/coupon/paypay',
 }
 
 def fetch(url):
-    # Official coupon pages render their lists with JavaScript. On GitHub-hosted
-    # Linux runners, use installed Chrome/Chromium to render the DOM first.
     chrome = shutil.which('google-chrome') or shutil.which('google-chrome-stable') or shutil.which('chromium') or shutil.which('chromium-browser')
     if chrome:
         cp = subprocess.run([
@@ -58,63 +58,59 @@ def parse_vpass(page):
             offers.append({'provider':'vpass','brand':brand,'rate':float(m.group(1)),'sourceUrl':SOURCES['vpass'],'note':'Vクーポン公開掲載。獲得済み・対象カードであることが必要'})
     return offers
 
-def parse_date_range(s, now):
-    m=re.search(r'(\d{4})[/.](\d{1,2})[/.](\d{1,2})\s*[〜～~-]\s*(?:(\d{4})[/.])?(\d{1,2})[/.](\d{1,2})',s)
-    if not m:return None,None
-    y1,mo1,d1=int(m.group(1)),int(m.group(2)),int(m.group(3));y2=int(m.group(4) or y1);mo2,d2=int(m.group(5)),int(m.group(6))
-    return f'{y1:04d}-{mo1:02d}-{d1:02d}',f'{y2:04d}-{mo2:02d}-{d2:02d}'
+def fetch_raw(url):
+    req=urllib.request.Request(url,headers={'User-Agent':UA,'Accept-Language':'ja'})
+    with urllib.request.urlopen(req,timeout=25) as response:
+        return response.read().decode('utf-8',errors='replace')
 
-def parse_money(s):
-    m=re.search(r'([0-9,]+)\s*円',s)
-    return int(m.group(1).replace(',','')) if m else 0
+def render_lyp(url):
+    from playwright.sync_api import sync_playwright
+    chrome=shutil.which('google-chrome') or shutil.which('google-chrome-stable') or shutil.which('chromium')
+    if not chrome: raise RuntimeError('Chrome is required to read the public LYP catalogue')
+    with sync_playwright() as p:
+        browser=p.chromium.launch(executable_path=chrome,headless=True,args=['--no-sandbox'])
+        try:
+            page=browser.new_page(locale='ja-JP')
+            page.goto(url,wait_until='domcontentloaded',timeout=30000)
+            page.wait_for_selector('#coupon__listitems .itemdetail__name',timeout=20000)
+            return page.content()
+        finally: browser.close()
 
-def parse_paypay(page):
-    lines=text_lines(page); offers=[]; now=datetime.now(JST).date()
-    for i,line in enumerate(lines):
-        m=re.search(r'最大\s*(\d+(?:\.\d+)?)\s*[％%]\s*付与',line)
-        if not m: continue
-        brand=''
-        for j in range(i-1,max(-1,i-9),-1):
-            c=clean_brand(lines[j])
-            if c and len(c)<=80 and not re.search(r'[％%]|付与|対象金額|上限|期間|クーポン|今週|月曜',c):
-                brand=c;break
-        if not brand: continue
-        min_spend=max_bonus=0;start=end=None
-        for k in range(i+1,min(len(lines),i+20)):
-            t=lines[k]
-            if '対象金額' in t:
-                min_spend=parse_money(' '.join(lines[k:min(len(lines),k+3)]))
-            if '付与上限' in t:
-                max_bonus=parse_money(' '.join(lines[k:min(len(lines),k+3)]))
-            if '開催期間' in t:
-                start,end=parse_date_range(' '.join(lines[k:min(len(lines),k+3)]),now)
-            if k>i+2 and re.search(r'最大\s*\d+(?:\.\d+)?\s*[％%]\s*付与',t): break
-        if end:
-            try:
-                if datetime.strptime(end,'%Y-%m-%d').date() < now: continue
-            except Exception: pass
-        offers.append({'provider':'paypay','brand':brand,'rate':float(m.group(1)),'minSpend':min_spend,'maxBonus':max_bonus,'start':start,'end':end,'sourceUrl':SOURCES['paypay'],'note':'PayPay公式公開クーポン。獲得済み・対象条件を満たすことが必要'})
-    return offers
+def main():
+    dest=Path('coupon-feed.json')
+    try: previous=json.loads(dest.read_text(encoding='utf-8'))
+    except (OSError,ValueError): previous={}
+    checked=datetime.now(JST).isoformat();today=checked[:10]
+    offers=[];errors=[];status={}
+    for key,url in SOURCES.items():
+        try:
+            if key=='vpass':
+                parsed=parse_vpass(fetch(url))
+                if not parsed: raise ValueError('Vpass merchant list was not found')
+                for o in parsed: o['checkedAt']=checked
+            elif key=='paypay-softbank': parsed=parse_super(fetch_raw(url),checked)
+            else: parsed=parse_lyp(render_lyp(url),checked)
+            for o in parsed: o['feedSource']=key
+            parsed=[o for o in parsed if active(o,today)]
+            offers.extend(parsed);status[key]={'status':'ok','checkedAt':checked,'count':len(parsed)}
+            print(key,'active',len(parsed))
+        except Exception as e:
+            errors.append(key+': '+str(e))
+            retained=[]
+            for original in previous.get('offers',[]):
+                source=original.get('feedSource') or ('vpass' if original.get('provider')=='vpass' else '')
+                if source!=key or not active(original,today): continue
+                o=dict(original);o['checkedAt']=o.get('checkedAt') or previous.get('updatedAt','');o['feedSource']=key
+                retained.append(o)
+            offers.extend(retained);status[key]={'status':'failed','retainedCount':len(retained),'attemptedAt':checked}
+    # Preserve distinct membership, date, and app-route offers; never collapse them by brand.
+    unique={o.get('id') or (o['provider']+'|'+o['brand']):o for o in offers}
+    data={'version':2,'updatedAt':checked,'offers':list(unique.values()),'sources':SOURCES,
+          'sourceStatus':status,'errors':errors,
+          'coverage':{'paypay':'公式公開のソフトバンク・LYP会員向け一覧のみ。一般向け一覧・個別配信・Myクーポン・獲得状態・利用済み枠は未取得。',
+                      'bounds':'LYPの期間・上限は公開ページから取得。ソフトバンクの上限・期間は公式月次PDFの確認値をクーポンIDで照合。新IDの不明条件は推測しない。'}}
+    dest.write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8')
+    print('offers',len(data['offers']),'errors',errors)
+    if len(errors)==len(SOURCES): raise SystemExit('Every official coupon source failed')
 
-def dedupe(offers):
-    out={}
-    for o in offers:
-        brand=re.sub(r'\s+','',o['brand']).lower()
-        if not brand or len(brand)>80: continue
-        key=(o['provider'],brand)
-        if key not in out or o.get('rate',0)>out[key].get('rate',0):out[key]=o
-    return list(out.values())
-
-errors=[];offers=[]
-for provider,url in SOURCES.items():
-    try:
-        page=fetch(url)
-        parsed=parse_vpass(page) if provider=='vpass' else parse_paypay(page)
-        offers += parsed
-        print(provider,'parsed',len(parsed))
-    except Exception as e:
-        errors.append(f'{provider}: {e}')
-
-data={'updatedAt':datetime.now(JST).isoformat(),'offers':dedupe(offers),'sources':SOURCES,'errors':errors}
-Path('coupon-feed.json').write_text(json.dumps(data,ensure_ascii=False,indent=2),encoding='utf-8')
-print('offers',len(data['offers']),'errors',errors)
+if __name__=='__main__': main()
