@@ -33,7 +33,7 @@ jobs:
           node --check checker-20260907-autocoupons.js
           python3 -m json.tool coupon-feed.json >/dev/null
           grep -q '自動検出' checker-20260907-autocoupons.js
-          grep -q 'checker-20260907-autocoupons.js?v=20260907-auto2' index.html
+          grep -q 'checker-20260907-autocoupons.js?v=20260907-auto3' index.html
       - name: Commit refreshed coupon data
         run: |
           git config user.name "github-actions[bot]"
@@ -44,4 +44,3 @@ jobs:
             git push origin HEAD:main
           else
             echo "coupon data unchanged"
-          fi
