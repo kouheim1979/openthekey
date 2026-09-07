@@ -1,6 +1,84 @@
 {
-  "updatedAt": "2026-09-07T19:38:59.521326+09:00",
-  "offers": [],
+  "updatedAt": "2026-09-07T19:40:39.517194+09:00",
+  "offers": [
+    {
+      "provider": "vpass",
+      "brand": "すき家",
+      "rate": 10.0,
+      "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
+      "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要"
+    },
+    {
+      "provider": "vpass",
+      "brand": "はま寿司",
+      "rate": 10.0,
+      "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
+      "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要"
+    },
+    {
+      "provider": "vpass",
+      "brand": "ココス",
+      "rate": 10.0,
+      "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
+      "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要"
+    },
+    {
+      "provider": "vpass",
+      "brand": "なか卯",
+      "rate": 10.0,
+      "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
+      "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要"
+    },
+    {
+      "provider": "vpass",
+      "brand": "ジョリーパスタ",
+      "rate": 10.0,
+      "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
+      "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要"
+    },
+    {
+      "provider": "vpass",
+      "brand": "オリーブの丘",
+      "rate": 10.0,
+      "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
+      "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要"
+    },
+    {
+      "provider": "vpass",
+      "brand": "出前館",
+      "rate": 10.0,
+      "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
+      "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要"
+    },
+    {
+      "provider": "vpass",
+      "brand": "CoCo壱番屋",
+      "rate": 5.0,
+      "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
+      "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要"
+    },
+    {
+      "provider": "vpass",
+      "brand": "かっぱ寿司",
+      "rate": 5.0,
+      "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
+      "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要"
+    },
+    {
+      "provider": "vpass",
+      "brand": "Qoo10",
+      "rate": 1.0,
+      "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
+      "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要"
+    },
+    {
+      "provider": "vpass",
+      "brand": "ビックカメラ",
+      "rate": 1.0,
+      "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
+      "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要"
+    }
+  ],
   "sources": {
     "vpass": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
     "paypay": "https://paypay.ne.jp/event/jumbo-coupon/"
