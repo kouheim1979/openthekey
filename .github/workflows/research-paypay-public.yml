@@ -11,51 +11,45 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Read public coupon pages without login
+      - name: Read linked public pages without login
         run: |
           mkdir -p research
           python3 - <<'PY'
           import urllib.request, urllib.parse, re, json
           from pathlib import Path
           urls = {
-            'jumbo': 'https://paypay.ne.jp/event/jumbo-coupon/',
-            'super': 'https://paypay.ne.jp/event/super-paypay-coupon/',
-            'guide': 'https://paypay.ne.jp/guide/coupon/',
-            'event': 'https://paypay.ne.jp/event/',
-            'softbank': 'https://www.softbank.jp/mobile/info/personal/news/service/20260824a/',
-            'belc': 'https://www.belc.jp/topics/20260901_paypay',
+            'seasonal': 'https://www.paypay.ne.jp/portal/coupon-corner/seasonal-coupons?seasonId=1800747966076723200',
+            'coupon-detail': 'https://www.paypay.ne.jp/portal/coupon-corner/coupons/100372197',
+            'lyp': 'https://premium.yahoo.co.jp/benefit/coupon/paypay?ex=P_2778.C_C4pps462',
+            'softbank-landing': 'https://www.softbank.jp/mobile/special/paypay-otoku-2022/?p=paypay-coupon',
+            'softbank-monthly.pdf': 'https://www.softbank.jp/mobile/set/data/info/personal/news/service/20260824a/pdf/targetstores_aug_20260824.pdf',
           }
-          for key, url in urls.items():
+          for key,url in urls.items():
             try:
-              req=urllib.request.Request(url, headers={'User-Agent':'Mozilla/5.0','Accept-Language':'ja'})
+              req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0','Accept-Language':'ja'})
               with urllib.request.urlopen(req,timeout=20) as r:
-                body=r.read().decode('utf-8',errors='replace')
-              Path('research/'+key+'.html').write_text(body)
+                raw=r.read(); print(key, 'status',r.status,'url',r.url,'bytes',len(raw))
+              if key.endswith('.pdf'):
+                Path('research/'+key).write_bytes(raw);continue
+              body=raw.decode('utf-8',errors='replace');Path('research/'+key+'.html').write_text(body)
               scripts=re.findall(r'<script[^>]*src=[\"\x27]([^\"\x27]+)',body,re.I)
-              links=re.findall(r'(?:href|data-url|data-link)=[\"\x27]([^\"\x27]+)',body,re.I)
-              print(key, 'bytes',len(body), 'scripts',scripts)
-              print(key,'coupon links',[x for x in links if any(w in x.lower() for w in ('coupon','paypay','json'))][-45:])
-              # Only same-site public scripts explicitly referenced by these pages.
+              print(key,'scripts',scripts)
+              print(key,'preview',re.sub(r'<[^>]+>',' ',body)[-1500:])
+              manifest={}
               for i,src in enumerate(scripts):
-                target=urllib.parse.urljoin(url,src)
-                if urllib.parse.urlparse(target).hostname not in ('paypay.ne.jp','www.softbank.jp'): continue
-                if not any(w in src for w in ('coupon','super','event')): continue
+                target=urllib.parse.urljoin(url,src); host=urllib.parse.urlparse(target).hostname or ''
+                if not any(host==h or host.endswith('.'+h) for h in ('paypay.ne.jp','yimg.jp','premium.yahoo.co.jp')): continue
+                if len(scripts)>15 and i>=15: break
                 try:
                   with urllib.request.urlopen(target,timeout=15) as r: js=r.read().decode('utf-8',errors='replace')
-                  Path('research/'+key+'-script-'+str(i)+'.js').write_text(js)
-                  print('script',target, js[:120], 'json paths',re.findall(r'[^\s\"\x27]+\.json[^\s\"\x27]*',js)[:30])
+                  file=key+'-script-'+str(i)+'.js';Path('research/'+file).write_text(js);manifest[file]=target
+                  print('script',target,'bytes',len(js))
                 except Exception as e: print('script error',str(e))
-            except Exception as e: print(key, 'ERROR',str(e))
+              Path('research/'+key+'-scripts.json').write_text(json.dumps(manifest))
+            except Exception as e: print(key,'ERROR',str(e))
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: public-coupon-research
+          name: public-coupon-paths
           retention-days: 1
-          path: |
-            research/
-            scripts/
-            *.js
-            *.html
-            *.json
-            icons/
-            manifest.webmanifest
+          path: research/
