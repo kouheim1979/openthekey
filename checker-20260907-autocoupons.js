@@ -56,7 +56,7 @@ function combinationFor(store){
  if(name==='ベルマート')return 'TOKAI STATION POINT対象店でアプリ提示（110円税込ごと1P）＋決済還元。支店・対象外商品の確認が必要です。';
  const active=store.points.filter(p=>typeof p.base==='number');
  const single=active.filter(p=>p.x!=='併用可'),extra=active.filter(p=>p.x==='併用可');
- if(active.length){const add=(single.length?Math.max(...single.map(p=>p.base)):0)+extra.reduce((s,p)=>s+p.base,0);const total=configuredRate(best.r)+add;return '提示ポイント'+add.toFixed(1)+'%（共通ポイントは1種類）＋ '+best.n+' '+best.r+' ＝ 計'+total.toFixed(1)+'%目安。各条件と端数処理によって変わります。';}
+ if(active.length){const add=(single.length?Math.max(...single.map(p=>p.base)):0)+extra.reduce((s,p)=>s+p.base,0);const total=comparisonRate(best)+add;return '提示ポイント'+add.toFixed(1)+'%（共通ポイントは1種類）＋ '+best.n+' '+comparisonLabel(best)+' ＝ 計'+total.toFixed(1)+'%目安。各条件と端数処理によって変わります。';}
  if(store.points.some(p=>p.r.startsWith('税抜')))return 'ポイントカードを対象条件で提示してから支払い。提示分は税抜金額を基準に付くため、税込決済還元率との単純合計は目安にも誤差があります。';
  if(store.points.some(p=>p.r.includes('終了')))return '終了したポイントカードの提示分は加算しません。支払方法のポイントは別に比較します。';
  return '提示ポイントの進呈率・併用条件が未確認の項目は、合計還元率に加算しません。';
@@ -75,45 +75,131 @@ const OWNER_KEY='payment-checker-aeon-owners-rate';
 const OWNER_RATES=[0,1,2,3,4,5,7];
 function readOwnerSetting(){try{const raw=localStorage.getItem(OWNER_KEY);const value=Number(raw);if(raw!==null&&OWNER_RATES.includes(value))return{rate:value,confirmed:true};}catch(_){}return{rate:3,confirmed:false};}
 let ownerSetting=readOwnerSetting();
-function couponNorm(v){return String(v||'').toLowerCase().normalize('NFKC').replace(/[\s　・･\-‐‑–—ー()（）]/g,'').replace(/ホールディングス|hd|株式会社|有限会社/g,'');}
+// Public coupon information only. Confirmation is a local calculation input, NOT claiming.
+const COUPON_STATE={}; // Page-session only: never assume that a previously used coupon is still usable.
+let couponLoading=true,couponFailed=false,lastCouponContext=null;
+function couponNorm(v){return String(v||'').normalize('NFKC').toLowerCase().replace(/[\s　・･‐‑–—ー()（）-]/g,'');}
 function couponPaymentProvider(p){const n=String(p&&p.n||'');if(n==='PayPay')return'paypay';if(n==='Olive'||n==='Olive通常'||n.includes('三井住友カード'))return'vpass';return'';}
+function couponLive(o,now=Date.now()){
+ const checked=Date.parse(o.checkedAt||COUPON_FEED.updatedAt||'');
+ if(!Number.isFinite(checked)||now-checked>48*3600000||checked-now>3600000)return false;
+ if(o.start&&now<Date.parse(o.start+'T00:00:00+09:00'))return false;
+ if(o.end&&now>Date.parse(o.end+'T23:59:59+09:00'))return false;
+ return Number.isFinite(Number(o.rate))&&Number(o.rate)>0&&Number(o.rate)<=100;
+}
+function couponMatches(store,o){
+ const names=[store.store,...(store.aliases||[])].map(couponNorm);
+ return [o.brand,...(o.aliases||[])].some(b=>names.includes(couponNorm(b)));
+}
+function couponOffers(store,provider){return (COUPON_FEED.offers||[]).filter(o=>o.provider===provider&&couponLive(o)&&couponMatches(store,o));}
+function couponState(store){return COUPON_STATE[store.store]||(COUPON_STATE[store.store]={amount:0,checked:{}});}
+function couponPoints(o,amount){
+ if(!o.termsVerified||!o.start||!o.end||!Number.isFinite(amount)||amount<=0)return 0;
+ if(o.minSpend!=null&&amount<Number(o.minSpend))return 0;
+ if(o.maxBonus==null||!Number.isFinite(Number(o.maxBonus)))return 0;
+ // The checkbox confirms the full public cap is still unused. Partial used balances are not known.
+ return Math.min(Math.floor((amount*Number(o.rate)+1e-8)/100),Number(o.maxBonus));
+}
 function couponStoreOffer(store,provider){
- const names=[store.store,...(store.aliases||[])].map(couponNorm).filter(Boolean);
- const offers=(COUPON_FEED.offers||[]).filter(o=>o.provider===provider);
- const exact=offers.filter(o=>names.includes(couponNorm(o.brand)));
- const pool=exact.length?exact:offers.filter(o=>{const b=couponNorm(o.brand);return b.length>=4&&names.some(n=>n.length>=4&&(n.includes(b)||b.includes(n)));});
- return pool.sort((a,b)=>(Number(b.rate)||0)-(Number(a.rate)||0))[0]||null;
+ const offers=couponOffers(store,provider);
+ if(provider!=='paypay')return offers.sort((a,b)=>b.rate-a.rate)[0]||null;
+ const st=couponState(store);
+ return offers.filter(o=>st.checked[o.id]&&couponPoints(o,st.amount)>0)
+   .sort((a,b)=>couponPoints(b,st.amount)-couponPoints(a,st.amount)||b.rate-a.rate)[0]||null;
 }
-function couponOfferFor(store,p){const provider=couponPaymentProvider(p);return provider?couponStoreOffer(store,provider):null;}
 function refreshCouponBonus(store){
- store.payments=store.payments.filter(p=>p.id!=='vpassCouponCard');
- const vpass=couponStoreOffer(store,'vpass');
- if(vpass&&!store.payments.some(p=>couponPaymentProvider(p)==='vpass')){
-  store.payments.push({...METHODS.card,id:'vpassCouponCard',n:'三井住友カード / Olive',r:'0.5%',x:'Vクーポン対象カード利用・通常還元0.5%設定',conditions:[...METHODS.card.conditions,'VクーポンをVpassで獲得後、対象カードで利用する場合。'],src:['sm'],rankable:true});
+ store.payments=store.payments.filter(p=>!['vpassCouponCard','paypayPublicCoupon'].includes(p.id));
+ const vp=couponStoreOffer(store,'vpass'),pp=couponStoreOffer(store,'paypay');
+ if(vp&&!store.payments.some(p=>couponPaymentProvider(p)==='vpass'))store.payments.push({...METHODS.card,id:'vpassCouponCard',n:'三井住友カード / Olive',r:'0.5%',x:'Vクーポン対象カード・通常0.5%設定',conditions:[...METHODS.card.conditions],src:['sm'],rankable:true});
+ if(pp&&!store.payments.some(p=>couponPaymentProvider(p)==='paypay'))store.payments.push({...METHODS.paypay,id:'paypayPublicCoupon',x:pp.paymentRoute||'公開クーポンの対象決済',rankable:true});
+ for(const p of store.payments){
+  p.autoCouponRate=0;p.autoCoupon=null;p.couponPoints=null;
+  const provider=couponPaymentProvider(p),o=provider==='vpass'?vp:provider==='paypay'?pp:null;
+  if(!o||!p.rankable)continue;
+  p.autoCoupon=o;
+  if(provider==='paypay'){p.couponPoints=couponPoints(o,couponState(store).amount);p.autoCouponRate=p.couponPoints/couponState(store).amount*100;}
+  else p.autoCouponRate=Number(o.rate);
  }
- for(const p of store.payments){p.autoCouponRate=0;p.autoCoupon=null;const o=couponOfferFor(store,p);if(o){p.autoCouponRate=Math.max(0,Number(o.rate)||0);p.autoCoupon=o;}}
 }
-function comparisonRate(payment){return configuredRate(payment.r)+(payment.ownerRate||0)+(payment.autoCouponRate||0);}
-function comparisonLabel(payment){return payment.ownerRate||payment.autoCouponRate?comparisonRate(payment).toFixed(1)+'%':payment.r;}
+function comparisonRate(p){return configuredRate(p.r)+(p.ownerRate||0)+(p.autoCouponRate||0);}
+function comparisonLabel(p){return p.ownerRate||p.autoCouponRate?comparisonRate(p).toFixed(2).replace(/0$/,'')+'%':p.r;}
+function couponDetail(p){
+ if(!p.autoCoupon)return '';
+ if(p.autoCoupon.provider==='paypay')return '通常 '+p.r+' ＋ クーポン '+p.couponPoints+'pt（上限反映） · '+(p.autoCoupon.paymentRoute||'対象決済');
+ return '通常 '+p.r+' ＋ Vクーポン '+p.autoCouponRate+'%（獲得・対象条件を要確認）';
+}
+function ensureAutoCouponStyle(){
+ if(document.getElementById('autoCouponStyle'))return;
+ const el=document.createElement('style');el.id='autoCouponStyle';el.textContent=`
+ .auto-coupon-strip{min-width:0;border:1.5px solid #d9d2e1;border-radius:12px;background:#fff7fb;padding:8px 10px;font-size:12px;line-height:1.55}
+ .coupon-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}.coupon-line b{font-size:12px}
+ .coupon-chip{border-radius:6px;padding:3px 7px;background:#e8f2ff;font-weight:800;overflow-wrap:anywhere}
+ .coupon-chip.paypay{background:#ffe8eb}.coupon-caution{color:var(--muted);font-size:11px;overflow-wrap:anywhere}
+ .coupon-source{color:#6742dd;font-size:12px;text-decoration:underline;text-underline-offset:3px}
+ .coupon-expand summary{min-height:36px;display:flex;align-items:center;font-size:12px;font-weight:800;list-style:none;gap:7px}
+ .coupon-expand summary:before{content:'＋'}.coupon-expand[open] summary:before{content:'−'}
+ .coupon-offer{min-width:0;padding:8px 0;border-top:1px solid #e1dbe7;overflow-wrap:anywhere}
+ .coupon-offer p{margin:3px 0}.coupon-offer label{display:flex;align-items:flex-start;gap:6px;margin-top:5px;font-size:12px}
+ .coupon-offer input[type=checkbox]{width:18px;height:18px;flex:0 0 18px;margin:2px 0;accent-color:#6742dd}
+ .coupon-amount{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 0}.coupon-amount label{flex:1;font-size:12px}
+ .coupon-amount input{width:130px;max-width:100%;min-width:0;min-height:40px;border:1px solid #b6abbf;border-radius:8px;padding:6px;font-size:16px}
+ .coupon-apply{width:100%;min-height:42px;border-radius:9px;border:1.5px solid var(--ink);background:var(--yellow);font-size:14px;font-weight:800;margin-top:5px}
+ .coupon-foot{margin-top:5px;font-size:10px;color:var(--muted)}
+ .store-head>div{min-width:0}.store-head>button{flex-shrink:0}.rank-grid{min-width:0;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .pay-main{min-width:0;flex-wrap:wrap}.pay-name{min-width:0}.pay-rate{flex-shrink:0}.rank-hint{overflow-wrap:anywhere}
+ @media(min-width:700px){.rank-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}`;
+ document.head.appendChild(el);
+}
+function couponSafeLink(url){try{const u=new URL(url);return u.protocol==='https:'&&['paypay.ne.jp','www.paypay.ne.jp','premium.yahoo.co.jp','www.smbc-card.com','vcoupon.smbc-card.com','www.softbank.jp'].includes(u.hostname)?url:'';}catch(_){return '';}}
+function couponStrip(store){
+ ensureAutoCouponStyle();const pp=couponOffers(store,'paypay'),vp=couponOffers(store,'vpass'),st=couponState(store),esc=escapeHtml;
+ const vpHtml=vp.length?'<span class="coupon-chip">Vクーポン +'+esc(String(vp[0].rate))+'%・条件付き</span>':'';
+ const ppHtml='<span class="coupon-chip paypay">PayPay '+(pp.length?pp.length+'件・会員限定':couponLoading?'確認中':couponFailed?'取得未完了':'公開掲載未検出')+'</span>';
+ const selected=couponStoreOffer(store,'paypay');
+ const rows=pp.map((o,i)=>{
+  const scope=o.capScope==='period'?'期間':'回';
+  const bounds=o.termsVerified?o.start+'〜'+o.end+' · 上限'+o.maxBonus+'pt/'+scope+' · '+(o.maxUses?o.maxUses+'回まで':'期間上限まで'):'上限・有効期間を確認できていないため順位には未反映';
+  const portal=/^\d+$/.test(o.couponId||'')?'paypay://internalembed?url=https://www.paypay.ne.jp/portal/coupon-corner/coupons/'+o.couponId:'';
+  return '<div class="coupon-offer"><b>'+esc(o.audience==='softbank'?'ソフトバンク限定':'LYPプレミアム限定')+' 最大'+esc(String(o.rate))+'%</b><p>'+esc(o.paymentRoute||o.title||'')+'</p><p class="coupon-caution">'+esc(bounds)+'</p><p class="coupon-caution">'+esc(o.requirements||'')+'</p>'+(portal?'<a class="coupon-source" href="'+esc(portal)+'">PayPayで確認</a> · ':'')+'<a class="coupon-source" href="'+esc(couponSafeLink(o.sourceUrl))+'" target="_blank" rel="noopener noreferrer">公式条件</a>'+(o.termsVerified?'<label><input type="checkbox" data-pp-index="'+i+'"'+(st.checked[o.id]?' checked':'')+'>今回使える（獲得済み・対象会員・対象決済・未使用を確認）</label>':'')+'</div>';
+ }).join('');
+ const detail=pp.length?'<details class="coupon-expand"><summary>PayPayの条件・上限を確認して比較</summary><div class="coupon-amount"><label for="couponAmount">対象商品の支払額（円）</label><input id="couponAmount" type="number" inputmode="numeric" min="1" step="1" placeholder="例 3000" value="'+(st.amount||'')+'"></div>'+rows+'<p class="coupon-caution">同じ店は付与額が最大の1枚だけ。最低利用額・対象外商品・早期終了はアプリで確認。使用済み・上限を一部使用済みのものはチェックしないでください。</p><button id="couponApply" type="button" class="coupon-apply">確認した条件で順位を計算</button></details>':'';
+ const status=selected?'<div class="coupon-caution">反映：'+esc(selected.audience==='softbank'?'ソフトバンク限定':'LYP限定')+' · 対象額'+st.amount.toLocaleString()+'円 → '+couponPoints(selected,st.amount)+'pt</div>':'';
+ const when=COUPON_FEED.updatedAt?new Date(COUPON_FEED.updatedAt).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'未取得';
+ return '<section class="auto-coupon-strip" aria-label="公開クーポン"><div class="coupon-line"><b>クーポン自動検出</b>'+vpHtml+ppHtml+'</div>'+status+detail+(vp.length?'<a class="coupon-source" href="'+esc(couponSafeLink(vp[0].sourceUrl))+'" target="_blank" rel="noopener noreferrer">Vクーポン公式で獲得・条件確認</a>':'')+'<div class="coupon-foot">一般向け・Myクーポンは未取得。掲載未検出＝配布なしではありません。更新 '+esc(when)+(couponFailed?' · 一部取得失敗':'')+'</div></section>';
+}
+function bindCouponControls(store,context){
+ const btn=$('couponApply');if(!btn)return;
+ btn.onclick=()=>{
+  const input=$('couponAmount'),amount=Number(input.value);
+  if(!Number.isFinite(amount)||amount<=0||!Number.isInteger(amount)){input.setCustomValidity('対象商品の支払額を1円以上の整数で入力してください。');input.reportValidity();return;}
+  input.setCustomValidity('');const st=couponState(store);st.amount=amount;st.checked={};
+  const offers=couponOffers(store,'paypay');
+  document.querySelectorAll('[data-pp-index]').forEach(el=>{const o=offers[Number(el.dataset.ppIndex)];if(o&&el.checked)st.checked[o.id]=true;});
+  refreshStoreSummary(store);renderPayment(store,context);
+ };
+}
+async function loadPublicCoupons(){
+ const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),12000);
+ try{
+  const r=await fetch('./coupon-feed.json?ts='+Date.now(),{cache:'no-store',signal:ctl.signal});
+  if(!r.ok)throw new Error('coupon HTTP '+r.status);
+  const d=await r.json();if(!d||!Array.isArray(d.offers))throw new Error('invalid coupon feed');
+  COUPON_FEED=d;couponFailed=Array.isArray(d.errors)&&d.errors.length>0;
+ }catch(e){couponFailed=true;console.warn('Public coupon refresh failed:',e.message);}
+ finally{clearTimeout(timer);couponLoading=false;STORE_DATA.forEach(refreshStoreSummary);if(lastSelectedStore&&!$('resultPanel').classList.contains('hidden'))renderPayment(lastSelectedStore,lastCouponContext);}
+}
+
 function refreshStoreSummary(store){
- for(const payment of store.payments)payment.ownerRate=store.local.aeonOwners&&['aeonGroup','cash'].includes(payment.id)?ownerSetting.rate:0;
  refreshCouponBonus(store);
+ for(const payment of store.payments)payment.ownerRate=store.local.aeonOwners&&['aeonGroup','cash'].includes(payment.id)?ownerSetting.rate:0;
  const top=store.payments.filter(p=>p.rankable).sort(paymentOrder);
  [store.first,store.second,store.third]=[0,1,2].map(i=>top[i]?paymentLabel(top[i]):'確認済み候補なし');
  store.combination=combinationFor(store);
+ if(top[0]&&top[0].autoCoupon)store.combination=couponDetail(top[0])+'。 '+store.combination;
 }
 function ownerControls(store){
  if(!store.local.aeonOwners)return '';
  return '<div class="owners-setting"><label for="ownersRate">オーナーズカード</label><select id="ownersRate" aria-label="オーナーズカードの返金率">'+OWNER_RATES.map(rate=>'<option value="'+rate+'"'+(rate===ownerSetting.rate?' selected':'')+'>'+(rate===0?'今回は使わない':rate+'%返金')+'</option>').join('')+'</select><small id="ownersNote">'+(ownerSetting.confirmed?'選択した率で比較':'3%は仮設定・実際の返金率を選択')+'</small></div>';
-}
-function ensureAutoCouponStyle(){if(document.getElementById('autoCouponStyle'))return;const st=document.createElement('style');st.id='autoCouponStyle';st.textContent='.auto-coupon-strip{display:flex;align-items:center;gap:6px;flex-wrap:wrap;border:2px solid var(--ink);border-radius:12px;background:#fff7fb;padding:7px 9px;font-size:11px;font-weight:750}.auto-coupon-strip b{font-size:12px}.coupon-chip{display:inline-flex;align-items:center;border:1.5px solid var(--ink);border-radius:999px;background:#fff;padding:3px 7px;font-weight:850}.coupon-chip.paypay{background:#ffe8eb}.coupon-chip.vpass{background:#e8f2ff}.coupon-caution{color:var(--muted);font-weight:650}.coupon-source{margin-left:auto;color:#6742dd;text-decoration:none;font-weight:800}@media(max-width:600px){.auto-coupon-strip{padding:6px 8px}.coupon-source{margin-left:0}}';document.head.appendChild(st);}
-function couponStrip(store){
- ensureAutoCouponStyle();const seen=new Set(),items=[];
- for(const p of store.payments){const o=p.autoCoupon;if(!o)continue;const key=o.provider+'|'+o.brand+'|'+o.rate;if(seen.has(key))continue;seen.add(key);items.push(o);}
- if(!items.length)return '';
- const chips=items.map(o=>'<span class="coupon-chip '+escapeHtml(o.provider)+'">'+escapeHtml(o.provider==='paypay'?'PayPay':'Vクーポン')+' +'+escapeHtml(String(o.rate))+'%</span>').join('');
- const url=items[0].sourceUrl||'';
- return '<div class="auto-coupon-strip"><b>🎟 自動検出</b>'+chips+'<span class="coupon-caution">獲得済み・対象条件なら順位に反映</span>'+(url?'<a class="coupon-source" href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer">公式で確認</a>':'')+'</div>';
 }
 const STORE_DATA=AUDIT.rows.map(row=>{
  const [name,aliases,payIdx,pointIdx,src,notes,missing,status,pointStatus,scope]=row;
@@ -123,11 +209,10 @@ const STORE_DATA=AUDIT.rows.map(row=>{
  const store={local,store:name,aliases:Array.from(new Set([name,...aliases])),payments,points:AUDIT.points[pointIdx].map(p=>({...p})),conditions:Array.from(new Set([...payments.flatMap(p=>p.conditions),...(local.conditions||[])])),note:notes.map(i=>AUDIT.text[i]).join(' '),audit:{date:local.date||AUDIT.date,status:AUDIT.text[status],pointStatus:AUDIT.text[pointStatus],scope,missing:missing.map(i=>AUDIT.text[i]),sources:sourceKeys}};
  refreshStoreSummary(store);return store;
 });
-function auditDetails(store){const a=store.audit;const local=store.local||{};const checks=(local.checks||[]).map(c=>'<div class="pay-option"><span>'+escapeHtml(c.name)+'</span><span>'+escapeHtml(c.state)+'</span></div>').join('');return (checks?'<div class="note"><h4>主なコード決済の対応状況</h4><div class="pay-options">'+checks+'</div><p>未確認の方法は順位・合計に含めません。</p></div>':'')+ (local.scopeHint?'<div class="note">'+escapeHtml(local.scopeHint)+'</div>':'')+'<div class="note"><h4>確認状況 · '+escapeHtml(a.date)+'</h4><p>'+escapeHtml(a.status)+'／'+escapeHtml(a.scope)+'</p><p>提示ポイント：'+escapeHtml(a.pointStatus)+'</p><p>ブランド・公式店舗例の確認です。全国すべての支店の実機確認ではありません。</p>'+a.missing.map(t=>'<p>'+escapeHtml(t)+'</p>').join('')+'<p>PayPay・Vクーポンは公式公開ページから自動検出した候補のみ条件付きで順位に反映します。Myクーポンの獲得済み状態や個別配信は外部から取得できないため、利用前に公式アプリで確認してください。その他の期間限定キャンペーン・チャージ元特典は自動加算しません。税抜／税込、対象外商品、端数処理により実際の還元は変わります。</p><h4>公式の確認先</h4>'+a.sources.filter(k=>AUDIT.sources[k]).map(k=>{const [title,url]=AUDIT.sources[k];return '<p><a href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(title)+'</a></p>';}).join('')+'</div>';}
+function auditDetails(store){const a=store.audit;const local=store.local||{};const checks=(local.checks||[]).map(c=>'<div class="pay-option"><span>'+escapeHtml(c.name)+'</span><span>'+escapeHtml(c.state)+'</span></div>').join('');return (checks?'<div class="note"><h4>主なコード決済の対応状況</h4><div class="pay-options">'+checks+'</div><p>未確認の方法は順位・合計に含めません。</p></div>':'')+ (local.scopeHint?'<div class="note">'+escapeHtml(local.scopeHint)+'</div>':'')+'<div class="note"><h4>確認状況 · '+escapeHtml(a.date)+'</h4><p>'+escapeHtml(a.status)+'／'+escapeHtml(a.scope)+'</p><p>提示ポイント：'+escapeHtml(a.pointStatus)+'</p><p>ブランド・公式店舗例の確認です。全国すべての支店の実機確認ではありません。</p>'+a.missing.map(t=>'<p>'+escapeHtml(t)+'</p>').join('')+'<p>公開Vクーポンは対象条件付きの比較。PayPayは公式公開の会員向け候補を自動取得し、今回使えると確認したものだけ上限を反映して比較。一般向け・Myクーポン・獲得状態は未取得。その他のキャンペーン・チャージ特典は自動加算しません。税抜／税込、対象外商品、端数処理により実際の還元は変わります。</p><h4>公式の確認先</h4>'+a.sources.filter(k=>AUDIT.sources[k]).map(k=>{const [title,url]=AUDIT.sources[k];return '<p><a href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(title)+'</a></p>';}).join('')+'</div>';}
 
 const $=id=>document.getElementById(id);
 let lastSelectedStore=null;
-fetch('./coupon-feed.json?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(new Error('coupon feed '+r.status))).then(d=>{COUPON_FEED=d||{offers:[]};STORE_DATA.forEach(refreshStoreSummary);if(lastSelectedStore)renderPayment(lastSelectedStore);}).catch(()=>{});
 function candidateGroupKey(matchStore){return matchStore.store;}
 function normalizeText(value){return String(value||"").normalize("NFKC").toLowerCase().replace(/[ー‐-‒–—―\-−\s　・･'’`]/g,"").replace(/株式会社|有限会社|合同会社|店$/g,"").trim();}
 function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[ch]));}
@@ -160,22 +245,23 @@ function renderCandidates(candidates,titlePrefix="候補"){
 }
 function configuredRate(label){const match=String(label).match(/(\d+(?:\.\d+)?)%/);return match?Number(match[1]):0;}
 function paymentOrder(a,b){const difference=comparisonRate(b)-comparisonRate(a);if(difference)return difference;return (a.n==='PayPay'?0:a.n==='楽天ペイ'?1:2)-(b.n==='PayPay'?0:b.n==='楽天ペイ'?1:2);}
-function paymentLabel(payment){return payment.n+'（'+comparisonLabel(payment)+(payment.ownerRate?'・決済'+payment.r+'＋株主優待'+payment.ownerRate.toFixed(1)+'%':'')+(payment.autoCouponRate?'・公開クーポン候補+'+payment.autoCouponRate.toFixed(1)+'%':'')+(payment.x?'・'+payment.x:'')+'）';}
+function paymentLabel(payment){return payment.n+'（'+comparisonLabel(payment)+(payment.autoCoupon?'・'+couponDetail(payment):'')+(payment.ownerRate?'・決済'+payment.r+'＋株主優待'+payment.ownerRate.toFixed(1)+'%':'')+(payment.x?'・'+payment.x:'')+'）';}
 function renderPayment(store,context=null){
+ lastCouponContext=context;refreshStoreSummary(store);
  cancelGeo();lastSelectedStore=store;$("manualSearch").value=store.store;document.activeElement?.blur();document.body.classList.add("has-result");
  hide($("candidatePanel"));hide($("quickPanel"));hide($("allPanel"));setStatus("");
  const allPayments=store.payments.slice().sort(paymentOrder),payments=allPayments.filter(p=>p.rankable);
  const meta=context&&context.source==="geo"?'現在地から約'+context.distance+'m'+(context.accuracy?'（位置の誤差 約'+Math.ceil(context.accuracy)+'m）':'')+(context.osmName&&context.osmName!==store.store?' · '+context.osmName:''):'お会計のおすすめ'+(store.local.notice?' · '+store.local.notice:'');
  const ranks=payments.slice(0,3).map((p,i)=>{
   const tied=i>0&&comparisonRate(p)===comparisonRate(payments[0]);
-  const hint=p.autoCouponRate?'クーポン候補込み':p.ownerRate?'株主優待込み':i===0?(store.local.partial?'確認済み候補':'おすすめ'):tied?'同じ還元率':'';
-  const detailParts=[];if(p.ownerRate)detailParts.push('決済 '+p.r+' ＋ 株主優待 '+p.ownerRate.toFixed(1)+'%');else if(p.x)detailParts.push(p.x);if(p.autoCouponRate)detailParts.push((p.autoCoupon?.provider==='paypay'?'PayPay':'Vクーポン')+' +'+p.autoCouponRate.toFixed(1)+'%（獲得済み・対象なら）');const detail=detailParts.join(' · ');
+  const hint=p.autoCouponRate?(p.autoCoupon.provider==='paypay'?'確認したクーポン込み':'クーポン条件付き'):p.ownerRate?'株主優待込み':i===0?(store.local.partial?'確認済み候補':'おすすめ'):tied?'同じ還元率':'';
+  const detail=p.autoCoupon?couponDetail(p):p.ownerRate?'決済 '+p.r+' ＋ 株主優待 '+p.ownerRate.toFixed(1)+'%':p.x;
   return '<div class="rank-card r'+(i+1)+'"><div class="rank-top"><span class="rank-label">'+['🥇 1位','🥈 2位','🥉 3位'][i]+'</span><span class="rank-hint">'+hint+'</span></div><div class="pay-main"><span class="pay-name">'+escapeHtml(p.n)+'</span><strong class="pay-rate">'+escapeHtml(comparisonLabel(p)||'要確認')+'</strong></div>'+(detail?'<div class="pay-extra">'+escapeHtml(detail)+'</div>':'')+'</div>';
  }).join('');
  const pts=store.points.map(p=>'<span class="point-pill">'+escapeHtml(p.n)+' <strong>'+escapeHtml(p.r)+'</strong>'+(p.x?' · '+escapeHtml(p.x):'')+'</span>').join('');
  const single=store.points.filter(p=>['楽天','d','V','Ponta','WAON POINT'].includes(p.n)).length>1;
  $("result").innerHTML='<div class="store-head"><div><h3 class="store-name">'+escapeHtml(store.store)+'</h3><div class="meta">'+escapeHtml(meta)+(store.audit.status!=='ブランド条件確認'?' · '+escapeHtml(store.audit.status):'')+'</div></div><button id="changeStoreBtn" type="button" class="btn ghost small">店を変える</button></div>'+ownerControls(store)+couponStrip(store)+'<div class="rank-grid">'+(ranks||'<div class="note">支払方法を確認中です。未確認の還元率では順位を付けません。</div>')+'</div><section class="point-box"><div class="point-head"><h4>'+escapeHtml(store.local.pointHeading||'会計前に提示')+'</h4><small>'+escapeHtml(store.local.pointCaption||(single?'共通ポイントは1種類':'支払いポイントとは別'))+'</small></div><div class="point-pills">'+(pts||'<span class="micro">'+escapeHtml(store.audit.pointStatus)+'</span>')+'</div>'+(store.points.some(p=>p.x==='併用可')?'<p class="point-foot">「併用可」の店舗ポイントは別に貯められます。</p>':'')+'</section><div class="combo"><strong>＋ ポイントと支払いの組み合わせ</strong><p>'+escapeHtml(store.combination)+'</p></div><details class="more"><summary>還元条件・ほかの支払い</summary><div class="note"><h4>還元条件</h4>'+(store.conditions.map(c=>'<p>'+escapeHtml(c)+'</p>').join('')||'店舗・利用方法ごとの条件をご確認ください。')+'</div><div class="note"><h4>使える主な支払い候補</h4><div class="pay-options">'+allPayments.map(p=>'<div class="pay-option"><span>'+escapeHtml(p.n)+(p.x?'<small>'+escapeHtml(p.x)+'</small>':'')+(p.ownerRate?'<small>決済 '+escapeHtml(p.r)+' ＋ 株主優待 '+p.ownerRate.toFixed(1)+'%</small>':'')+'</span><strong>'+escapeHtml(comparisonLabel(p)||'要確認')+'</strong></div>').join('')+'</div></div><div class="note"><h4>備考</h4>'+escapeHtml(store.note)+'</div>'+auditDetails(store)+'<div class="detail-tools"><button id="copyBtn" type="button" class="btn ghost small">結果をコピー</button><button id="resultListBtn" type="button" class="btn secondary small">登録店一覧</button></div></details>';
- show($("resultPanel"));$("changeStoreBtn").onclick=()=>{clearView();$("manualSearch").focus();};$("copyBtn").onclick=copyResult;$("resultListBtn").onclick=openStoreList;
+ bindCouponControls(store,context);show($("resultPanel"));$("changeStoreBtn").onclick=()=>{clearView();$("manualSearch").focus();};$("copyBtn").onclick=copyResult;$("resultListBtn").onclick=openStoreList;
  if(store.local.aeonOwners)$("ownersRate").onchange=event=>{
   const rate=Number(event.target.value);if(!OWNER_RATES.includes(rate))return;
   ownerSetting={rate,confirmed:true};try{localStorage.setItem(OWNER_KEY,String(rate));}catch(_){}
@@ -228,7 +314,8 @@ function rememberStore(name){try{localStorage.setItem(RECENT_KEY,JSON.stringify(
 function renderQuick(){const names=Array.from(new Set([...recentStores(),"ベルク","Fit Care DEPOT","ファミリーマート","コーナン","オーケー"])).slice(0,5);const box=$("quickStores");box.innerHTML="";for(const name of names){const store=STORE_DATA.find(s=>s.store===name);if(!store)continue;const btn=document.createElement('button');btn.type='button';btn.className='bubble';btn.textContent=name;btn.onclick=()=>renderPayment(store);box.appendChild(btn);}}
 function runManualSearch(submit=false){cancelGeo();const keyword=$("manualSearch").value.trim();hide($("resultPanel"));document.body.classList.remove("has-result");if(!keyword){hide($("candidatePanel"));hide($("allPanel"));setStatus("");show($("quickPanel"));return;}const results=searchManual(keyword),q=normalizeText(keyword);results.sort((a,b)=>Number(b.store.aliases.some(x=>normalizeText(x)===q))-Number(a.store.aliases.some(x=>normalizeText(x)===q)));if(submit&&(results.length===1||(results[0]&&results[0].store.aliases.some(x=>normalizeText(x)===q)))){renderPayment(results[0].store);return;}if(!results.length){hide($("candidatePanel"));hide($("allPanel"));show($("quickPanel"));setStatus("該当する店舗がありません。短い名前や別名でもお試しください。","error");return;}setStatus("");renderCandidates(results,"検索候補");}
 function setupEvents(){$("geoBtn").onclick=handleGeoSearch;$("resultGeoBtn").onclick=handleGeoSearch;$("clearBtn").onclick=clearView;$("listModeBtn").onclick=openStoreList;$("manualSearch").addEventListener("input",()=>runManualSearch());$("searchForm").onsubmit=e=>{e.preventDefault();runManualSearch(true);};$("inputClearBtn").onclick=()=>{clearView();$("manualSearch").focus();};$("showAllBtn").onclick=openStoreList;$("hideAllBtn").onclick=clearView;}
-setupEvents();renderQuick();setStatus("");window.PAYMENT_CHECKER_READY=true;window.PAYMENT_STORE_COUNT=STORE_DATA.length;
+setupEvents();renderQuick();setStatus("");window.PAYMENT_CHECKER_READY=true;loadPublicCoupons();
+ window.addEventListener('pageshow',e=>{if(e.persisted)loadPublicCoupons();});window.PAYMENT_STORE_COUNT=STORE_DATA.length;
 window.addEventListener('pagehide',cancelGeo);
 
 } catch (error) { const e=document.getElementById("status");if(e){e.className="status error";e.textContent="起動できませんでした。再読み込みしてください。 "+error.message;}console.error(error); }
