@@ -1,0 +1,47 @@
+name: Auto refresh payment coupons
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/update_coupon_feed.py'
+      - 'scripts/build_auto_coupon_checker.py'
+      - '.github/workflows/coupon-auto.yml'
+  schedule:
+    - cron: '17 */6 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: coupon-auto
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch official public coupons
+        run: python3 scripts/update_coupon_feed.py
+      - name: Build compact coupon-aware app
+        run: python3 scripts/build_auto_coupon_checker.py
+      - name: Validate
+        run: |
+          node --check checker-20260907-autocoupons.js
+          python3 -m json.tool coupon-feed.json >/dev/null
+          grep -q '自動検出' checker-20260907-autocoupons.js
+          grep -q 'checker-20260907-autocoupons.js?v=20260907-auto2' index.html
+      - name: Commit refreshed coupon data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add coupon-feed.json checker-20260907-autocoupons.js index.html app-v2.html app-v3.html
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: refresh public payment coupons [skip ci]"
+            git push origin HEAD:main
+          else
+            echo "coupon data unchanged"
+          fi
