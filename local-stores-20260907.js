@@ -5,6 +5,9 @@
   if (!a || !Array.isArray(a.rows)) throw new Error('基本店舗データがありません');
   const date = '2026-09-07';
   const sources = {
+    seriaLocal: ['セリア：モザイクモール港北店の公式支払い一覧', 'https://shop.seria-group.com/seria/info/000002036'],
+    seriaSearch: ['セリア：店舗別の支払い方法を確認', 'https://shop.seria-group.com/seria/top'],
+    seriaRakuten: ['楽天ペイ：コード・QR払いの還元対象外店舗（セリア掲載）', 'https://pay.rakuten.co.jp/topics/pointprogram/excluded-shops/'],
     maruetsuPay: ['マルエツ：支払い・提示ポイントの公式FAQ', 'https://www.maruetsu.co.jp/contact/faq/'],
     maruetsuPoint: ['マルエツ：WAON POINTの通常進呈と対象決済', 'https://www.maruetsu.co.jp/wp-content/uploads/2026/09/20260902_2.pdf'],
     maruetsuV: ['マルエツ：Vポイントサービス終了', 'https://www.maruetsu.co.jp/vpoint/'],
@@ -168,9 +171,11 @@
   add('サミット',['サミットストア','summit'],['paypay'],[],['pp'],
   'PayPay公式の対応店一覧に掲載。ポイントカードの支払い別進呈率と他の決済は未確認です。',
   '確認済みのPayPayは指定1.5%。サミットの店舗ポイントを現金とQRで同じ率と決めつけて合算しません。', {partial:true});
-  add('セリア',['Seria','セリアセンター南モール','セリアセンター南モール店'],['aeonpay'],[],['aeonShop'],
-  'AEON Payコード払いの公式対応店一覧に掲載。一部店舗・レジ・対象外商品は除きます。ほかのキャッシュレス対応は店舗で確認してください。',
-  '確認済みのAEON Payコード払いは通常0.5%。イオングループの直営店1.0%とは別です。', {partial:true});
+  add('セリア',['Seria','セリアセンター南モール','セリアセンター南モール店','セリアモザイクモール港北','セリアモザイクモール港北店'],['paypay','dpay','aupay','famipay','aeonpay','card'],[],['seriaLocal','seriaSearch','pp','smartCode','famiGeneral','aeonShop','seriaRakuten'],
+  'モザイクモール港北店の公式店舗ページでPayPay・楽天ペイ・d払い・au PAY・AEON Pay・Smart Code・クレジットカード・交通系IC・iD・QUICPay・WAON・nanaco・楽天Edyを確認。支店・レジごとに対応が異なるため全国一律の対応とは扱いません。FamiPayはSmart Code対応レジでのバーコード払いです。',
+  '対応店舗・レジではPayPay 1.5%を基本比較。d払いは通常0.5%（dカード設定なら計1.0%、他社カード設定はd払い自体0%）。au PAY・FamiPay・AEON Payは通常0.5%。楽天ペイは使える店舗でも還元対象外の注記があるため、楽天キャッシュ1.5%として順位へ入れていません。提示ポイントは別で、未確認分を加算しません。',
+  {partial:true,notice:'PayPayなどは対応店舗・レジのみ／楽天ペイは還元条件に注意',checks:{rakuten:'対応店舗あり・還元対象外の掲載あり（1.5%で比較しません）'},scopeHint:'公式確認例：モザイクモール港北店。センター南モール店など他の支店は、セリア公式店舗検索の「お支払方法」と利用するレジの表示を確認してください。',conditions:['楽天ペイの利用可否とポイント進呈対象は別です。公式の還元対象外一覧にセリアが掲載されています。支店ごとの適用を確認できていないため、楽天キャッシュ払いを一律1.5%としておすすめしません。楽天カードを支払元に設定したコード・QR払いは公式案内ではカードから1%が進呈されますが、楽天キャッシュ払いとは別ルートです。','楽天ペイ対応だけで楽天ポイントカードの提示にも対応すると判断しません。施設独自ポイントは支店・支払い条件を確認し、決済ポイントと分けて扱います。']});
+  a.storeMeta['セリア'].date = '2026-09-09';
   augment(['オーケー','東急ストア','三和・フードワン','近商ストア'], 'famipay', ['smartCode','famiGeneral']);
   augment(['ミニストップ'], 'aeonGroup', ['aeonShop','aeonGroup']);
   augment(['ローソン','ナチュラルローソン','ローソンストア100','セイコーマート','アオキスーパー','スシロー','CoCo壱番屋','かっぱ寿司','くら寿司','フレッシュネスバーガー','ガスト','バーミヤン','しゃぶ葉','夢庵','ジョナサン','ステーキガスト','むさしの森珈琲','から好し','藍屋','とんから亭','La Ohana','魚屋路','桃菜','グラッチェガーデンズ','八郎そば','ゆめあん食堂','すき家','はま寿司','ココス','なか卯','ジョリーパスタ','ビッグボーイ','ヴィクトリアステーション','華屋与兵衛','熟成焼肉いちばん','かつ庵','オリーブの丘','久兵衛屋','伝丸','ゼッテリア','一風堂','ドトール','エクセルシオール','丸亀製麺','松屋','松のや','吉野家'], 'aeonpay', ['aeonShop','aeonRate']);
