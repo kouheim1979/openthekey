@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-09T20:20:22.843517+09:00",
+  "updatedAt": "2026-09-10T01:38:09.885411+09:00",
   "offers": [
     {
       "provider": "vpass",
@@ -8,7 +8,7 @@
       "rate": 10.0,
       "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
       "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "feedSource": "vpass"
     },
     {
@@ -17,7 +17,7 @@
       "rate": 10.0,
       "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
       "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "feedSource": "vpass"
     },
     {
@@ -26,7 +26,7 @@
       "rate": 10.0,
       "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
       "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "feedSource": "vpass"
     },
     {
@@ -35,7 +35,7 @@
       "rate": 10.0,
       "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
       "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "feedSource": "vpass"
     },
     {
@@ -44,7 +44,7 @@
       "rate": 10.0,
       "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
       "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "feedSource": "vpass"
     },
     {
@@ -53,7 +53,7 @@
       "rate": 10.0,
       "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
       "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "feedSource": "vpass"
     },
     {
@@ -62,7 +62,7 @@
       "rate": 10.0,
       "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
       "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "feedSource": "vpass"
     },
     {
@@ -71,7 +71,7 @@
       "rate": 5.0,
       "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
       "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "feedSource": "vpass"
     },
     {
@@ -80,7 +80,7 @@
       "rate": 5.0,
       "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
       "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "feedSource": "vpass"
     },
     {
@@ -89,7 +89,7 @@
       "rate": 1.0,
       "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
       "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "feedSource": "vpass"
     },
     {
@@ -98,7 +98,7 @@
       "rate": 1.0,
       "sourceUrl": "https://www.smbc-card.com/camp/vcoupon/index.jsp",
       "note": "Vクーポン公開掲載。獲得済み・対象カードであることが必要",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "feedSource": "vpass"
     },
     {
@@ -107,7 +107,7 @@
       "aliases": [],
       "audience": "softbank",
       "sourceUrl": "https://paypay.ne.jp/event/super-paypay-coupon/",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -135,7 +135,7 @@
       "aliases": [],
       "audience": "softbank",
       "sourceUrl": "https://paypay.ne.jp/event/super-paypay-coupon/",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -163,7 +163,7 @@
       "aliases": [],
       "audience": "softbank",
       "sourceUrl": "https://paypay.ne.jp/event/super-paypay-coupon/",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -193,7 +193,7 @@
       ],
       "audience": "softbank",
       "sourceUrl": "https://paypay.ne.jp/event/super-paypay-coupon/",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -221,7 +221,7 @@
       "aliases": [],
       "audience": "softbank",
       "sourceUrl": "https://paypay.ne.jp/event/super-paypay-coupon/",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -249,7 +249,7 @@
       "aliases": [],
       "audience": "softbank",
       "sourceUrl": "https://paypay.ne.jp/event/super-paypay-coupon/",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -277,7 +277,7 @@
       "aliases": [],
       "audience": "softbank",
       "sourceUrl": "https://paypay.ne.jp/event/super-paypay-coupon/",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -305,7 +305,7 @@
       "aliases": [],
       "audience": "softbank",
       "sourceUrl": "https://paypay.ne.jp/event/super-paypay-coupon/",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -333,7 +333,7 @@
       "aliases": [],
       "audience": "softbank",
       "sourceUrl": "https://paypay.ne.jp/event/super-paypay-coupon/",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -357,39 +357,11 @@
     },
     {
       "provider": "paypay",
-      "brand": "Qoo10",
-      "aliases": [],
-      "audience": "softbank",
-      "sourceUrl": "https://paypay.ne.jp/event/super-paypay-coupon/",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
-      "acquired": null,
-      "minSpend": null,
-      "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
-      "id": "paypay-100372134",
-      "couponId": "100372134",
-      "title": "Qoo10",
-      "rate": 10.0,
-      "openUrl": "paypay://internalembed?url=https://www.paypay.ne.jp/portal/coupon-corner/coupons/100372134",
-      "requirements": "ソフトバンク限定・スマートログインとYahoo! JAPAN IDのPayPay連携が必要。ワイモバイル・LINEMO等は対象外。",
-      "paymentRoute": "対象オンライン決済",
-      "termsVerified": true,
-      "maxBonus": 300,
-      "capScope": "transaction",
-      "maxUses": 1,
-      "start": "2026-08-28",
-      "end": "2026-09-09",
-      "termsSourceUrl": "https://www.softbank.jp/mobile/set/data/info/personal/news/service/20260824a/pdf/targetstores_aug_20260824.pdf",
-      "termsCheckedAt": "2026-09-07",
-      "termsMethod": "official-monthly-PDF-checked-by-coupon-ID",
-      "feedSource": "paypay-softbank"
-    },
-    {
-      "provider": "paypay",
       "brand": "ebookjapan",
       "aliases": [],
       "audience": "softbank",
       "sourceUrl": "https://paypay.ne.jp/event/super-paypay-coupon/",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -417,7 +389,7 @@
       "aliases": [],
       "audience": "lyp",
       "sourceUrl": "https://premium.yahoo.co.jp/benefit/coupon/paypay",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -444,7 +416,7 @@
       ],
       "audience": "lyp",
       "sourceUrl": "https://premium.yahoo.co.jp/benefit/coupon/paypay",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -468,7 +440,7 @@
       "aliases": [],
       "audience": "lyp",
       "sourceUrl": "https://premium.yahoo.co.jp/benefit/coupon/paypay",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -492,7 +464,7 @@
       "aliases": [],
       "audience": "lyp",
       "sourceUrl": "https://premium.yahoo.co.jp/benefit/coupon/paypay",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -516,7 +488,7 @@
       "aliases": [],
       "audience": "lyp",
       "sourceUrl": "https://premium.yahoo.co.jp/benefit/coupon/paypay",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -540,7 +512,7 @@
       "aliases": [],
       "audience": "lyp",
       "sourceUrl": "https://premium.yahoo.co.jp/benefit/coupon/paypay",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -566,7 +538,7 @@
       ],
       "audience": "lyp",
       "sourceUrl": "https://premium.yahoo.co.jp/benefit/coupon/paypay",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -590,7 +562,7 @@
       "aliases": [],
       "audience": "lyp",
       "sourceUrl": "https://premium.yahoo.co.jp/benefit/coupon/paypay",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -614,7 +586,7 @@
       "aliases": [],
       "audience": "lyp",
       "sourceUrl": "https://premium.yahoo.co.jp/benefit/coupon/paypay",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -638,7 +610,7 @@
       "aliases": [],
       "audience": "lyp",
       "sourceUrl": "https://premium.yahoo.co.jp/benefit/coupon/paypay",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "acquired": null,
       "minSpend": null,
       "note": "事前獲得・対象店舗・商品・決済方法・残り利用枠はPayPayで確認。早期終了の場合あり。",
@@ -665,17 +637,17 @@
   "sourceStatus": {
     "vpass": {
       "status": "ok",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "count": 11
     },
     "paypay-softbank": {
       "status": "ok",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
-      "count": 11
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
+      "count": 10
     },
     "paypay-lyp": {
       "status": "ok",
-      "checkedAt": "2026-09-09T20:20:22.843517+09:00",
+      "checkedAt": "2026-09-10T01:38:09.885411+09:00",
       "count": 10
     }
   },
