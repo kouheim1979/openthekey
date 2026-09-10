@@ -38,7 +38,12 @@ const METHODS={
  rakutenReview:method('楽天ペイ（楽天キャッシュ）','0%','コード・QR払いの通常還元対象外',['公式の還元対象外店舗では楽天キャッシュ払いの通常還元は0%。楽天カードを支払元にしたコード・QR払いのカード還元1%とは別ルートです。提示ポイントカードは別に確認します。'],['rpex'],false)
 };
 function combinationFor(store){
- if(store.local.aeonOwners){const best=store.payments.filter(p=>p.rankable).sort(paymentOrder)[0];return 'オーナーズカードを会計前に提示。'+best.n+'の決済分'+best.r+' ＋ 株主優待'+ownerSetting.rate.toFixed(1)+'% ＝ '+comparisonLabel(best)+'目安。優待は対象のお買物・支払いのみ。WAON POINTを二重に足しません。';}
+ if(store.local.aeonOwners){
+  const best=store.payments.filter(p=>p.rankable).sort(paymentOrder)[0];
+  if(!best)return '優待の対象支払いを確認してください。';
+  if(!best.ownerRate)return best.n+'の決済分'+best.r+'で比較。今回はこの支払いに株主優待の返金を加算していません。';
+  return 'オーナーズカードを会計前に提示。'+best.n+'の決済分'+best.r+' ＋ 株主優待'+best.ownerRate.toFixed(1)+'% ＝ '+comparisonLabel(best)+'目安。優待は後日の返金です。WAON POINTを二重に足しません。';
+ }
  if(store.local&&store.local.combination)return store.local.combination;
  const name=store.store, best=store.payments.filter(p=>p.rankable).sort(paymentOrder)[0];
  if(!best)return '支払方法が未確認のため、還元率による順位は確定していません。店頭表示をご確認ください。';
@@ -191,15 +196,16 @@ async function loadPublicCoupons(){
 
 function refreshStoreSummary(store){
  refreshCouponBonus(store);
- for(const payment of store.payments)payment.ownerRate=store.local.aeonOwners&&['aeonGroup','cash'].includes(payment.id)?ownerSetting.rate:0;
+ for(const payment of store.payments)payment.ownerRate=store.local.aeonOwners&&(store.local.ownerPaymentIds||[]).includes(payment.id)?ownerSetting.rate:0;
  const top=store.payments.filter(p=>p.rankable).sort(paymentOrder);
  [store.first,store.second,store.third]=[0,1,2].map(i=>top[i]?paymentLabel(top[i]):'確認済み候補なし');
  store.combination=combinationFor(store);
  if(top[0]&&top[0].autoCoupon)store.combination=couponDetail(top[0])+'。 '+store.combination;
 }
 function ownerControls(store){
- if(!store.local.aeonOwners)return '';
- return '<div class="owners-setting"><label for="ownersRate">オーナーズカード</label><select id="ownersRate" aria-label="オーナーズカードの返金率">'+OWNER_RATES.map(rate=>'<option value="'+rate+'"'+(rate===ownerSetting.rate?' selected':'')+'>'+(rate===0?'今回は使わない':rate+'%返金')+'</option>').join('')+'</select><small id="ownersNote">'+(ownerSetting.confirmed?'選択した率で比較':'3%は仮設定・実際の返金率を選択')+'</small></div>';
+ const notice=store.local.ownerNotice?'<div class="note"><strong>'+escapeHtml(store.local.ownerNotice)+'</strong></div>':'';
+ if(!store.local.aeonOwners)return notice;
+ return notice+'<div class="owners-setting"><label for="ownersRate">オーナーズカード</label><select id="ownersRate" aria-label="オーナーズカードの返金率">'+OWNER_RATES.map(rate=>'<option value="'+rate+'"'+(rate===ownerSetting.rate?' selected':'')+'>'+(rate===0?'今回は使わない':rate+'%返金')+'</option>').join('')+'</select><small id="ownersNote">'+(ownerSetting.confirmed?'選択した率で比較':'3%は仮設定・実際の返金率を選択')+'</small></div>';
 }
 const STORE_DATA=AUDIT.rows.map(row=>{
  const [name,aliases,payIdx,pointIdx,src,notes,missing,status,pointStatus,scope]=row;

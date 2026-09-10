@@ -103,7 +103,7 @@ test('audit fixes sparse records, keeps unknowns and excludes non-earning Rakute
   assert.equal(w.store('松弁ネット/松屋モバイルオーダー').payments.length,1);
 });
 
-test('actual coupon runtime renders all 133 stores even when the coupon network fails', async () => {
+test('actual coupon runtime renders all 141 stores even when the coupon network fails', async () => {
   const w=world({runtime:'checker-20260907-autocoupons.js',fetcher:async()=>{throw Error('offline');}});
   await flush();
   for(const s of w.api.STORE_DATA) {
@@ -129,8 +129,8 @@ test('all entrypoints have valid script integrity and keep the colorful design',
   assert.equal(read('index.html'), read('app-v2.html')); assert.equal(read('index.html'), read('app-v3.html'));
 });
 
-test('133 stores render, original rates and PayPay tie ordering survive, list is lazy', () => {
-  const w = world(); assert.equal(w.sandbox.PAYMENT_STORE_COUNT, 133);
+test('141 stores render, original rates and PayPay tie ordering survive, list is lazy', () => {
+  const w = world(); assert.equal(w.sandbox.PAYMENT_STORE_COUNT, 141);
   assert.equal(w.nodes.get('storeList').children.length, 0); assert.equal(w.nodes.get('quickStores').children.length, 5);
   for (const store of w.api.STORE_DATA) {
     const top = store.payments.filter(p => p.rankable).sort(w.api.paymentOrder);
@@ -170,6 +170,35 @@ test('owners rate changes apply to eligible payments, both Aeon brands, copy sum
   const restored = world({storage: w.storage}); restored.manual('イオン'); assert.match(restored.nodes.get('result').innerHTML, /6.0%/);
   restored.nodes.get('ownersRate').onchange({target: {value: '0'}}); assert.equal(restored.api.comparisonRate(restored.store('イオン').payments[0]), 1);
   assert.equal(restored.store('イオン').payments[1].ownerRate, 0);
+});
+
+test('owners benefits use brand and route allowlists in both shipped runtimes', () => {
+  for (const runtime of ['checker-20260907.js','checker-20260907-autocoupons.js']) {
+    const w=world({runtime,storage:new Map([['payment-checker-aeon-owners-rate','5']])});
+    for(const name of ['イオン','イオンスタイル','まいばすけっと','ダイエー','イオンフードスタイル','グルメシティ','マックスバリュ','ピーコックストア','ビッグ・エー','ザ・ビッグ']) {
+      const store=w.store(name);w.manual(name);
+      assert.match(w.nodes.get('result').innerHTML,/イオン株主優待：返金対象/);
+      assert.equal(store.payments.find(p=>p.id==='aeonGroup').ownerRate,5);
+      assert.match(store.first,/6.0%/);
+    }
+    for(const name of ['マルエツ','ミニストップ','ウエルシア','ハックドラッグ','ベルク']) {
+      w.manual(name);assert.match(w.nodes.get('result').innerHTML,/イオン株主優待：/);
+      assert.doesNotMatch(w.nodes.get('result').innerHTML,/id="ownersRate"/);
+      assert.ok(w.store(name).payments.every(p=>p.ownerRate===0));
+    }
+    assert.equal(w.api.matchStoreFromText('イオンモールの専門店'),null);
+    assert.equal(w.api.matchStoreFromText('まいばすけっと 北山田駅前店').store.store,'まいばすけっと');
+    w.manual('まいばすけっと');assert.match(w.nodes.get('result').innerHTML,/返金引換証の換金を扱いません/);
+    // A higher-rate ineligible route must never inherit the store's cashback in its summary.
+    const store=w.store('イオン');store.payments.push({...w.store('マルエツ').payments.find(p=>p.id==='paypay'),r:'10%'});
+    w.manual('イオン');w.nodes.get('ownersRate').onchange({target:{value:'5'}});
+    assert.match(store.first,/PayPay/);assert.match(store.combination,/株主優待の返金を加算していません/);
+    assert.equal(store.payments.find(p=>p.id==='paypay').ownerRate,0);
+    // Even confirmed AEON Pay acceptance does not override a cash-only eligibility rule.
+    store.local.ownerPaymentIds=['cash'];w.nodes.get('ownersRate').onchange({target:{value:'7'}});
+    assert.equal(store.payments.find(p=>p.id==='aeonGroup').ownerRate,0);
+    assert.equal(store.payments.find(p=>p.id==='cash').ownerRate,7);
+  }
 });
 
 test('missing optional location script and denied local storage cannot block manual search', async () => {

@@ -148,7 +148,15 @@
   const aeonNote='AEON Payのイオンカード払い／チャージ払いの対象コード決済は200円税込ごと2 WAON POINT。ポイント利用分や対象外商品・カードは除きます。電子マネーWAONのタッチ払い、テナント専門店、他のQR決済とは別です。';
   for (const row of [
     ['イオン',['AEON','イオン横浜新吉田','イオン横浜新吉田店']],
-    ['イオンスタイル',['AEON STYLE','イオンスタイル横浜高田','イオンスタイル横浜高田店']]
+    ['イオンスタイル',['AEON STYLE','イオンスタイル横浜高田','イオンスタイル横浜高田店']],
+    ['まいばすけっと',['My Basket','まいばす']],
+    ['ダイエー',['daiei']],
+    ['イオンフードスタイル',['AEON FOOD STYLE']],
+    ['グルメシティ',['ダイエーグルメシティ']],
+    ['マックスバリュ',['MaxValu','マックスバリュー']],
+    ['ピーコックストア',['ピーコック','Peacock Store']],
+    ['ビッグ・エー',['ビッグエー','Big-A']],
+    ['ザ・ビッグ',['ザビッグ','The Big']]
   ]) add(row[0],row[1],['aeonGroup','cash'],aeonPoints,['aeonShop','aeonGroup','aeonOwners','aeonOwnersPay','aeonOwnersFaq'],aeonNote,
     'オーナーズカードを会計前に提示。返金率を選ぶと、対象決済に限り優待分を加えて比較します。WAON POINTの決済分を提示分として重ねません。',
     {aeonOwners:true,pointHeading:'ポイントの扱い',pointCaption:'決済ポイントの二重加算なし',partial:true,scopeHint:'イオンの直営売場を想定。モール内の専門店へは適用しません。',conditions:['株主優待は現金・WAON・イオンマークのカード・対象AEON Payなど指定の支払いが条件です。PayPayや他社カードへ優待分は加算しません。','オーナーズカードを支払い前に提示。家族カード利用分を含む半年100万円までが返金対象。AEON PayのWAON POINT充当分、地域キャンペーンを経由する支払いは優待対象外です。','返金率は権利確定時の株数による1・2・3・4・5・7%。画面の3%は仮設定です。実際の返金率へ変更できます。日別の感謝デー割引は自動加算しません。']});
@@ -250,6 +258,30 @@
   for (const [name,branch] of [['成城石井','グランゲート'],['東急ストア','たまプラーザテラス店（売店）'],['タリーズ','楽天ペイ公式一覧に掲載の対象支店']]) {
     revise(name,[],['rpex'],'楽天ペイは一部支店が還元対象外（'+branch+'）。対象外支店では楽天キャッシュ1.5%の順位を適用しません。',{meta:{notice:'楽天ペイは一部支店で還元対象外／支店確認'}});
   }
+  // Owners Card eligibility is explicit per brand AND payment route, independent of AEON Pay acceptance.
+  for (const r of a.rows.filter(r=>a.storeMeta[r[0]]?.aeonOwners)) {
+    const meta=a.storeMeta[r[0]];
+    meta.date=auditDate;
+    meta.ownerPaymentIds=['aeonGroup','cash'];
+    meta.ownerNotice='イオン株主優待：返金対象（直営売場・対象商品・指定の支払いのみ）';
+    meta.scopeHint='このブランドの直営売場が対象。イオンモール・イオンタウン内の専門店へは引き継ぎません。';
+    meta.conditions.push('たばこ・処方箋医薬品・金券購入・チャージ・有料レジ袋などは返金対象外。WAON POINTで優待を受け取っても、購入時のポイントとして再加算しません。');
+    if(['まいばすけっと','ビッグ・エー'].includes(r[0]))meta.conditions.push('お買物は優待返金の対象ですが、この店舗では返金引換証の換金を扱いません。購入の対象可否と返金の受取窓口は別です。');
+    if(['イオン','イオンスタイル'].includes(r[0]))meta.excludeTerms.push('イオンモール','イオンタウン','専門店');
+  }
+  for (const name of ['マルエツ','ミニストップ','ウエルシア','ハックドラッグ']) {
+    const r=a.rows.find(r=>r[0]===name), meta=a.storeMeta[name] || (a.storeMeta[name]={});
+    meta.date=auditDate; meta.aeonOwners=false; meta.ownerPaymentIds=[];
+    meta.ownerNotice='イオン株主優待：対象外。AEON PayやWAON POINTの特典とは別です。';
+    meta.conditions=[...(meta.conditions||[]),'イオン公式のオーナーズカード対象外店舗一覧に掲載（ハックドラッグはウエルシア薬局運営）。保有中でも株主優待の返金率は加算しません。'];
+    r[4]=Array.from(new Set([...r[4],'aeonOwnersPay']));
+  }
+  {
+    const r=a.rows.find(r=>r[0]==='ベルク'), meta=a.storeMeta['ベルク'];
+    meta.ownerNotice='イオン株主優待：公式の対象店舗一覧に掲載なし。優待の返金は加算しません。';
+    meta.date=auditDate; meta.aeonOwners=false; meta.ownerPaymentIds=[];
+    r[4]=Array.from(new Set([...r[4],'aeonOwnersPay']));
+  }
   // Expose all six comparison methods on every store, including honest unknowns.
   // This makes sparse records distinguishable from genuinely unsupported methods.
   for (const r of a.rows) {
@@ -262,7 +294,7 @@
     r[6]=r[6].filter(i=>!a.text[i].startsWith('未確認の決済：'));
   }
   a.paymentAudit={date:auditDate,total:a.rows.length,corrections,excludedRakuten};
-  a.localUpdate = {date:auditDate,added:21,total:a.rows.length};
+  a.localUpdate = {date:auditDate,added:29,total:a.rows.length};
   a.settings.aeonPay = 0.5; a.settings.aeonPayGroup = 1; a.settings.famiPay = 0.5;
   window.PAYMENT_LOCAL_READY = true;
 })();
