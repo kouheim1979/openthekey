@@ -32,15 +32,14 @@ with sync_playwright() as p:
                 assert page.evaluate('document.documentElement.scrollWidth')<=width+1, 'horizontal overflow at '+str(width)
             search('ジョリパ');assert '10.5%' in page.locator('.rank-card.r1').inner_text();check_width()
             search('ベルク');assert page.locator('.coupon-offer').count()==1
-            assert not page.locator('[data-pp-index="0"]').is_checked()
+            assert not page.locator('[data-coupon-key="test-belc"]').is_checked()
             page.locator('.coupon-expand summary').click();check_width()
-            page.locator('#couponAmount').fill('3000');page.locator('[data-pp-index="0"]').check()
+            page.locator('#couponAmount').fill('3000');page.locator('[data-coupon-key="test-belc"]').check()
             page.locator('#couponApply').click();assert '100pt' in page.locator('.auto-coupon-strip').inner_text()
             assert '4.83%' in page.locator('#result').text_content();check_width()
             if width==390:page.screenshot(path='test-results/mobile-capped-ranking.png',full_page=True)
             assert not errors,errors
             ctx.close()
-        # Real refreshed public data (not the fixture): verify screen and save review images.
         ctx=browser.new_context(locale='ja-JP',viewport={'width':390,'height':844})
         page=ctx.new_page();page.goto(url,wait_until='networkidle');page.wait_for_function('window.PAYMENT_CHECKER_READY===true')
         for name in ('ジョリパ','ベルク','吉野家'):
