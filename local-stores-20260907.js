@@ -35,6 +35,7 @@
     rosenPay: ['そうてつローゼン：対応決済とAEON Payの除外（6月案内）', 'https://www.sotetsu.rosen.co.jp/archives/45888'],
     rosenPoint: ['相鉄POINT：ポイントをためる', 'https://www.sotetsupoint.jp/append/'],
     kohnanPay: ['コーナン：使える支払方法', 'https://www.hc-kohnan.com/service/stores/payment/'],
+    kohnanMoney: ['コーナンPay：チャージ特典・利用期限', 'https://www.hc-kohnan.com/service/stores/kohnan_pay/'],
     kohnanPoint: ['コーナン：楽天ポイントの進呈条件', 'https://pointcard.rakuten.co.jp/partner/kohnan/'],
     olympicPoint: ['Olympic：とこポン・対象支払い', 'https://www.olympic-corp.co.jp/tokopon-lp'],
     seijoLocal: ['成城石井：公式店舗の決済表示例', 'https://shop.seijoishii.com/seijoishii/spot/detail?code=0001'],
@@ -116,9 +117,9 @@
   '公式の2026年6月案内で主要4種QR対応とAEON Pay利用不可の明記を確認。掲載キャンペーンの還元率は通常還元に含めません。',
   'PayPay 1.5%と楽天ペイ1.5%を比較。相鉄POINTは会員提示・対象商品などの条件を確認し、税抜基準の進呈分と決済分を区別します。',
   {checks:{aeonpay:'利用不可（公式2026年6月案内）',famipay:'バーコード対応未確認'},pointCaption:'会員提示・対象商品に限る'});
-  add('コーナン',['ホームセンターコーナン','コーナン港北ニュータウン店','コーナン港北ニュータウン','kohnan','コーナンPRO'],[...qr,'famipay','card'],[
+  add('コーナン',['ホームセンターコーナン','コーナン港北ニュータウン店','コーナン港北ニュータウン','kohnan','コーナンPRO','コーナンPay'],[...qr,'famipay','card','kohnanMoney'],[
     {n:'楽天',r:'税抜0.5%',x:'200円税抜で1P'}
-  ],['kohnanPay','kohnanPoint','smartCode'],
+  ],['kohnanPay','kohnanMoney','kohnanPoint','smartCode'],
   '主要4種QR・FamiPay・クレジットカードの公式案内を確認。AEON Payのコード払い対応は今回の公式一覧では確定していません。ポイント増量キャンペーンは通常率に含めません。',
   '楽天ポイントカードを提示してからPayPay 1.5%で支払い。楽天の提示分は200円税抜で1P。楽天ペイ1.5%も別の候補として残します。');
   add('Olympic',['オリンピック','Olympic港北ニュータウン','オリンピック港北ニュータウン店','オリンピック港北ニュータウン'],['paypay','card','cash'],[
@@ -182,7 +183,7 @@
   add('セリア',['Seria','セリアセンター南モール','セリアセンター南モール店','セリアモザイクモール港北','セリアモザイクモール港北店'],['paypay','dpay','aupay','famipay','aeonpay','card'],[],['seriaLocal','seriaSearch','pp','smartCode','famiGeneral','aeonShop','seriaRakuten'],
   'モザイクモール港北店の公式店舗ページでPayPay・楽天ペイ・d払い・au PAY・AEON Pay・Smart Code・クレジットカード・交通系IC・iD・QUICPay・WAON・nanaco・楽天Edyを確認。支店・レジごとに対応が異なるため全国一律の対応とは扱いません。FamiPayはSmart Code対応レジでのバーコード払いです。',
   '対応店舗・レジではPayPay 1.5%を基本比較。d払いは通常0.5%（dカード設定なら計1.0%、他社カード設定はd払い自体0%）。au PAY・FamiPay・AEON Payは通常0.5%。楽天ペイは使える店舗でも還元対象外の注記があるため、楽天キャッシュ1.5%として順位へ入れていません。提示ポイントは別で、未確認分を加算しません。',
-  {partial:true,notice:'PayPayなどは対応店舗・レジのみ／楽天ペイは還元条件に注意',checks:{rakuten:'対応店舗あり・還元対象外の掲載あり（1.5%で比較しません）'},scopeHint:'公式確認例：モザイクモール港北店。センター南モール店など他の支店は、セリア公式店舗検索の「お支払方法」と利用するレジの表示を確認してください。',conditions:['楽天ペイの利用可否とポイント進呈対象は別です。公式の還元対象外一覧にセリアが掲載されています。支店ごとの適用を確認できていないため、楽天キャッシュ払いを一律1.5%としておすすめしません。楽天カードを支払元に設定したコード・QR払いは公式案内ではカードから1%が進呈されますが、楽天キャッシュ払いとは別ルートです。','楽天ペイ対応だけで楽天ポイントカードの提示にも対応すると判断しません。施設独自ポイントは支店・支払い条件を確認し、決済ポイントと分けて扱います。']});
+  {partial:true,notice:'PayPayなどは対応店舗・レジのみ／楽天ペイは還元条件に注意',checks:{rakuten:'対応店舗あり・還元対象外の掲載あり（1.5%で比較しません）'},scopeHint:'公式確認例：モザイクモール港北店。センター南モール店など他の支店は、セリア公式店舗検索の「お支払方法」と利用するレジの表示を確認してください。',conditions:['楽天ペイの利用可否とポイント進呈対象は別です。公式の還元対象外一覧にセリアが掲載されています。楽天キャッシュによるコード・QR払いの通常還元は0%で、還元率の順位には含めません。決済の利用可否は店舗・レジごとに確認してください。楽天カードを支払元に設定したコード・QR払いは公式案内ではカードから1%が進呈されますが、楽天キャッシュ払いとは別ルートです。','楽天ペイ対応だけで楽天ポイントカードの提示にも対応すると判断しません。施設独自ポイントは支店・支払い条件を確認し、決済ポイントと分けて扱います。']});
   a.storeMeta['セリア'].date = '2026-09-09';
   augment(['オーケー','東急ストア','三和・フードワン','近商ストア'], 'famipay', ['smartCode','famiGeneral']);
   augment(['ミニストップ'], 'aeonGroup', ['aeonShop','aeonGroup']);

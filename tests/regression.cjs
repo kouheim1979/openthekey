@@ -77,6 +77,31 @@ function world({loadLocation = true, storage = new Map(), blockedStorage = false
 const shops = {elements: [{type: 'node', id: 1, lat: 35.558, lon: 139.579, tags: {name: 'マルエツ 中川駅前店', shop: 'supermarket'}}]};
 const response = data => ({ok: true, json: async () => data});
 
+test('Kohnan balance preference stays separate from numeric rewards and resets with a new session', () => {
+  for (const runtime of ['checker-20260907.js','checker-20260907-autocoupons.js']) {
+    const w=world({runtime});
+    w.manual('コーナンPay');
+    const shop=w.store('コーナン');
+    assert.equal(shop.payments.find(p=>p.id==='kohnanMoney').rankable,false);
+    assert.match(shop.first,/PayPay/);
+    w.nodes.get('kohnanPriority').onchange({target:{value:'balance'}});
+    assert.match(w.nodes.get('result').innerHTML,/今回の優先：コーナンPay/);
+    assert.match(shop.combination,/今回はチャージ済み残高/);
+    assert.match(shop.first,/PayPay/);
+    assert.equal(w.api.comparisonRate(shop.payments.find(p=>p.id==='paypay')),1.5);
+    w.manual('セリア');
+    assert.doesNotMatch(w.nodes.get('result').innerHTML,/今回の優先：コーナンPay|支店ごとの適用を確認できていない/);
+    assert.equal(w.store('セリア').payments.find(p=>p.id==='rakutenReview').r,'0%');
+    w.manual('コーナン');
+    assert.match(w.nodes.get('result').innerHTML,/今回の優先：コーナンPay/);
+    w.nodes.get('kohnanPriority').onchange({target:{value:'normal'}});
+    assert.doesNotMatch(w.nodes.get('result').innerHTML,/今回の優先：コーナンPay/);
+    assert.match(shop.combination,/PayPay 1.5%で支払い/);
+    const fresh=world({runtime,storage:w.storage});fresh.manual('コーナン');
+    assert.doesNotMatch(fresh.nodes.get('result').innerHTML,/今回の優先：コーナンPay/);
+  }
+});
+
 test('audit fixes sparse records, keeps unknowns and excludes non-earning Rakuten cash routes', () => {
   const w=world(), data=w.sandbox.PAYMENT_AUDIT_DATA;
   for (const [name,ids] of [['天狗',['paypay','dpay','aupay','card']],['ビッグヨーサン',['paypay','dpay','card']],['サミット',['paypay','rakuten']],['ハックドラッグ',['paypay','rakuten','dpay','aupay','famipay','aeonGroup']]]) {

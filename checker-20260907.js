@@ -37,6 +37,7 @@ const METHODS={
  rakutenReview:method('楽天ペイ（楽天キャッシュ）','0%','コード・QR払いの通常還元対象外',['公式の還元対象外店舗では楽天キャッシュ払いの通常還元は0%。楽天カードを支払元にしたコード・QR払いのカード還元1%とは別ルートです。提示ポイントカードは別に確認します。'],['rpex'],false)
 };
 function combinationFor(store){
+ if(store.store==='コーナン'&&kohnanBalancePriority)return '今回はチャージ済み残高を使う方針でコーナンPayを優先。楽天ポイントカードは会計前に提示し、対象商品・提示条件を確認してください。チャージ時の特典は今回の還元に再加算しません。残高がなくなったら通常比較に戻してください。';
  if(store.local.aeonOwners){
   const best=store.payments.filter(p=>p.rankable).sort(paymentOrder)[0];
   if(!best)return '優待の対象支払いを確認してください。';
@@ -72,9 +73,17 @@ Object.assign(METHODS, {
  aeonGroup:method('AEON Pay','1.0%','2倍対象店・コード払い',['イオン等の指定2倍対象店では200円税込ごと2 WAON POINT（1.0%）。イオンカード払い／チャージ払いのコード決済が対象。WAON POINT利用分やイオンJMBカード等の対象外条件に注意。','この1.0%は通常ポイントを含みます。さらに0.5%を足したり、同じWAON POINTを提示分として重ねたりしません。専門店や他のQR決済に2倍を自動適用しません。'],['aeonShop','aeonGroup','aeonRate']),
  cash:method('現金','0%','支払い自体のポイントなし',['現金の支払い自体には決済ポイントを設定しません。店舗ポイント・値引きがある場合は別欄で比較してください。'],[]),
  kaldiCard:method('カルディカード','チャージ特典1%','支払い時の還元率ではありません',['チャージ金額の1%分がバリューとして加算。支払い時の1%還元とは別の特典なので、決済順位には入れていません。対象のコーヒー豆のポイントも別制度です。'],['kaldiCard'],false),
+ kohnanMoney:method('コーナンPay','チャージ特典あり','チャージ済み残高で支払い',['通常は1,000円チャージごとに1%の特典。増量時の特典率はチャージした際の条件によります。チャージ時に受け取った特典を今回の決済還元率として再加算しません。','コーナンの店舗で利用できます。コーナンe-shopでは利用できません。残高・利用期限・対象商品を確認してください。'],['kohnanMoney'],false),
  belcMoney:method('ベルクペイ','チャージ特典あり','1万円現金チャージで100円分',['指定チャージ機で1回1万円の現金チャージをする特典。レジチャージや複数回合算とは区別。ベルクカード提示の購入ポイントと、チャージ特典を二重に支払い還元へ計上しません。'],['belcMoney','belcPoint'],false)
 });
 
+// Session-only preference: never assume that a previously available balance remains.
+let kohnanBalancePriority=false;
+function kohnanControls(store){
+ if(store.store!=='コーナン')return '';
+ const choice='<div class="owners-setting"><label for="kohnanPriority">コーナンPayの残高</label><select id="kohnanPriority" aria-label="コーナンPayの残高を優先"><option value="normal"'+(!kohnanBalancePriority?' selected':'')+'>通常の還元率で比較</option><option value="balance"'+(kohnanBalancePriority?' selected':'')+'>高還元でチャージした残高を優先</option></select></div>';
+ return choice+(kohnanBalancePriority?'<section class="note" aria-label="今回の優先支払い"><strong>今回の優先：コーナンPay</strong><p>チャージ済み残高を使う方針で表示しています。還元率1位という意味ではありません。残高・期限を確認し、使い切ったら「通常の還元率で比較」に戻してください。</p></section>':'')+'<p class="micro">'+(kohnanBalancePriority?'以下は通常の決済還元率の順位です。':'高還元時にチャージした残高がある場合は、上の選択で優先表示できます。')+'チャージ特典は支払い時の還元に足しません。</p>';
+}
 const OWNER_KEY='payment-checker-aeon-owners-rate';
 const OWNER_RATES=[0,1,2,3,4,5,7];
 function readOwnerSetting(){try{const raw=localStorage.getItem(OWNER_KEY);const value=Number(raw);if(raw!==null&&OWNER_RATES.includes(value))return{rate:value,confirmed:true};}catch(_){}return{rate:3,confirmed:true};}
@@ -88,6 +97,7 @@ function refreshStoreSummary(store){
  store.combination=combinationFor(store);
 }
 function ownerControls(store){
+ if(store.store==='コーナン')return kohnanControls(store);
  const notice=store.local.ownerNotice?'<div class="note"><strong>'+escapeHtml(store.local.ownerNotice)+'</strong></div>':'';
  if(!store.local.aeonOwners)return notice;
  return notice+'<div class="owners-setting"><label for="ownersRate">オーナーズカード</label><select id="ownersRate" aria-label="オーナーズカードの返金率">'+OWNER_RATES.map(rate=>'<option value="'+rate+'"'+(rate===ownerSetting.rate?' selected':'')+'>'+(rate===0?'今回は使わない':rate+'%返金')+'</option>').join('')+'</select><small id="ownersNote">'+(ownerSetting.rate===3?'確認済みの返金率3%で比較':'選択した率で比較')+'</small></div>';
@@ -156,6 +166,9 @@ function renderPayment(store,context=null){
   const rate=Number(event.target.value);if(!OWNER_RATES.includes(rate))return;
   ownerSetting={rate,confirmed:true};try{localStorage.setItem(OWNER_KEY,String(rate));}catch(_){}
   STORE_DATA.filter(s=>s.local.aeonOwners).forEach(refreshStoreSummary);renderPayment(store,context);$("ownersRate").focus();
+ };
+ if(store.store==='コーナン')$('kohnanPriority').onchange=event=>{
+  kohnanBalancePriority=event.target.value==='balance';refreshStoreSummary(store);renderPayment(store,context);$('kohnanPriority').focus();
  };
  rememberStore(store.store);window.scrollTo({top:0,behavior:"auto"});
 }

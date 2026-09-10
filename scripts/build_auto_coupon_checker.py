@@ -1,7 +1,7 @@
 from pathlib import Path
 import hashlib,base64,re
 
-VERSION='20260907-auto4'
+VERSION='20260910-kohnan-seria1'
 s=Path('checker-20260907.js').read_text(encoding='utf-8')
 def replace(old,new):
     global s

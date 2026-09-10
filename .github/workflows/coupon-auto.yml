@@ -41,7 +41,7 @@ jobs:
         run: |
           node --check checker-20260907-autocoupons.js
           python3 -m json.tool coupon-feed.json >/dev/null
-          grep -q 'checker-20260907-autocoupons.js?v=20260907-auto4' index.html
+          grep -q 'checker-20260907-autocoupons.js?v=20260910-kohnan-seria1' index.html
           python3 scripts/test_coupon_browser.py
       - name: Upload visual regression results
         if: always()
