@@ -179,7 +179,90 @@
   augment(['オーケー','東急ストア','三和・フードワン','近商ストア'], 'famipay', ['smartCode','famiGeneral']);
   augment(['ミニストップ'], 'aeonGroup', ['aeonShop','aeonGroup']);
   augment(['ローソン','ナチュラルローソン','ローソンストア100','セイコーマート','アオキスーパー','スシロー','CoCo壱番屋','かっぱ寿司','くら寿司','フレッシュネスバーガー','ガスト','バーミヤン','しゃぶ葉','夢庵','ジョナサン','ステーキガスト','むさしの森珈琲','から好し','藍屋','とんから亭','La Ohana','魚屋路','桃菜','グラッチェガーデンズ','八郎そば','ゆめあん食堂','すき家','はま寿司','ココス','なか卯','ジョリーパスタ','ビッグボーイ','ヴィクトリアステーション','華屋与兵衛','熟成焼肉いちばん','かつ庵','オリーブの丘','久兵衛屋','伝丸','ゼッテリア','一風堂','ドトール','エクセルシオール','丸亀製麺','松屋','松のや','吉野家'], 'aeonpay', ['aeonShop','aeonRate']);
-  a.localUpdate = {date,added:21,total:a.rows.length};
+  // 2026-09-10: explicit evidence-driven corrections. Clone shared payment
+  // arrays before editing; never infer acceptance from another payment brand.
+  const auditDate = '2026-09-10';
+  Object.assign(a.sources, {
+    auditTengu: ['天狗：公式キャッシュレス一覧（コード決済・カード）','https://www.teng.co.jp/cashless.html'],
+    auditTenguLocal: ['天狗：中川駅前店のキャッシュレス対応','https://www.teng.co.jp/shopsearch/shops/kanagawa/yokohama-shi-tsuzuki-ku/washoku-nakagawaeki-mae.html'],
+    auditBig: ['ビッグヨーサン横浜都筑店：支払い・ポイントカード','https://www.bigyosun.com/shop/2246'],
+    auditSeven: ['セブン-イレブン：支払い方法','https://www.sej.co.jp/services/cash.html'],
+    auditLawson: ['ローソン：バーコード決済一覧','https://www.lawson.co.jp/service/payment/settlement/'],
+    auditMc: ['マクドナルド：店頭・モバイルオーダー別の決済一覧','https://www.mcdonalds.co.jp/shop/payment/'],
+    auditD: ['d払い：加盟店と対象外条件','https://service.smt.docomo.ne.jp/keitai_payment/town/'],
+    auditDEx: ['d払い：利用進呈ポイント対象外店舗','https://service.smt.docomo.ne.jp/keitai_payment/town/no-reward.html'],
+    auditWelcia: ['ウエルシアグループ：利用可能な支払い・支店差','https://welcia.tayori.com/q/yk-01/detail/753696/']
+  });
+  const corrections = [];
+  function revise(name, ids, sourceKeys, note, options = {}) {
+    const r = a.rows.find(row => row[0] === name);
+    if (!r) throw new Error('監査対象の店舗がありません：' + name);
+    const before = a.pay[r[2]].map(p => p.id);
+    const pay = a.pay[r[2]].filter(p => !(options.remove || []).includes(p.id)).map(p => ({...p}));
+    for (const id of ids) if (!pay.some(p => p.id === id)) pay.push({id, x:options.route || '対応店舗・対象商品に限る'});
+    r[2] = a.pay.push(pay) - 1;
+    r[4] = Array.from(new Set([...r[4], ...sourceKeys]));
+    r[5] = [...r[5], text(auditDate + '再点検：' + note)];
+    r[7] = text('決済登録・還元例外を再点検（支店条件あり）');
+    const meta = a.storeMeta[name] || {};
+    a.storeMeta[name] = {...meta, date:auditDate, partial:true,
+      conditions:[...(meta.conditions || []), note],
+      scopeHint:options.scopeHint || meta.scopeHint || 'ブランドの公式掲載・公式支店例を確認。対応店舗・レジでのみ利用できます。',
+      ...options.meta};
+    corrections.push({store:name, added:pay.map(p=>p.id).filter(id=>!before.includes(id)), removed:before.filter(id=>!pay.some(p=>p.id===id)), sources:sourceKeys, note});
+  }
+  revise('天狗',['dpay','aupay','card'],['auditTengu','auditTenguLocal'],
+    '中川駅前店のキャッシュレス対応と公式画像のPayPay・d払い・au PAY・Visa等を確認。楽天ペイ・FamiPay・AEON Payはこの確認から推測しません。',
+    {scopeHint:'公式支店例：和食れすとらん天狗 中川駅前店。別ブランド・支店ではレジ表示も確認。'});
+  revise('ビッグヨーサン',['dpay','card','cash'],['auditBig'],
+    '横浜都筑店の公式表示でd払い・Visa等のカード・現金・ポイントカードを確認。電子マネーと交通系ICも掲載。独自ポイントの支払い別進呈率は未確認。',
+    {scopeHint:'横浜都筑店（北山田）の公式表示を確認。他支店に一律適用しません。',meta:{combination:'PayPay 1.5%とd払い通常0.5%（dカード設定は計1.0%）等を比較。独自ポイントカードは会計前に確認し、支払い別の提示分は未確認のため合計に加えません。',notice:'横浜都筑店：d払い・カードにも対応／独自ポイント率は確認待ち'}});
+  { const r = a.rows.find(row=>row[0]==='ビッグヨーサン'); r[3]=a.points.push([{n:'ビッグヨーサンのポイントカード',r:'支払い別条件を確認',x:'カードの取扱いは公式確認済み。進呈率・対象決済は店頭確認'}])-1; r[8]=text('カード取扱い確認・進呈率は未確認'); }
+  revise('セブン-イレブン',['dpay','aupay'],['auditSeven'],'店頭バーコード払いのd払い・au PAYを補完。収納代行など対象外商品は除く。');
+  revise('ローソンストア100',['dpay','aupay'],['auditLawson','la100','la100p'],'d払い・au PAYの決済登録を補完。提示ポイントはストア100の条件で、通常ローソンの夕方2倍を適用しません。');
+  revise('ローソン・スリーエフ',['paypay','rakuten','dpay','aupay'],['auditLawson'],'ローソンの対応バーコード決済を補完。一部店舗・対象外商品を除き、支店のレジ表示を確認してください。');
+  revise('マクドナルド',['paypay','dpay','aupay'],['auditMc'],'店頭のPayPay・d払い・au PAYを補完。楽天キャッシュ払いの還元対象外と楽天カード払い1%は別条件。');
+  revise('ガスト',['dpay'],['auditD'],'d払い公式の街の加盟店掲載を確認。dポイントカード提示分とは別の決済です。');
+  // The provider directory explicitly names these brands. Missing entries in
+  // the directory do not imply that other stores cannot accept the method.
+  for (const name of ['サミット','フードストアあおき','アオキスーパー','オオゼキ','近商ストア','サンリブ','三和・フードワン','東武ストア','ドミー','ヤマナカ','ココス','ハックドラッグ','ウエルシア','ヤマダデンキ','AOKI']) {
+    revise(name,['rakuten'],['rp','rpex'],'楽天ペイ公式の対応ブランド一覧を確認。条件達成時の楽天キャッシュ払い1.5%を比較し、提示用の楽天ポイントカード対応は別に確認。対応店舗・対象商品に限ります。');
+  }
+  a.storeMeta['サミット'].combination='対応レジではPayPay 1.5%を先に、同率の楽天ペイ1.5%を次に比較（楽天キャッシュ・条件達成時）。サミットの独自ポイントは支払い別条件が未確認のため合計に加えません。';
+  a.storeMeta['ヤマダデンキ'].combination='決済分はPayPay 1.5%、楽天ペイは楽天キャッシュ・条件達成時1.5%。同率はPayPayを先に表示。ヤマダポイントは商品・支払方法で異なるため、レジの表示率を別に確認してください。';
+  for (const name of ['ウエルシア','ハックドラッグ']) revise(name,['dpay','aupay','card'],['auditWelcia','welciaPoint','welciaBoth'],'ウエルシアグループ公式FAQでd払い・au PAY・クレジットを確認。商業施設に従い支店差あり。WAON POINT提示の税抜1%は決済分と別枠。');
+  for (const name of ['セブン-イレブン','ローソン','ナチュラルローソン','ローソンストア100','生活彩家','ポプラ','ガスト','バーミヤン','しゃぶ葉','ジョナサン','夢庵','ステーキガスト','くら寿司','スシロー','ケンタッキー','CoCo壱番屋','松屋','松のや','マイカリー食堂']) {
+    const vending=['松屋','松のや','マイカリー食堂'].includes(name);
+    revise(name,['famipay'],['smartCode','famiGeneral'],'JCB公式のSmart Code加盟店掲載とFamiPayのバーコード対応を照合。'+(vending?'券売機・セルフレジのみ。':'対応店舗・レジのみ。')+'FamiPayカード・QUICPayとは別ルート。',
+      {route:vending?'Smart Code対応の券売機・セルフレジのみ':'FamiPayバーコード／Smart Code対応レジのみ'});
+  }
+  // Rendered official exclusion list checked 2026-09-10 (updated 2026-08-31).
+  // Keep the usable payment visible, but never rank its cash route at 1.5%.
+  const excludedRakuten = ['オーケー','ヨークフーズ','ガスト','バーミヤン','しゃぶ葉','ジョナサン','夢庵','から好し','ステーキガスト','むさしの森珈琲','藍屋','とんから亭','chawan','La Ohana','魚屋路','桃菜','グラッチェガーデンズ','ゆめあん食堂','八郎そば','三〇三','くら寿司','スシロー','マクドナルド','ケンタッキー','セリア','NewDays'];
+  for (const name of excludedRakuten) {
+    const message='楽天ペイの公式還元対象外一覧にブランド掲載あり。コード・QR払いの楽天キャッシュ通常1.5%は比較対象外。支払元を楽天カードに設定した場合のカード還元1%は別ルート（両方は加算しない）。';
+    revise(name,['rakutenReview','rakutenCard'],['rpex'],message,{remove:['rakuten'],route:'楽天ペイ対応レジのみ／楽天キャッシュ払いは還元対象外'});
+    const meta=a.storeMeta[name]; meta.rakutenExcluded=true;
+    meta.notice=[meta.notice,'楽天キャッシュのコード払いは通常還元の対象外'].filter(Boolean).join('／');
+    // Replace stale local recommendations, keeping presentation rules separate.
+    if (name==='ヨークフーズ') meta.combination='PayPay 1.5%を基本比較。楽天ペイは使えますが楽天キャッシュ払いは通常還元対象外。楽天カードを支払元にした場合はカード分1%。nanaco等の決済ポイントを提示分として足しません。';
+  }
+  for (const [name,branch] of [['成城石井','グランゲート'],['東急ストア','たまプラーザテラス店（売店）'],['タリーズ','楽天ペイ公式一覧に掲載の対象支店']]) {
+    revise(name,[],['rpex'],'楽天ペイは一部支店が還元対象外（'+branch+'）。対象外支店では楽天キャッシュ1.5%の順位を適用しません。',{meta:{notice:'楽天ペイは一部支店で還元対象外／支店確認'}});
+  }
+  // Expose all six comparison methods on every store, including honest unknowns.
+  // This makes sparse records distinguishable from genuinely unsupported methods.
+  for (const r of a.rows) {
+    const meta=a.storeMeta[r[0]] || (a.storeMeta[r[0]]={});
+    const ids=a.pay[r[2]].map(p=>p.id), previous=meta.checks || [];
+    meta.checks=paymentIds.map(id=>({name:paymentNames[id],state:
+      id==='rakuten' && meta.rakutenExcluded ? '対応あり／楽天キャッシュの通常還元は対象外（楽天カード払い1%は別）' :
+      ids.includes(id) || (id==='aeonpay' && ids.includes('aeonGroup')) ? '公式掲載あり（対応店舗・レジ・対象商品に限る）' :
+      previous.find(c=>c.name===paymentNames[id])?.state || '未確認（非対応とは断定しません）'}));
+    r[6]=r[6].filter(i=>!a.text[i].startsWith('未確認の決済：'));
+  }
+  a.paymentAudit={date:auditDate,total:a.rows.length,corrections,excludedRakuten};
+  a.localUpdate = {date:auditDate,added:21,total:a.rows.length};
   a.settings.aeonPay = 0.5; a.settings.aeonPayGroup = 1; a.settings.famiPay = 0.5;
   window.PAYMENT_LOCAL_READY = true;
 })();

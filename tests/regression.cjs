@@ -28,7 +28,7 @@ function clock() {
     pending: () => tasks.size
   };
 }
-function world({loadLocation = true, storage = new Map(), blockedStorage = false, geolocation, fetcher} = {}) {
+function world({loadLocation = true, storage = new Map(), blockedStorage = false, geolocation, fetcher, runtime = 'checker-20260907.js'} = {}) {
   const time = clock(), nodes = new Map(), errors = [], geoCalls = [], requests = [];
   function element(id = '') {
     const el = {id, className: '', value: '', children: [], disabled: false, attrs: {}, events: {}, textContent: '', focus() {}, blur() {},
@@ -50,7 +50,7 @@ function world({loadLocation = true, storage = new Map(), blockedStorage = false
   parseIds(read('index.html')); nodes.get('radiusSelect').value = '250';
   const geo = geolocation || {getCurrentPosition(ok, fail, options) { geoCalls.push({ok, fail, options}); }};
   const sandbox = {
-    document: {getElementById: id => nodes.get(id) || null, createElement: () => element(), body: element(), activeElement: null},
+    document: {getElementById: id => nodes.get(id) || null, createElement: () => element(), head: element(), body: element(), activeElement: null},
     navigator: {geolocation: geo, clipboard: {writeText: async () => {}}},
     localStorage: {getItem: key => { if (blockedStorage) throw Error('blocked'); return storage.get(key) ?? null; }, setItem: (key, value) => { if (blockedStorage) throw Error('blocked'); storage.set(key, value); }},
     console: {error: error => errors.push(error), warn() {}},
@@ -63,8 +63,8 @@ function world({loadLocation = true, storage = new Map(), blockedStorage = false
   sandbox.window = sandbox; vm.createContext(sandbox);
   for (const name of ['audit-data-20260906.js', 'local-stores-20260907.js']) vm.runInContext(read(name), sandbox, {filename: name});
   if (loadLocation) vm.runInContext(read('location-search-20260907.js'), sandbox, {filename: 'location-search-20260907.js'});
-  const script = read('checker-20260907.js').replace('setupEvents();renderQuick();', 'window.__test={STORE_DATA,renderPayment,paymentOrder,comparisonRate,buildCandidatesFromOsm,matchStoreFromText};setupEvents();renderQuick();');
-  vm.runInContext(script, sandbox, {filename: 'checker-20260907.js'});
+  const script = read(runtime).replace('setupEvents();renderQuick();', 'window.__test={STORE_DATA,renderPayment,paymentOrder,comparisonRate,buildCandidatesFromOsm,matchStoreFromText};setupEvents();renderQuick();');
+  vm.runInContext(script, sandbox, {filename: runtime});
   assert.equal(errors.length, 0, errors.map(String).join('\n'));
   assert.equal(sandbox.PAYMENT_CHECKER_READY, true);
   return {sandbox, time, errors, nodes, geoCalls, requests, storage, api: sandbox.__test,
@@ -77,6 +77,45 @@ function world({loadLocation = true, storage = new Map(), blockedStorage = false
 const shops = {elements: [{type: 'node', id: 1, lat: 35.558, lon: 139.579, tags: {name: 'マルエツ 中川駅前店', shop: 'supermarket'}}]};
 const response = data => ({ok: true, json: async () => data});
 
+test('audit fixes sparse records, keeps unknowns and excludes non-earning Rakuten cash routes', () => {
+  const w=world(), data=w.sandbox.PAYMENT_AUDIT_DATA;
+  for (const [name,ids] of [['天狗',['paypay','dpay','aupay','card']],['ビッグヨーサン',['paypay','dpay','card']],['サミット',['paypay','rakuten']],['ハックドラッグ',['paypay','rakuten','dpay','aupay','famipay','aeonGroup']]]) {
+    for (const id of ids) assert.ok(w.store(name).payments.some(p=>p.id===id),name+':'+id);
+  }
+  for (const name of data.paymentAudit.excludedRakuten) {
+    const s=w.store(name);
+    assert.ok(!s.payments.some(p=>p.id==='rakuten'),name);
+    assert.equal(s.payments.find(p=>p.id==='rakutenReview').rankable,false,name);
+    assert.equal(s.payments.find(p=>p.id==='rakutenReview').r,'0%',name);
+    assert.equal(s.payments.find(p=>p.id==='rakutenCard').r,'1.0%',name);
+  }
+  for (const s of w.api.STORE_DATA) {
+    assert.equal(s.local.checks.length,6,s.store);
+    assert.equal(new Set(s.payments.map(p=>p.id)).size,s.payments.length,s.store);
+    assert.ok(s.audit.sources.every(k=>data.sources[k]),s.store);
+    assert.ok(!s.audit.missing.some(t=>t.startsWith('未確認の決済：')),s.store);
+  }
+  assert.match(w.store('ビッグヨーサン').local.scopeHint,/横浜都筑店/);
+  assert.match(w.store('ビッグヨーサン').local.checks.find(c=>c.name==='楽天ペイ').state,/未確認/);
+  assert.match(w.store('マイカリー食堂').payments.find(p=>p.id==='famipay').x,/券売機・セルフレジ/);
+  assert.equal(w.store('横浜家').payments.length,0);
+  assert.equal(w.store('ヨドバシカメラ').payments.length,0);
+  assert.equal(w.store('松弁ネット/松屋モバイルオーダー').payments.length,1);
+});
+
+test('actual coupon runtime renders all 133 stores even when the coupon network fails', async () => {
+  const w=world({runtime:'checker-20260907-autocoupons.js',fetcher:async()=>{throw Error('offline');}});
+  await flush();
+  for(const s of w.api.STORE_DATA) {
+    w.api.renderPayment(s);
+    assert.ok(w.nodes.get('result').innerHTML.includes(s.store.replaceAll('&','&amp;')),s.store);
+  }
+  for(const name of ['天狗','ビッグヨーサン','サミット','セリア','ヨークフーズ']) {
+    w.manual(name);assert.ok(w.nodes.get('result').innerHTML.includes(name),name);
+  }
+  assert.equal(w.errors.length,0,w.errors.map(String).join('\n'));
+});
+
 test('all entrypoints have valid script integrity and keep the colorful design', () => {
   for (const name of ['index.html', 'app-v2.html', 'app-v3.html']) {
     const html = read(name);
@@ -84,7 +123,7 @@ test('all entrypoints have valid script integrity and keep the colorful design',
     for (const color of ['#ff4fa3', '#ffe45c', '#4ac7ff', '#60f09b']) assert.ok(html.includes(color));
     const scripts = [...html.matchAll(/<script defer src="\.\/([^"?]+)(?:\?[^" ]+)?" integrity="sha384-([^"]+)"/g)];
     assert.equal(scripts.length, 4);
-    assert.deepEqual(scripts.map(m => m[1]), ['audit-data-20260906.js','local-stores-20260907.js','location-search-20260907.js','checker-20260907.js']);
+    assert.deepEqual(scripts.map(m => m[1]), ['audit-data-20260906.js','local-stores-20260907.js','location-search-20260907.js','checker-20260907-autocoupons.js']);
     for (const [, file, digest] of scripts) assert.equal(crypto.createHash('sha384').update(read(file)).digest('base64'), digest, file);
   }
   assert.equal(read('index.html'), read('app-v2.html')); assert.equal(read('index.html'), read('app-v3.html'));

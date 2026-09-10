@@ -34,7 +34,7 @@ const METHODS={
  paypayCoke:method('PayPay','1.5%','Coke ON Pay対応機・指定還元率',[PP_COND,'Coke ON Pay対応自販機でPayPayが選べる場合のみ。スタンプは別制度で、円換算還元率に含めません。'],['pp']),
  rakutenCard:method('楽天ペイ（カード）','1.0%','支払元に楽天カードを設定',['楽天ペイの支払元を楽天カードに設定したコード・QR払いのカード還元。楽天キャッシュ払いとは異なり、その1.5%とは合算しません。'],['rpex']),
  paypayReview:method('PayPay','要確認','通常設定1.5%・店別の還元注記あり',[PP_COND,'NewDaysの公式案内にポイント等の対象外注記があります。適用範囲を確定できていないため、1.5%を確定したおすすめ順位には使用しません。'],['nd'],false),
- rakutenReview:method('楽天ペイ','要確認','楽天キャッシュの店別進呈を確認',[RP_COND,'決済対応は確認していますが、残高払いの店別ポイント進呈条件が未確定。1.5%を確定したおすすめ順位には使用しません。'],['rpex'],false)
+ rakutenReview:method('楽天ペイ（楽天キャッシュ）','0%','コード・QR払いの通常還元対象外',['公式の還元対象外店舗では楽天キャッシュ払いの通常還元は0%。楽天カードを支払元にしたコード・QR払いのカード還元1%とは別ルートです。提示ポイントカードは別に確認します。'],['rpex'],false)
 };
 function combinationFor(store){
  if(store.local.aeonOwners){const best=store.payments.filter(p=>p.rankable).sort(paymentOrder)[0];return 'オーナーズカードを会計前に提示。'+best.n+'の決済分'+best.r+' ＋ 株主優待'+ownerSetting.rate.toFixed(1)+'% ＝ '+comparisonLabel(best)+'目安。優待は対象のお買物・支払いのみ。WAON POINTを二重に足しません。';}
