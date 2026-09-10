@@ -161,7 +161,7 @@ test('Maruetsu accepts manual/nearby aliases, ranks confirmed payments and separ
 
 test('owners rate changes apply to eligible payments, both Aeon brands, copy summaries and saved preference', () => {
   const w = world(); w.manual('イオン');
-  assert.match(w.nodes.get('result').innerHTML, /3%は仮設定/);
+  assert.match(w.nodes.get('result').innerHTML, /確認済みの返金率3%で比較/);
   assert.match(w.nodes.get('result').innerHTML, /決済 1.0% ＋ 株主優待 3.0%/);
   assert.equal(w.api.comparisonRate(w.store('イオン').payments[0]), 4);
   w.nodes.get('ownersRate').onchange({target: {value: '5'}});

@@ -77,7 +77,7 @@ Object.assign(METHODS, {
 
 const OWNER_KEY='payment-checker-aeon-owners-rate';
 const OWNER_RATES=[0,1,2,3,4,5,7];
-function readOwnerSetting(){try{const raw=localStorage.getItem(OWNER_KEY);const value=Number(raw);if(raw!==null&&OWNER_RATES.includes(value))return{rate:value,confirmed:true};}catch(_){}return{rate:3,confirmed:false};}
+function readOwnerSetting(){try{const raw=localStorage.getItem(OWNER_KEY);const value=Number(raw);if(raw!==null&&OWNER_RATES.includes(value))return{rate:value,confirmed:true};}catch(_){}return{rate:3,confirmed:true};}
 let ownerSetting=readOwnerSetting();
 function comparisonRate(payment){return configuredRate(payment.r)+(payment.ownerRate||0);}
 function comparisonLabel(payment){return payment.ownerRate?comparisonRate(payment).toFixed(1)+'%':payment.r;}
@@ -90,7 +90,7 @@ function refreshStoreSummary(store){
 function ownerControls(store){
  const notice=store.local.ownerNotice?'<div class="note"><strong>'+escapeHtml(store.local.ownerNotice)+'</strong></div>':'';
  if(!store.local.aeonOwners)return notice;
- return notice+'<div class="owners-setting"><label for="ownersRate">オーナーズカード</label><select id="ownersRate" aria-label="オーナーズカードの返金率">'+OWNER_RATES.map(rate=>'<option value="'+rate+'"'+(rate===ownerSetting.rate?' selected':'')+'>'+(rate===0?'今回は使わない':rate+'%返金')+'</option>').join('')+'</select><small id="ownersNote">'+(ownerSetting.confirmed?'選択した率で比較':'3%は仮設定・実際の返金率を選択')+'</small></div>';
+ return notice+'<div class="owners-setting"><label for="ownersRate">オーナーズカード</label><select id="ownersRate" aria-label="オーナーズカードの返金率">'+OWNER_RATES.map(rate=>'<option value="'+rate+'"'+(rate===ownerSetting.rate?' selected':'')+'>'+(rate===0?'今回は使わない':rate+'%返金')+'</option>').join('')+'</select><small id="ownersNote">'+(ownerSetting.rate===3?'確認済みの返金率3%で比較':'選択した率で比較')+'</small></div>';
 }
 const STORE_DATA=AUDIT.rows.map(row=>{
  const [name,aliases,payIdx,pointIdx,src,notes,missing,status,pointStatus,scope]=row;

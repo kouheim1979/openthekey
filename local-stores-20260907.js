@@ -159,7 +159,7 @@
     ['ザ・ビッグ',['ザビッグ','The Big']]
   ]) add(row[0],row[1],['aeonGroup','cash'],aeonPoints,['aeonShop','aeonGroup','aeonOwners','aeonOwnersPay','aeonOwnersFaq'],aeonNote,
     'オーナーズカードを会計前に提示。返金率を選ぶと、対象決済に限り優待分を加えて比較します。WAON POINTの決済分を提示分として重ねません。',
-    {aeonOwners:true,pointHeading:'ポイントの扱い',pointCaption:'決済ポイントの二重加算なし',partial:true,scopeHint:'イオンの直営売場を想定。モール内の専門店へは適用しません。',conditions:['株主優待は現金・WAON・イオンマークのカード・対象AEON Payなど指定の支払いが条件です。PayPayや他社カードへ優待分は加算しません。','オーナーズカードを支払い前に提示。家族カード利用分を含む半年100万円までが返金対象。AEON PayのWAON POINT充当分、地域キャンペーンを経由する支払いは優待対象外です。','返金率は権利確定時の株数による1・2・3・4・5・7%。画面の3%は仮設定です。実際の返金率へ変更できます。日別の感謝デー割引は自動加算しません。']});
+    {aeonOwners:true,pointHeading:'ポイントの扱い',pointCaption:'決済ポイントの二重加算なし',partial:true,scopeHint:'イオンの直営売場を想定。モール内の専門店へは適用しません。',conditions:['株主優待は現金・WAON・イオンマークのカード・対象AEON Payなど指定の支払いが条件です。PayPayや他社カードへ優待分は加算しません。','オーナーズカードを支払い前に提示。家族カード利用分を含む半年100万円までが返金対象。AEON PayのWAON POINT充当分、地域キャンペーンを経由する支払いは優待対象外です。','返金率は権利確定時の株数による1・2・3・4・5・7%。本人確認済みの返金率3%を初期設定にしています。必要に応じて変更できます。日別の感謝デー割引は自動加算しません。']});
   const welciaPoints=[{n:'WAON POINT',r:'税抜1.0%',x:'会員提示・対象商品'},{n:'V',r:'税抜0.5%',x:'会員連携で併用可'}];
   for (const row of [
     ['ハックドラッグ',['HAC','ハック','ハックドラッグ港北東急SC','ハックドラッグ都筑阪急']],
