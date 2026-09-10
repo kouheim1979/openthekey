@@ -15,6 +15,7 @@ const DP_COND='d払い：残高等の対象支払元は0.5%、dカードを支�
 const AU_COND='au PAY：通常は200円税込につき1Pで0.5%。チャージ元カードや特定料金プラン等の加算は別条件なので自動加算しません。Pontaの提示分と決済分を区別します。';
 function method(n,r,x,conditions,src,rankable=true){return{n,r,x,conditions,src,rankable};}
 const METHODS={
+ jalTokyu:method('JALカード TOKYU POINT ClubQ','0.5%相当','通常200円＝1マイル・プレミアム未加入',['本人設定：ショッピングマイル・プレミアム未加入。通常200円税込につき1マイル。JAL特約店の倍付けは支店・決済方式の確認前には適用しません。','マイルは現金ではありません。画面の1マイルの換算額で比較し、実際の交換先・必要マイル数・期限により価値が変わります。TOKYU POINTは提示欄に分け、一般のTOKYU CARDのクレジットポイントは加算しません。'],['jalShopping','jalTokyu']),
  paypay:method('PayPay','1.5%','指定の還元率',[PP_COND],['ppstep']),
  rakuten:method('楽天ペイ','1.5%','楽天キャッシュ・条件達成時',[RP_COND],['rprate','rpex']),
  dpay:method('d払い','0.5%','残高等／dカード設定なら1.0%',[DP_COND],['dprate','dpcard']),
@@ -37,6 +38,10 @@ const METHODS={
  rakutenReview:method('楽天ペイ（楽天キャッシュ）','0%','コード・QR払いの通常還元対象外',['公式の還元対象外店舗では楽天キャッシュ払いの通常還元は0%。楽天カードを支払元にしたコード・QR払いのカード還元1%とは別ルートです。提示ポイントカードは別に確認します。'],['rpex'],false)
 };
 function combinationFor(store){
+ if(store.local.kohokuPoints){
+  const best=store.payments.filter(p=>p.rankable).sort(paymentOrder)[0];
+  return '会計前にTOKYU POINTカード（JAL提携カード等）を提示。提示1.0% ＋ '+best.n+' '+best.r+' ＝ 計'+(1+configuredRate(best.r)).toFixed(2).replace(/0$/,'')+'%'+(best.id==='jalTokyu'?'相当':'')+'目安。JALカード払いは提示1.0%＋200円につき1マイル。PayPay払いでも提示1.0%は別に貯まります。';
+ }
  if(store.store==='コーナン'&&kohnanBalancePriority)return '今回はチャージ済み残高を使う方針でコーナンPayを優先。楽天ポイントカードは会計前に提示し、対象商品・提示条件を確認してください。チャージ時の特典は今回の還元に再加算しません。残高がなくなったら通常比較に戻してください。';
  if(store.local.aeonOwners){
   const best=store.payments.filter(p=>p.rankable).sort(paymentOrder)[0];
@@ -88,15 +93,28 @@ const OWNER_KEY='payment-checker-aeon-owners-rate';
 const OWNER_RATES=[0,1,2,3,4,5,7];
 function readOwnerSetting(){try{const raw=localStorage.getItem(OWNER_KEY);const value=Number(raw);if(raw!==null&&OWNER_RATES.includes(value))return{rate:value,confirmed:true};}catch(_){}return{rate:3,confirmed:true};}
 let ownerSetting=readOwnerSetting();
+const JAL_MILE_KEY='payment-checker-jal-mile-value';
+const JAL_MILE_VALUES=[1,1.5,2,3,4];
+let jalMileValue=1;
+try{const value=Number(localStorage.getItem(JAL_MILE_KEY));if(JAL_MILE_VALUES.includes(value))jalMileValue=value;}catch(_){}
+function jalControls(store){
+ if(!store.payments.some(p=>p.id==='jalTokyu'))return '';
+ return '<div class="owners-setting"><label for="jalMileValue">JAL 1マイルの換算額</label><select id="jalMileValue" aria-label="JAL 1マイルの換算額">'+JAL_MILE_VALUES.map(v=>'<option value="'+v+'"'+(v===jalMileValue?' selected':'')+'>'+v+'円相当</option>').join('')+'</select><small>プレミアム未加入：200円＝1マイル。初期換算は1円／マイル、現金還元ではありません。</small></div>';
+}
 function comparisonRate(payment){return configuredRate(payment.r)+(payment.ownerRate||0);}
 function comparisonLabel(payment){return payment.ownerRate?comparisonRate(payment).toFixed(1)+'%':payment.r;}
 function refreshStoreSummary(store){
+ for(const payment of store.payments)if(payment.id==='jalTokyu'){
+  payment.r=(0.5*jalMileValue).toFixed(2).replace(/0$/,'')+'%相当';
+  payment.x='通常200円＝1マイル・1マイル＝'+jalMileValue+'円相当で比較・プレミアム未加入';
+ }
  for(const payment of store.payments)payment.ownerRate=store.local.aeonOwners&&(store.local.ownerPaymentIds||[]).includes(payment.id)?ownerSetting.rate:0;
  const top=store.payments.filter(p=>p.rankable).sort(paymentOrder);
  [store.first,store.second,store.third]=[0,1,2].map(i=>top[i]?paymentLabel(top[i]):'確認済み候補なし');
  store.combination=combinationFor(store);
 }
 function ownerControls(store){
+ if(store.payments.some(p=>p.id==='jalTokyu'))return jalControls(store);
  if(store.store==='コーナン')return kohnanControls(store);
  const notice=store.local.ownerNotice?'<div class="note"><strong>'+escapeHtml(store.local.ownerNotice)+'</strong></div>':'';
  if(!store.local.aeonOwners)return notice;
@@ -162,6 +180,12 @@ function renderPayment(store,context=null){
  const single=store.points.filter(p=>['楽天','d','V','Ponta','WAON POINT'].includes(p.n)).length>1;
  $("result").innerHTML='<div class="store-head"><div><h3 class="store-name">'+escapeHtml(store.store)+'</h3><div class="meta">'+escapeHtml(meta)+(store.audit.status!=='ブランド条件確認'?' · '+escapeHtml(store.audit.status):'')+'</div></div><button id="changeStoreBtn" type="button" class="btn ghost small">店を変える</button></div>'+ownerControls(store)+'<div class="rank-grid">'+(ranks||'<div class="note">支払方法を確認中です。未確認の還元率では順位を付けません。</div>')+'</div><section class="point-box"><div class="point-head"><h4>'+escapeHtml(store.local.pointHeading||'会計前に提示')+'</h4><small>'+escapeHtml(store.local.pointCaption||(single?'共通ポイントは1種類':'支払いポイントとは別'))+'</small></div><div class="point-pills">'+(pts||'<span class="micro">'+escapeHtml(store.audit.pointStatus)+'</span>')+'</div>'+(store.points.some(p=>p.x==='併用可')?'<p class="point-foot">「併用可」の店舗ポイントは別に貯められます。</p>':'')+'</section><div class="combo"><strong>＋ ポイントと支払いの組み合わせ</strong><p>'+escapeHtml(store.combination)+'</p></div><details class="more"><summary>還元条件・ほかの支払い</summary><div class="note"><h4>還元条件</h4>'+(store.conditions.map(c=>'<p>'+escapeHtml(c)+'</p>').join('')||'店舗・利用方法ごとの条件をご確認ください。')+'</div><div class="note"><h4>使える主な支払い候補</h4><div class="pay-options">'+allPayments.map(p=>'<div class="pay-option"><span>'+escapeHtml(p.n)+(p.x?'<small>'+escapeHtml(p.x)+'</small>':'')+(p.ownerRate?'<small>決済 '+escapeHtml(p.r)+' ＋ 株主優待 '+p.ownerRate.toFixed(1)+'%</small>':'')+'</span><strong>'+escapeHtml(comparisonLabel(p)||'要確認')+'</strong></div>').join('')+'</div></div><div class="note"><h4>備考</h4>'+escapeHtml(store.note)+'</div>'+auditDetails(store)+'<div class="detail-tools"><button id="copyBtn" type="button" class="btn ghost small">結果をコピー</button><button id="resultListBtn" type="button" class="btn secondary small">登録店一覧</button></div></details>';
  show($("resultPanel"));$("changeStoreBtn").onclick=()=>{clearView();$("manualSearch").focus();};$("copyBtn").onclick=copyResult;$("resultListBtn").onclick=openStoreList;
+ if(store.payments.some(p=>p.id==='jalTokyu'))$("jalMileValue").onchange=event=>{
+  const value=Number(event.target.value);if(!JAL_MILE_VALUES.includes(value))return;
+  jalMileValue=value;try{localStorage.setItem(JAL_MILE_KEY,String(value));}catch(_){}
+  STORE_DATA.filter(s=>s.payments.some(p=>p.id==='jalTokyu')).forEach(refreshStoreSummary);
+  renderPayment(store,context);$("jalMileValue").focus();
+ };
  if(store.local.aeonOwners)$("ownersRate").onchange=event=>{
   const rate=Number(event.target.value);if(!OWNER_RATES.includes(rate))return;
   ownerSetting={rate,confirmed:true};try{localStorage.setItem(OWNER_KEY,String(rate));}catch(_){}

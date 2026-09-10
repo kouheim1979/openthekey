@@ -283,6 +283,41 @@
     meta.date=auditDate; meta.aeonOwners=false; meta.ownerPaymentIds=[];
     r[4]=Array.from(new Set([...r[4],'aeonOwnersPay']));
   }
+  // Personal JAL/TOKYU card: mileage and presentation points are separate rewards.
+  Object.assign(a.sources,{
+    jalShopping:['JAL：通常ショッピングマイル・特約店・端数処理','https://www.jal.co.jp/jp/ja/jalcard/function/shoppingmile.html'],
+    jalTokyu:['JALカード TOKYU POINT ClubQ：マイルとポイント','https://www.jal.co.jp/jp/ja/jalcard/card/top.html'],
+    kohokuPoints:['TOKYU POINT：港北TOKYU S.C.のJAL提携カード・提示条件','https://point.tokyu.co.jp/shop/detail-kohokutokyu-sc'],
+    kohokuExclusions:['港北TOKYU S.C.：ポイント対象外・条件が異なる店舗','https://www.kohokutokyu-sc.com/service/tokyupoint/'],
+    kohokuPay:['港北TOKYU S.C.：決済方法','https://www.kohokutokyu-sc.com/service/'],
+    kohokuCafe:['港北TOKYU S.C.：サンマルクカフェ A館B1F','https://www.kohokutokyu-sc.com/floor/detail/?cd=000171'],
+    saintPay:['サンマルクカフェ：対応決済と支店例外','https://www.saint-marc-hd.com/saintmarccafe/news/187/'],
+    saintApp:['myサンマルク：提示ポイント・併用条件','https://www.saint-marc-hd.jp/lp/app/using-the-app/'],
+    saintOldApp:['サンマルクカフェ：旧アプリ終了','https://www.saint-marc-hd.com/saintmarccafe/news/1525/'],
+    tokyuStoreJal:['TOKYU POINT：東急ストアのJAL提携カード条件','https://point.tokyu.co.jp/shop/detail-tokyustore']
+  });
+  const kohokuConditions=[
+    '保有カードはJALカード TOKYU POINT ClubQ、ショッピングマイル・プレミアム未加入。一般のTOKYU CARDの最大2%とは区別します。',
+    '港北TOKYU S.C.の通常TOKYU POINTは100円税込につき1ポイント。JAL提携カード提示＋コード払いでも対象。TOKYU POINT・金券・商品券払いはポイント対象外です。',
+    '施設内でもロピア・セブン-イレブン・ニトリ・コジマ×ビックカメラ・魚べい・109シネマズ港北等はポイント対象外。シャトレーゼ・ユニクロ・ダイソー・Standard Productsは条件が異なります。',
+    'ポイントアップ日の最大率は自動加算しません。JAL提携カードへの適用を確認してから利用してください。'
+  ];
+  add('サンマルクカフェ 港北東急SC店',['サンマルクカフェ港北TOKYU','サンマルク港北東急','サンマルクカフェ港北東急ショッピングセンター店'],['paypay','rakuten','jalTokyu','dpay','aupay','card','cash'],[
+    {n:'TOKYU POINT',r:'1.0%',base:1,x:'100円税込につき1P・JAL提携カード等を提示'},
+    {n:'myサンマルク',r:'100円税込につき1P',x:'対象店舗・対面レジ／クーポン交換型。TOKYUとの併用は店頭確認'}
+  ],['kohokuCafe','kohokuPoints','kohokuExclusions','kohokuPay','saintPay','saintApp','saintOldApp','jalShopping','jalTokyu'],
+  '港北東急SCのサンマルクカフェを支店として登録。公式施設ポイント対象外・例外リストに掲載なし。全国のサンマルクやベーカリーレストランには適用しません。支払いは施設・ブランド公式案内に基づき、店頭の対応レジも確認。','',
+  {partial:true,matchRequired:'港北',notice:'JAL提携カードの提示＋PayPayも比較',pointCaption:'JALマイルは決済分・TOKYU POINTは別枠',scopeHint:'港北TOKYU S.C. A館B1Fのサンマルクカフェ専用です。',conditions:[...kohokuConditions,'旧サンマルクカフェアプリのポイント付与は2026年8月31日終了。myサンマルクのポイントはクーポン交換型で、1P＝1円や一律1%還元とは扱いません。共通ポイントとの併用についてサンマルクカフェは対象外と案内されています。']});
+  Object.assign(a.storeMeta['サンマルクカフェ 港北東急SC店'],{date:auditDate,kohokuPoints:true});
+  add('港北東急SC（施設ポイント案内）',['港北東急','港北TOKYU SC','港北東急ショッピングセンター'],[],[],['kohokuPoints','kohokuExclusions','kohokuPay','jalTokyu'],
+    '施設名だけで館内すべての店に同じ条件を当てはめません。サンマルクは「サンマルクカフェ 港北東急SC店」を選んで比較してください。',
+    '通常の対象店はTOKYU POINT提示1%＋決済特典。JALカード払いなら通常200円につき1マイル、対応店でPayPay払いなら指定1.5%を別に比較。対象外店舗・商品は除きます。',
+    {partial:true,scope:'施設案内',notice:'館内の店舗ごとに対象可否が異なります',pointStatus:'対象店舗の通常提示分は税込1%・対象外店舗あり',conditions:kohokuConditions});
+  a.storeMeta['港北東急SC（施設ポイント案内）'].date=auditDate;
+  revise('東急ストア',['jalTokyu'],['jalShopping','jalTokyu','tokyuStoreJal'],
+    'JALカード TOKYU POINT ClubQ（プレミアム未加入）を追加。通常200円税込につき1マイル。提携カードのTOKYU POINTは200円税抜につき1Pで、一般TOKYU CARDの加盟店3Pとは異なります。',
+    {meta:{conditions:[...(a.storeMeta['東急ストア']?.conditions||[]),'JAL提携カード払いも、カード提示＋現金・QR払いもTOKYU POINTは通常200円税抜につき1P。マイルとは別に扱います。JAL特約店の倍付けは未確認のため通常積算で比較します。']}});
+  a.settings.jalTokyu={shoppingMilePremium:false,milesPer200Yen:1,defaultYenPerMile:1};
   // Expose all six comparison methods on every store, including honest unknowns.
   // This makes sparse records distinguishable from genuinely unsupported methods.
   for (const r of a.rows) {
@@ -295,7 +330,7 @@
     r[6]=r[6].filter(i=>!a.text[i].startsWith('未確認の決済：'));
   }
   a.paymentAudit={date:auditDate,total:a.rows.length,corrections,excludedRakuten};
-  a.localUpdate = {date:auditDate,added:29,total:a.rows.length};
+  a.localUpdate = {date:auditDate,added:31,total:a.rows.length};
   a.settings.aeonPay = 0.5; a.settings.aeonPayGroup = 1; a.settings.famiPay = 0.5;
   window.PAYMENT_LOCAL_READY = true;
 })();

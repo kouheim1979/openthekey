@@ -128,7 +128,7 @@ test('audit fixes sparse records, keeps unknowns and excludes non-earning Rakute
   assert.equal(w.store('松弁ネット/松屋モバイルオーダー').payments.length,1);
 });
 
-test('actual coupon runtime renders all 141 stores even when the coupon network fails', async () => {
+test('actual coupon runtime renders all 143 stores even when the coupon network fails', async () => {
   const w=world({runtime:'checker-20260907-autocoupons.js',fetcher:async()=>{throw Error('offline');}});
   await flush();
   for(const s of w.api.STORE_DATA) {
@@ -154,8 +154,8 @@ test('all entrypoints have valid script integrity and keep the colorful design',
   assert.equal(read('index.html'), read('app-v2.html')); assert.equal(read('index.html'), read('app-v3.html'));
 });
 
-test('141 stores render, original rates and PayPay tie ordering survive, list is lazy', () => {
-  const w = world(); assert.equal(w.sandbox.PAYMENT_STORE_COUNT, 141);
+test('143 stores render, original rates and PayPay tie ordering survive, list is lazy', () => {
+  const w = world(); assert.equal(w.sandbox.PAYMENT_STORE_COUNT, 143);
   assert.equal(w.nodes.get('storeList').children.length, 0); assert.equal(w.nodes.get('quickStores').children.length, 5);
   for (const store of w.api.STORE_DATA) {
     const top = store.payments.filter(p => p.rankable).sort(w.api.paymentOrder);
@@ -224,6 +224,31 @@ test('owners benefits use brand and route allowlists in both shipped runtimes', 
     assert.equal(store.payments.find(p=>p.id==='aeonGroup').ownerRate,0);
     assert.equal(store.payments.find(p=>p.id==='cash').ownerRate,7);
   }
+});
+
+test('JAL TOKYU without premium separates miles and presentation, shares valuation and scopes facility points', () => {
+ for(const runtime of ['checker-20260907.js','checker-20260907-autocoupons.js']){
+  const w=world({runtime});const cafe=w.store('サンマルクカフェ 港北東急SC店');
+  w.manual(cafe.store);
+  assert.equal(cafe.payments.find(p=>p.id==='jalTokyu').r,'0.5%相当');
+  assert.match(cafe.first,/PayPay/);assert.match(cafe.second,/楽天ペイ/);
+  assert.match(cafe.combination,/計2.5%目安/);
+  assert.match(w.nodes.get('result').innerHTML,/通常200円＝1マイル/);
+  assert.equal(cafe.points.find(p=>p.n==='TOKYU POINT').base,1);
+  assert.equal(cafe.points.find(p=>p.n==='myサンマルク').base,undefined);
+  w.nodes.get('jalMileValue').onchange({target:{value:'4'}});
+  assert.match(cafe.first,/JALカード/);assert.match(cafe.combination,/計3.0%相当/);
+  assert.equal(w.store('東急ストア').payments.find(p=>p.id==='jalTokyu').r,'2.0%相当');
+  const restored=world({runtime,storage:w.storage});assert.equal(restored.store(cafe.store).payments.find(p=>p.id==='jalTokyu').r,'2.0%相当');
+  assert.equal(w.api.matchStoreFromText('サンマルクカフェ 新宿店'),null);
+  assert.equal(w.api.matchStoreFromText('サンマルクカフェ 港北東急SC店').store.store,cafe.store);
+  assert.equal(w.api.matchStoreFromText('港北東急SC ロピア'),null);
+  assert.ok(w.api.STORE_DATA.filter(s=>s!==cafe).every(s=>!s.local.kohokuPoints));
+  assert.ok(w.store('イオン').payments.every(p=>p.id!=='jalTokyu'));
+ }
+ const denied=world({blockedStorage:true});denied.manual('サンマルクカフェ 港北東急SC店');
+ denied.nodes.get('jalMileValue').onchange({target:{value:'1.5'}});
+ assert.equal(denied.store('サンマルクカフェ 港北東急SC店').payments.find(p=>p.id==='jalTokyu').r,'0.75%相当');
 });
 
 test('missing optional location script and denied local storage cannot block manual search', async () => {
