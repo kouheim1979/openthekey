@@ -318,6 +318,46 @@
     'JALカード TOKYU POINT ClubQ（プレミアム未加入）を追加。通常200円税込につき1マイル。提携カードのTOKYU POINTは200円税抜につき1Pで、一般TOKYU CARDの加盟店3Pとは異なります。',
     {meta:{conditions:[...(a.storeMeta['東急ストア']?.conditions||[]),'JAL提携カード払いも、カード提示＋現金・QR払いもTOKYU POINTは通常200円税抜につき1P。マイルとは別に扱います。JAL特約店の倍付けは未確認のため通常積算で比較します。']}});
   a.settings.jalTokyu={shoppingMilePremium:false,milesPer200Yen:1,defaultYenPerMile:1};
+  // Current personal card rates and officially included sub-brands (2026-10-04).
+  const cardUpdateDate='2026-10-04';
+  Object.assign(a.sources,{
+    sevenBonus:['三井住友カード：セブン限定の追加2.5%とセブンマイルの条件','https://www.smbc-card.com/camp/seven-eleven_vpoint/index.html']
+  });
+  const includedBrands=[
+    ['プレッセ',['precce']],
+    ['フードステーション',['東急ストアフードステーション','food station','foodstation']],
+    ['MEATMeet',['meat meet','ミートミート']],
+    ['パワーマート',['power mart','powermart']],
+    ['サンリブBUONO',['サンリブボーノ','sunlive buono']],
+    ['生鮮げんき市場',['生鮮元気市場','せいせんげんきいちば']]
+  ];
+  for(const [name,aliases] of includedBrands){
+    add(name,aliases,['mufg','card'],[],['mf'],
+      '三菱UFJの公式対象ブランドとして確認。ネットスーパー・テナント・対象外支店等は各ブランドの公式条件に従ってください。他の決済・提示ポイントは親ブランドから自動継承せず、店頭で確認します。','',
+      {partial:true,scopeHint:'対象ブランドの店頭カード決済で比較。QR決済・提示ポイントの対応は支店ごとに確認してください。'});
+    a.storeMeta[name].date=cardUpdateDate;
+  }
+  add('モスバーガー＆カフェ',['モスバーガー&カフェ','モスバーガーアンドカフェ','mos burger & cafe','mos burger and cafe','mosburgercafe'],['olive','card'],[],['sm'],
+    '三井住友カードの高還元対象ブランドとして確認。スマホタッチ決済が対象。一部施設内店舗等は除外。QR決済・提示ポイントの対応は店頭で確認します。','',
+    {partial:true,scopeHint:'スマホタッチ決済で比較。モバイルオーダーは公式の指定方式・対象店舗に限ります。'});
+  a.storeMeta['モスバーガー＆カフェ'].date=cardUpdateDate;
+  for(const row of a.rows){
+    const payments=a.pay[row[2]].map(p=>({...p}));
+    const olive=payments.find(p=>['olive','oliveStar'].includes(p.id));
+    if(olive){
+      payments.push({...olive,id:olive.id==='oliveStar'?'smbcStar':'smbc'});
+      row[2]=a.pay.push(payments)-1;
+    }
+  }
+  {
+    const row=a.rows.find(r=>r[0]==='セブン-イレブン');
+    row[3]=a.points.push([{n:'セブンマイル',r:'税抜0.5%相当',x:'アプリ会員コード提示・対象商品・Vポイントへ交換'}])-1;
+    row[4]=Array.from(new Set([...row[4],'sevenBonus']));
+    a.storeMeta[row[0]].sevenApp=true;
+    row[8]=text('セブンアプリ提示のセブンマイルは税抜基準の別枠');
+    a.storeMeta[row[0]].date=cardUpdateDate;
+  }
+  a.settings.personalRatesUpdated=cardUpdateDate;
   // Expose all six comparison methods on every store, including honest unknowns.
   // This makes sparse records distinguishable from genuinely unsupported methods.
   for (const r of a.rows) {

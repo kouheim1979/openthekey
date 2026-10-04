@@ -85,7 +85,7 @@ function couponProviderLabel(o){return COUPON_PROVIDERS[o&&o.provider]?.label||S
 function couponDetail(p){
  if(!p.autoCoupon)return '';
  const o=p.autoCoupon,label=couponProviderLabel(o);
- if(o.provider==='vpass')return '通常 '+p.r+' ＋ '+label+' '+p.autoCouponRate+'%（獲得・対象条件を要確認）';
+ if(o.provider==='vpass')return (p.sevenBonusRate?'決済 '+p.r+'（セブン追加2.5%込み）':'通常 '+p.r)+' ＋ '+label+' '+p.autoCouponRate+'%（獲得・対象条件を要確認）';
  const benefit=Number.isFinite(Number(o.fixedBonus))&&Number(o.fixedBonus)>0
   ? p.couponPoints+'円相当（定額特典）'
   : p.couponPoints+'pt相当（上限反映）';

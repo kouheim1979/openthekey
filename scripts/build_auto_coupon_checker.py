@@ -1,7 +1,7 @@
 from pathlib import Path
 import hashlib,base64,re
 
-VERSION='20260910-jaltokyu1'
+VERSION='20261004-personalrates1'
 s=Path('checker-20260907.js').read_text(encoding='utf-8')
 def replace(old,new):
     global s
@@ -10,8 +10,8 @@ def replace(old,new):
 
 replace('const AUDIT=window.PAYMENT_AUDIT_DATA;',"const AUDIT=window.PAYMENT_AUDIT_DATA;\nlet COUPON_FEED={offers:[],updatedAt:''};")
 replace("function comparisonRate(payment){return configuredRate(payment.r)+(payment.ownerRate||0);}\nfunction comparisonLabel(payment){return payment.ownerRate?comparisonRate(payment).toFixed(1)+'%':payment.r;}",Path('scripts/coupon_runtime.js').read_text(encoding='utf-8'))
-replace('function refreshStoreSummary(store){','function refreshStoreSummary(store){\n refreshCouponBonus(store);')
-replace('function renderPayment(store,context=null){','function renderPayment(store,context=null){\n lastCouponContext=context;refreshStoreSummary(store);')
+replace('function refreshStoreSummary(store){\n refreshSevenBonus(store);','function refreshStoreSummary(store){\n refreshSevenBonus(store);\n refreshCouponBonus(store);')
+replace('function renderPayment(store,context=null){','function renderPayment(store,context=null){\n lastCouponContext=context;')
 replace("</div>'+ownerControls(store)+'<div class=\"rank-grid\">","</div>'+ownerControls(store)+couponStrip(store)+'<div class=\"rank-grid\">")
 replace("  const hint=p.ownerRate?'株主優待込み':", "  const hint=p.autoCouponRate?(p.autoCoupon.provider==='paypay'?'確認したクーポン込み':'クーポン条件付き'):p.ownerRate?'株主優待込み':")
 replace("  const detail=p.ownerRate?'決済 '+p.r+' ＋ 株主優待 '+p.ownerRate.toFixed(1)+'%':p.x;", "  const detail=p.autoCoupon?couponDetail(p):p.ownerRate?'決済 '+p.r+' ＋ 株主優待 '+p.ownerRate.toFixed(1)+'%':p.x;")
@@ -30,5 +30,8 @@ for name in ['index.html','app-v2.html','app-v3.html']:
     h=re.sub(r'checker-20260907(?:-coupons|-autocoupons)?\.js\?v=[^\"\']+',f'checker-20260907-autocoupons.js?v={VERSION}',h)
     h=re.sub(r'(checker-20260907-autocoupons\.js\?v='+VERSION+r'\" integrity=\")[^\"]+(\")',lambda m:m[1]+integrity+m[2],h)
     h=re.sub(r'data-ui-version="[^"]+"',f'data-ui-version="{VERSION}"',h)
+    for asset in ['audit-data-20260906.js','local-stores-20260907.js','stores-20260911.js','malls-20260913.js','location-search-20260907.js']:
+        asset_integrity='sha384-'+base64.b64encode(hashlib.sha384(Path(asset).read_bytes()).digest()).decode()
+        h=re.sub(r'(<script defer src="\./'+re.escape(asset)+r'\?v=)[^"]+(\")(?: integrity="[^"]+")?',lambda m:m[1]+VERSION+m[2]+' integrity="'+asset_integrity+'"',h)
     p.write_text(h,encoding='utf-8')
 print(VERSION,integrity)

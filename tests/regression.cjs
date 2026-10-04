@@ -61,7 +61,7 @@ function world({loadLocation = true, storage = new Map(), blockedStorage = false
     fetch: (url, options) => { requests.push({url, options}); return fetcher ? fetcher(url, options, requests.length) : new Promise(() => {}); }
   };
   sandbox.window = sandbox; vm.createContext(sandbox);
-  for (const name of ['audit-data-20260906.js', 'local-stores-20260907.js']) vm.runInContext(read(name), sandbox, {filename: name});
+  for (const name of ['audit-data-20260906.js', 'local-stores-20260907.js', 'stores-20260911.js', 'malls-20260913.js']) vm.runInContext(read(name), sandbox, {filename: name});
   if (loadLocation) vm.runInContext(read('location-search-20260907.js'), sandbox, {filename: 'location-search-20260907.js'});
   const script = read(runtime).replace('setupEvents();renderQuick();', 'window.__test={STORE_DATA,renderPayment,paymentOrder,comparisonRate,buildCandidatesFromOsm,matchStoreFromText};setupEvents();renderQuick();');
   vm.runInContext(script, sandbox, {filename: runtime});
@@ -128,7 +128,7 @@ test('audit fixes sparse records, keeps unknowns and excludes non-earning Rakute
   assert.equal(w.store('松弁ネット/松屋モバイルオーダー').payments.length,1);
 });
 
-test('actual coupon runtime renders all 143 stores even when the coupon network fails', async () => {
+test('actual coupon runtime renders all 155 stores even when the coupon network fails', async () => {
   const w=world({runtime:'checker-20260907-autocoupons.js',fetcher:async()=>{throw Error('offline');}});
   await flush();
   for(const s of w.api.STORE_DATA) {
@@ -147,22 +147,23 @@ test('all entrypoints have valid script integrity and keep the colorful design',
     assert.match(html, /いまのお店、何で払う？/);
     for (const color of ['#ff4fa3', '#ffe45c', '#4ac7ff', '#60f09b']) assert.ok(html.includes(color));
     const scripts = [...html.matchAll(/<script defer src="\.\/([^"?]+)(?:\?[^" ]+)?" integrity="sha384-([^"]+)"/g)];
-    assert.equal(scripts.length, 4);
-    assert.deepEqual(scripts.map(m => m[1]), ['audit-data-20260906.js','local-stores-20260907.js','location-search-20260907.js','checker-20260907-autocoupons.js']);
+    assert.equal(scripts.length, 6);
+    assert.deepEqual(scripts.map(m => m[1]), ['audit-data-20260906.js','local-stores-20260907.js','stores-20260911.js','malls-20260913.js','location-search-20260907.js','checker-20260907-autocoupons.js']);
     for (const [, file, digest] of scripts) assert.equal(crypto.createHash('sha384').update(read(file)).digest('base64'), digest, file);
   }
   assert.equal(read('index.html'), read('app-v2.html')); assert.equal(read('index.html'), read('app-v3.html'));
 });
 
-test('143 stores render, original rates and PayPay tie ordering survive, list is lazy', () => {
-  const w = world(); assert.equal(w.sandbox.PAYMENT_STORE_COUNT, 143);
+test('155 stores render, personal rates and PayPay tie ordering survive, list is lazy', () => {
+  const w = world(); assert.equal(w.sandbox.PAYMENT_STORE_COUNT, 155);
   assert.equal(w.nodes.get('storeList').children.length, 0); assert.equal(w.nodes.get('quickStores').children.length, 5);
   for (const store of w.api.STORE_DATA) {
     const top = store.payments.filter(p => p.rankable).sort(w.api.paymentOrder);
     for (const p of top) {
       if (p.n === 'PayPay') assert.equal(p.r, '1.5%');
-      if (p.n === '三菱UFJカード') assert.equal(p.r, '12.5%');
-      if (p.id === 'olive') assert.equal(p.r, '8%');
+      if (p.n === '三菱UFJカード') assert.equal(p.r, '10%');
+      if (['olive','oliveStar'].includes(p.id)) assert.equal(p.r, '9%');
+      if (['smbc','smbcStar'].includes(p.id)) assert.equal(p.r, '8%');
       if (p.id === 'rakuten') assert.equal(p.r, '1.5%');
     }
     if (top.some(p => p.id === 'paypay') && top.some(p => p.id === 'rakuten')) assert.ok(top.findIndex(p => p.id === 'paypay') < top.findIndex(p => p.id === 'rakuten'));
@@ -171,6 +172,74 @@ test('143 stores render, original rates and PayPay tie ordering survive, list is
   w.manual('コーナン'); assert.match(w.nodes.get('result').innerHTML, /point-pill">楽天 <strong>税抜0.5%/);
   w.manual('ファミマ'); assert.match(w.nodes.get('result').innerHTML, /pay-name">楽天ペイ/);
   assert.equal(w.errors.length, 0);
+});
+
+test('personal rates cover every UFJ route and keep store/card eligibility distinct', () => {
+  for (const runtime of ['checker-20260907.js','checker-20260907-autocoupons.js']) {
+    const w=world({runtime});
+    assert.equal(w.sandbox.PAYMENT_AUDIT_DATA.settings.mufg,10);
+    assert.equal(w.sandbox.PAYMENT_AUDIT_DATA.settings.olive,9);
+    assert.equal(w.sandbox.PAYMENT_AUDIT_DATA.settings.smbc,8);
+    for (const store of w.api.STORE_DATA) {
+      for (const p of store.payments) {
+        if (p.n==='三菱UFJカード') assert.equal(p.r,'10%',store.store);
+        if (p.id==='olive') assert.equal(store.payments.find(q=>q.id==='smbc').r,'8%',store.store);
+        if (p.id==='oliveStar') assert.equal(store.payments.find(q=>q.id==='smbcStar').r,'8%',store.store);
+      }
+      w.api.renderPayment(store);
+      assert.doesNotMatch(w.nodes.get('result').innerHTML,/12\.5%/,store.store);
+    }
+    for (const name of ['ローソン','くら寿司','スシロー','松屋','オーケー','スタバ','コカ・コーラ自販機','カーブス','ピザハットオンライン','松弁ネット/松屋モバイルオーダー']) assert.match(w.store(name).first,/三菱UFJカード（10%/);
+    for (const name of ['マクドナルド','すき家','サイゼリヤ','はま寿司','かっぱ寿司']) {
+      assert.match(w.store(name).first,/Olive（9%/);
+      assert.ok(!w.store(name).payments.some(p=>p.n==='三菱UFJカード'));
+    }
+    assert.ok(!w.store('ローソン・スリーエフ').payments.some(p=>p.n==='三菱UFJカード'));
+    assert.ok(!w.store('ファミリーマート').payments.some(p=>['mufg','olive','smbc'].includes(p.id)));
+    assert.match(w.store('スタバ').payments.find(p=>p.id==='smbcStar').x,/Apple Payでモバイルオーダー/);
+    assert.match(w.store('オーケー').combination,/10%/);
+    assert.match(w.store('ミニストップ').combination,/Olive 9%／ゴールドNL 8%/);
+  }
+});
+
+test('seven bonus requires current confirmation, ranks 11.5/10.5 and keeps tax-exclusive miles separate', async () => {
+  for (const runtime of ['checker-20260907.js','checker-20260907-autocoupons.js']) {
+    const w=world({runtime,blockedStorage:true});w.manual('セブン');
+    const store=w.store('セブン-イレブン'),olive=store.payments.find(p=>p.id==='olive'),smbc=store.payments.find(p=>p.id==='smbc');
+    assert.match(store.first,/三菱UFJカード（10%/);
+    assert.equal(olive.r,'9%');assert.equal(smbc.r,'8%');
+    assert.equal(store.points[0].n,'セブンマイル');assert.equal(store.points[0].base,undefined);
+    w.nodes.get('sevenBonus').onchange({target:{value:'on'}});
+    assert.equal(olive.r,'11.5%');assert.equal(smbc.r,'10.5%');
+    assert.match(store.first,/Olive（11\.5%/);assert.match(store.second,/ゴールドNL（10\.5%/);
+    assert.match(w.nodes.get('result').innerHTML,/セブン追加2\.5%込み/);
+    assert.match(store.combination,/税抜基準/);
+    assert.equal(w.api.comparisonRate(olive),11.5,'miles must not enter the payment rank');
+    let copied='';w.sandbox.navigator.clipboard.writeText=async text=>{copied=text};
+    await w.nodes.get('copyBtn').onclick();assert.match(copied,/1位：Olive（11\.5%/);assert.match(copied,/セブンマイル/);
+    w.manual('ローソン');assert.equal(w.store('ローソン').payments.find(p=>p.id==='olive').r,'9%');
+    assert.doesNotMatch(w.nodes.get('result').innerHTML,/id="sevenBonus"/);
+    w.manual('セブン');w.nodes.get('sevenBonus').onchange({target:{value:'off'}});
+    assert.equal(olive.r,'9%');assert.equal(smbc.r,'8%');assert.match(store.first,/三菱UFJカード（10%/);
+    assert.doesNotMatch(w.nodes.get('result').innerHTML,/セブン追加2\.5%込み/);
+    const fresh=world({runtime});fresh.manual('セブン');assert.match(fresh.store('セブン-イレブン').first,/三菱UFJカード（10%/);
+  }
+});
+
+test('official sub-brands match manual and nearby names without inheriting unverified payments', () => {
+  for (const runtime of ['checker-20260907.js','checker-20260907-autocoupons.js']) {
+    const w=world({runtime});
+    for (const [alias,name,id,rate] of [
+      ['プレッセ','プレッセ','mufg','10%'],['東急ストアフードステーション','フードステーション','mufg','10%'],
+      ['meat meet','MEATMeet','mufg','10%'],['パワーマート','パワーマート','mufg','10%'],
+      ['サンリブボーノ','サンリブBUONO','mufg','10%'],['生鮮げんき市場','生鮮げんき市場','mufg','10%'],
+      ['モスバーガー&カフェ','モスバーガー＆カフェ','olive','9%']]) {
+      w.manual(alias);assert.ok(w.nodes.get('result').innerHTML.includes(name.replaceAll('&','&amp;')),alias);
+      assert.equal(w.api.matchStoreFromText(alias+' 横浜店').store.store,name);
+      assert.equal(w.store(name).payments.find(p=>p.id===id).r,rate);
+      assert.ok(!w.store(name).payments.some(p=>['paypay','rakuten','jalTokyu','dpay'].includes(p.id)),name);
+    }
+  }
 });
 
 test('Maruetsu accepts manual/nearby aliases, ranks confirmed payments and separates presentation', () => {
