@@ -89,4 +89,5 @@
   }
   if (a.paymentAudit) a.paymentAudit.total = a.rows.length;
   window.PAYMENT_LOCAL_READY = true;
+  window.PAYMENT_STORES_0911_READY = true;
 })();

@@ -8,14 +8,14 @@ let COUPON_FEED={offers:[],updatedAt:''};
 if(!window.PAYMENT_LOCAL_READY)throw new Error('追加店舗データを読み込めません。通信状態を確認して再読み込みしてください。');
 if(!AUDIT||!Array.isArray(AUDIT.rows))throw new Error('店舗データを読み込めません。ページを再読み込みしてください。');
 const CARD_RATES={mufg:AUDIT.settings.mufg+'%',olive:AUDIT.settings.olive+'%',smbc:AUDIT.settings.smbc+'%'};
-const MF_COND='三菱UFJは本人指定の10%（キャッシュバック相当）で比較。グローバルポイント1P=4円の交換を前提とし、公式の1P=5円相当の表示とは区別します。三菱UFJ銀行の支払口座・MDCエントリーと各加算条件が前提。対象店の合計利用額は毎月16日〜翌月15日に5万円まで（超過分は通常0.5%ポイント還元、キャッシュバック換算0.4%）。家族カード利用分も含め枠を確認。カードブランド・対象店舗・決済方式を確認してください。';
+const MF_COND='三菱UFJは本人指定の10%（キャッシュバック相当）で比較。グローバルポイント1P=4円の交換を前提とし、公式の1P=5円相当の表示とは区別します。三菱UFJ銀行の支払口座・MDCエントリーと各加算条件が前提。対象店の合計利用額は毎月16日〜翌月15日に5万円まで（超過分は通常0.5%ポイント還元、キャッシュバック換算0.4%）。家族カード利用分も含め枠を確認。公式の対象店の基本は7%、条件達成で最大20%。アメリカン・エキスプレスは2026年12月15日利用分まで一部ブランド（くら寿司・オーケー等18ブランド）が対象外で、12月16日から4ブランド共通になります。カードブランド・対象店舗・決済方式を確認してください。';
 const MF_MODE='三菱UFJ：カード現物の対象決済、または対応店で対象のApple Pay（QUICPay）。スマホのVisa／Mastercardタッチやグローバルポイント Wallet払いは対象外。チャージ・オンライン専用店では各店の別条件に従ってください。';
-const OLIVE_COND='Oliveは本人指定の9%で比較（公式基本8%と個人加算を含む現在の設定）。クレジットモードのスマホVisaタッチが対象。カード現物のタッチ・差し込み・iDは高還元対象外。モバイルオーダーは公式の対象ブランド・指定方式に限ります。個人加算の達成状況・対象店舗を確認してください。';
-const SMBC_COND='三井住友カード ゴールドNLは本人指定の8%で比較（公式基本7%と個人加算を含む現在の設定）。スマホのVisa／Mastercardタッチが対象。カード現物のタッチ・差し込み・iDは高還元対象外。モバイルオーダーは公式の対象ブランド・指定方式に限ります。個人加算の達成状況・対象店舗を確認してください。';
-const SEVEN_COND='セブン限定の決済追加2.5%は、Vpass・Vポイント・セブンアプリの連携と、対象商品のスマホタッチ決済が条件。タバコ購入分は追加2.5%対象外。一部商業施設内の店舗等は対象外。会員コード提示によるセブンマイル（200円税抜につき1マイル、Vポイントへ交換）は別枠で、決済還元に重ねて加算しません。';
-const RP_COND='楽天ペイ1.5%：楽天キャッシュを支払元にし、適用月の前々月16日〜前月15日に対象アプリの楽天ポイントカードを2回以上提示して各回1ポイント以上獲得。未達時は1.0%。プラスチックカード提示等は判定対象外。ポイント進呈対象外店・商品は除きます。提示ポイントそのものは別欄で、1.5%に自動で含まれるわけではありません。';
-const PP_COND='PayPayは指定の1.5%を比較用設定値として使用。全員一律ではないため実際のPayPayステップ・支払元・対象商品をアプリで確認。同率の楽天ペイより先に表示します。';
-const DP_COND='d払い：残高等の対象支払元は0.5%、dカードを支払元に設定すると計1.0%。dカード以外のクレジットカードを支払元にした場合、d払い自体のポイントは0%（カード会社の特典は別）。この一覧は0.5%を基本比較値にしています。';
+const OLIVE_COND='Oliveは本人指定の9%で比較（公式：対象店のクレジットモード8%〔2026年2月1日〜〕＋本人の個人加算）。アプリログインの+1%特典は2026年2月28日で終了したため、個人加算の内訳を確認してください。クレジットモードのスマホVisaタッチが対象。カード現物のタッチ・差し込み・iDは高還元対象外。モバイルオーダーは公式の対象ブランド・指定方式に限ります。個人加算の達成状況・対象店舗を確認してください。';
+const SMBC_COND='三井住友カード ゴールドNLは本人指定の8%で比較（公式：対象店7%＋本人の個人加算）。アプリログインの+1%特典は2026年2月28日で終了したため、個人加算の内訳を確認してください。スマホのVisa／Mastercardタッチが対象。カード現物のタッチ・差し込み・iDは高還元対象外。モバイルオーダーは公式の対象ブランド・指定方式に限ります。個人加算の達成状況・対象店舗を確認してください。';
+const SEVEN_COND='公式：セブン‐イレブンはOlive（クレジットモード）最大11%＝8%＋3%、その他の対象カード最大10%＝7%＋3%。この3%のうち0.5%はセブンアプリ会員コード提示のセブンマイル分なので、決済の追加分は2.5%として比較します。セブン限定の決済追加2.5%は、Vpass・Vポイント・セブンアプリの連携と、対象商品のスマホタッチ決済が条件。タバコ購入分は追加2.5%対象外。一部商業施設内の店舗等は対象外。会員コード提示によるセブンマイル（200円税抜につき1マイル、Vポイントへ交換）は別枠で、決済還元に重ねて加算しません。';
+const RP_COND='楽天ペイ1.5%：楽天キャッシュを支払元にし、適用月の前々月16日〜前月15日に対象アプリの楽天ポイントカードを2回以上提示して各回1ポイント以上獲得。未達時は1.0%。プラスチックカード提示等は判定対象外。ポイント進呈対象外店・商品は除きます。提示ポイントそのものは別欄で、1.5%に自動で含まれるわけではありません。2026年1月に発表された引き下げ（最大1.0%・提示5回以上）は見合わせ中で新しい時期は未定のため、アプリの表示で要確認。';
+const PP_COND='PayPayは本人指定の1.5%を比較用設定値として使用（公式基本：残高0.5%／PayPayクレジット1.0%、PayPayステップ達成で+0.5%。2026年6月2日以降は本人確認が必須）。全員一律ではないため実際のPayPayステップ・支払元・対象商品をアプリで確認。同率の楽天ペイより先に表示します。';
+const DP_COND='d払い：残高等の対象支払元は0.5%、dカードを支払元に設定すると計1.0%。dカード以外のクレジットカードを支払元にした場合、d払い自体のポイントは0%（カード会社の特典は別）。この一覧は0.5%を基本比較値にしています。2026年9月以降の特典の月間上限・期間用途限定ポイント化は公式で要確認。';
 const AU_COND='au PAY：通常は200円税込につき1Pで0.5%。チャージ元カードや特定料金プラン等の加算は別条件なので自動加算しません。Pontaの提示分と決済分を区別します。';
 function method(n,r,x,conditions,src,rankable=true){return{n,r,x,conditions,src,rankable};}
 const METHODS={
@@ -30,7 +30,7 @@ const METHODS={
  card:method('Olive通常','0.5%','保有カードの通常還元を比較',['カード通常0.5%は保有カードの設定。カードを使えることと、9%／8%／10%の高還元対象方式で使えることは別です。'],['sm']),
  famipay:method('FamiPay','0.5%','バーコード／Smart Code・対象商品',['FamiPayのバーコード払いはFamiPay／Smart Code対応のレジで利用。通常200円税込でファミマポイント1円分（0.5%）。対象外店舗・商品を除きます。チャージ元カードや翌月払い、クーポンなどの加算は含めません。','FamiPayカードのJCB払い・Apple Pay等のQUICPay＋払いは、別の設定と加盟店条件が必要です。JCB対応だけでFamiPayバーコード対応とは判定していません。'],['famiGeneral','smartCode']),
  waon:method('電子マネーWAON','1.0%','会員登録済み・対象商品',['会員登録済みWAONは対象店で通常1.0%、未登録は0.5%。提示型WAON POINTカードとは別の決済制度です。'],['msw']),
- okCash:method('OKクラブ＋現金','約3%割引','対象食料品のみ',['対象食料品の3/103割引。カード・QR決済との二重取り不可。ポイントではなく値引きで、全商品・支払総額の一律3%ではありません。'],['ok']),
+ okCash:method('OKクラブ＋現金','約2.9%割引','対象食料品のみ',['対象食料品の3/103割引（税込価格の約2.91%）。順位は2.9%で比較します。カード・QR決済との二重取り不可。ポイントではなく値引きで、全商品・支払総額の一律3%ではありません。'],['ok']),
  suicaRegistered:method('登録済みSuica','0.5%','JRE POINTに事前登録',['JRE POINTに登録したSuicaで対象商品を支払うと200円税込につき1ポイント。カード・バーコードの提示だけでは貯まりません。チャージ元カード特典は含めません。'],['nd']),
  mufgOnline:method('三菱UFJカード',CARD_RATES.mufg,'公式オンラインに直接カード登録',[MF_COND,'対象公式サイト／アプリのカード払い専用。店舗レジや別アプリ経由、QR決済にカードを登録した場合とは区別します。'],['mf']),
  mufgRecurring:method('三菱UFJカード',CARD_RATES.mufg,'対象の会費支払い',[MF_COND,'カーブスの対象会費をカード払いする場合の比較。通常の店頭決済候補ではありません。'],['mf','mfnew']),
@@ -60,10 +60,12 @@ function combinationFor(store){
  if(!best)return '支払方法が未確認のため、還元率による順位は確定していません。店頭表示をご確認ください。';
  if(name==='ファミリーマート')return '楽天・d・Vのどれか0.5% ＋ PayPay 1.5% ＝ 計2.0%目安。楽天ペイも条件達成なら同率。';
  if(store.local.sevenApp)return '決済は '+best.n+' '+comparisonLabel(best)+'で比較'+(sevenBonusEnabled?'（Olive／ゴールドNLには条件確認済みの追加2.5%を反映）':'（セブン追加2.5%は未加算）')+'。会計前にセブンアプリの会員コードを提示すると、対象商品200円税抜につき1セブンマイル。Vポイントへ交換できます。提示分は税抜基準のため、決済還元率に一律0.5%を足していません。';
+ if(name==='オーケー'&&mufgCapReached())return '三菱UFJは今期の5万円枠を使い切ったため0.4%相当で比較。対象食料品はOKクラブ＋現金の割引（3/103≒2.9%）、それ以外はPayPay等を比較します。現金割引はカード・QRへ重ねて加算しません。';
  if(name==='オーケー')return '三菱UFJの対象決済10%（キャッシュバック相当）と、対象食料品の現金割引を比較。現金割引はカード・QRへ重ねて加算しません。';
  if(name==='ミニストップ')return 'Olive 9%／ゴールドNL 8%／PayPay 1.5%に、現金向けWAON POINT提示分を加算しません。電子マネーWAONの決済分も別です。';
  if(name==='NewDays')return 'Suica払いのJRE POINTは決済条件付き。PayPay払いにJREの提示ポイントを上乗せする計算はしません。';
  if(name==='セイコーマート')return 'カード決済の還元とクラブポイントは別制度。クラブポイントを1P＝1円と決めつけて加算しません。';
+ if(name==='スタバ'&&mufgCapReached())return '三菱UFJのオンラインチャージは今期の5万円枠を使い切ったため0.4%相当。Olive 9%／ゴールドNL 8%の指定モバイルオーダーとは別ルートで、合算しません。';
  if(name==='スタバ')return '三菱UFJのオンラインチャージ10%（キャッシュバック相当）と、Olive 9%／ゴールドNL 8%の指定モバイルオーダーは別ルート。合算しません。';
  if(name==='コカ・コーラ自販機'||store.audit.scope!=='店頭')return '表示の対象ルートで支払う場合のみ。決済手段を重ねたり、別サービスのスタンプを円換算して足したりしません。';
  if(name==='ココス')return '対象店では共通ポイント1種類0.5%を別途。富山・石川・福井・岐阜・滋賀・奈良・京都の対象外店には加算しません。';
@@ -107,7 +109,7 @@ try{const value=Number(localStorage.getItem(JAL_MILE_KEY));if(JAL_MILE_VALUES.in
 let sevenBonusEnabled=false;
 function sevenControls(store){
  if(!store.local.sevenApp)return '';
- return '<div class="owners-setting"><label for="sevenBonus">セブンの追加還元</label><select id="sevenBonus" aria-label="セブンの連携・対象商品を確認"><option value="off"'+(!sevenBonusEnabled?' selected':'')+'>連携・対象商品を未確認</option><option value="on"'+(sevenBonusEnabled?' selected':'')+'>連携済み・対象商品（＋2.5%）</option></select><small>Vpass・Vポイント・セブンアプリの連携と今回の商品を確認。タバコ等は追加対象外。セブンマイルは提示欄の別枠です。</small></div>';
+ return '<div class="owners-setting"><label for="sevenBonus">セブンの追加還元</label><select id="sevenBonus" aria-label="セブンの連携・対象商品を確認"><option value="off"'+(!sevenBonusEnabled?' selected':'')+'>連携・対象商品を未確認</option><option value="on"'+(sevenBonusEnabled?' selected':'')+'>連携済み・対象商品（＋2.5%）</option></select><small>Vpass・セブンアプリ連携と対象商品を確認（タバコ等は対象外）。マイルは提示欄の別枠。</small></div>';
 }
 function refreshSevenBonus(store){
  if(!store.local.sevenApp)return;
@@ -146,6 +148,7 @@ function couponPaymentProvider(p){
  if(id==='vpassCouponCard'||n==='Olive'||n==='Olive通常'||n.includes('三井住友カード'))return'vpass';
  return'';
 }
+function couponFeedStale(now=Date.now()){const t=Date.parse(COUPON_FEED.updatedAt||'');return Number.isFinite(t)&&now-t>48*3600000;}
 function couponLive(o,now=Date.now()){
  const checked=Date.parse(o.checkedAt||COUPON_FEED.updatedAt||'');
  if(!Number.isFinite(checked)||now-checked>48*3600000||checked-now>3600000)return false;
@@ -177,11 +180,13 @@ function couponPoints(o,amount){
  if(o.maxBonus!=null&&Number.isFinite(Number(o.maxBonus)))bonus=Math.min(bonus,Number(o.maxBonus));
  return Math.max(0,bonus);
 }
+// Vクーポン require acquisition in Vpass before payment: never rank one that the user has not confirmed.
+function couponVpassRate(o){const rate=Number(o&&o.rate);return Number.isFinite(rate)&&rate>0&&rate<=100?rate:0;}
 function couponStoreOffer(store,provider,payment=null){
  const offers=couponOffers(store,provider,payment).filter(o=>o.rankable!==false);
- if(provider==='vpass')return offers.sort((a,b)=>Number(b.rate||0)-Number(a.rate||0))[0]||null;
  const st=couponState(store);
- return offers.filter(o=>st.checked[o.id||provider+'|'+o.brand]&&couponPoints(o,st.amount)>0)
+ if(provider==='vpass')return offers.filter(o=>st.checked[couponOfferKey(o)]&&couponVpassRate(o)>0).sort((a,b)=>couponVpassRate(b)-couponVpassRate(a))[0]||null;
+ return offers.filter(o=>st.checked[couponOfferKey(o)]&&couponPoints(o,st.amount)>0)
    .sort((a,b)=>couponPoints(b,st.amount)-couponPoints(a,st.amount)||Number(b.rate||0)-Number(a.rate||0))[0]||null;
 }
 function storeHasCouponProvider(store,provider){return store.payments.some(p=>couponPaymentProvider(p)===provider);}
@@ -195,7 +200,7 @@ function refreshCouponBonus(store){
   const provider=couponPaymentProvider(p),o=provider?couponStoreOffer(store,provider,p):null;
   if(!o||!p.rankable)continue;
   p.autoCoupon=o;
-  if(provider==='vpass')p.autoCouponRate=Number(o.rate)||0;
+  if(provider==='vpass')p.autoCouponRate=couponVpassRate(o);
   else{
    const amount=couponState(store).amount,points=couponPoints(o,amount);
    p.couponPoints=points;
@@ -209,7 +214,7 @@ function couponProviderLabel(o){return COUPON_PROVIDERS[o&&o.provider]?.label||S
 function couponDetail(p){
  if(!p.autoCoupon)return '';
  const o=p.autoCoupon,label=couponProviderLabel(o);
- if(o.provider==='vpass')return (p.sevenBonusRate?'決済 '+p.r+'（セブン追加2.5%込み）':'通常 '+p.r)+' ＋ '+label+' '+p.autoCouponRate+'%（獲得・対象条件を要確認）';
+ if(o.provider==='vpass')return (p.sevenBonusRate?'決済 '+p.r+'（セブン追加2.5%込み）':'通常 '+p.r)+' ＋ '+label+' '+p.autoCouponRate+'%（獲得済みと確認・上限と期間は公式で確認）';
  const benefit=Number.isFinite(Number(o.fixedBonus))&&Number(o.fixedBonus)>0
   ? p.couponPoints+'円相当（定額特典）'
   : p.couponPoints+'pt相当（上限反映）';
@@ -265,11 +270,20 @@ function couponStrip(store){
  );
  const byProvider={};for(const o of offers)(byProvider[o.provider]||(byProvider[o.provider]=[])).push(o);
  const chips=providers.filter(p=>byProvider[p]?.length).map(p=>'<span class="coupon-chip '+esc(p)+'">'+esc(COUPON_PROVIDERS[p].label)+' '+byProvider[p].length+'件</span>').join('');
- const selectable=offers.filter(o=>o.provider!=='vpass');
- const selected=selectable.filter(o=>st.checked[couponOfferKey(o)]&&o.rankable!==false&&couponPoints(o,st.amount)>0);
+ const selectable=offers;
+ const selected=selectable.filter(o=>st.checked[couponOfferKey(o)]&&o.rankable!==false&&(o.provider==='vpass'?couponVpassRate(o)>0:couponPoints(o,st.amount)>0));
  const rows=selectable.map(o=>{
   const key=couponOfferKey(o),bounds=couponOfferBounds(o);
-  const rankable=o.rankable!==false&&o.termsVerified;
+  const vpass=o.provider==='vpass';
+  const rankable=o.rankable!==false&&(vpass?couponVpassRate(o)>0:o.termsVerified);
+  if(vpass){
+   const source=couponSafeLink(o.sourceUrl);
+   return '<div class="coupon-offer"><b>'+esc(couponProviderLabel(o))+' · '+esc(o.title||o.brand)+' · +'+esc(couponVpassRate(o))+'%</b>'
+    +'<p class="coupon-caution">'+esc(o.requirements||o.note||'Vクーポンの獲得と対象カードが必要です。')+' 上限・期間・対象ルート（店頭／ネット注文など）は公式で確認してください。</p>'
+    +(source?'<a class="coupon-source" href="'+esc(source)+'" target="_blank" rel="noopener noreferrer">Vクーポン公式</a>':'')
+    +(rankable?'<label><input type="checkbox" data-coupon-vpass="1" data-coupon-key="'+esc(key)+'"'+(st.checked[key]?' checked':'')+'>Vクーポンを獲得済み・対象カードで支払う</label>':'')
+    +'</div>';
+  }
   const benefit=Number.isFinite(Number(o.fixedBonus))&&Number(o.fixedBonus)>0
    ? Number(o.fixedBonus).toLocaleString()+'円相当'
    : Number(o.rate)>0?(rankable?'+'+Number(o.rate)+'%':'最大・特典率 '+Number(o.rate)+'%'):'特典あり';
@@ -282,26 +296,25 @@ function couponStrip(store){
    +(rankable?'<label><input type="checkbox" data-coupon-key="'+esc(key)+'"'+(st.checked[key]?' checked':'')+'>今回使える（対象・エントリー・未使用枠などを確認）</label>':'<p class="coupon-caution">抽選・累計購入・対象商品などのため順位には自動反映しません。</p>')
    +'</div>';
  }).join('');
- const vp=byProvider.vpass||[];
- const vpHtml=vp.length?'<p><a class="coupon-source" href="'+esc(couponSafeLink(vp[0].sourceUrl))+'" target="_blank" rel="noopener noreferrer">Vクーポン公式で獲得・条件確認</a></p>':'';
  const detail=selectable.length?'<details class="coupon-expand"><summary>主要Payのキャンペーン条件を確認</summary>'
-  +'<div class="coupon-amount"><label for="couponAmount">対象商品の支払額（円）</label><input id="couponAmount" type="number" inputmode="numeric" min="1" step="1" placeholder="例 3000" value="'+(st.amount||'')+'"></div>'
-  +rows+'<p class="coupon-caution">同じ決済では今回の支払額に対して最も得な確認済み1件だけを比較。抽選・累計条件・商品限定など、単純な還元率にできない特典は順位へ足しません。</p>'
+  +'<div class="coupon-amount"><label for="couponAmount">対象商品の支払額（円・上限計算用）</label><input id="couponAmount" type="number" inputmode="numeric" min="1" step="1" placeholder="例 3000" value="'+(st.amount||'')+'"></div>'
+  +rows+'<p class="coupon-caution">Vクーポン・PayPay等は「獲得済み／今回使える」を確認したものだけ順位へ反映。同じ決済では今回の支払額に対して最も得な確認済み1件だけを比較。抽選・累計条件・商品限定など、単純な還元率にできない特典は順位へ足しません。</p>'
   +'<button id="couponApply" type="button" class="coupon-apply">確認した条件で順位を計算</button></details>':'';
- const status=selected.length?'<div class="coupon-caution">反映中：'+selected.map(o=>esc(couponProviderLabel(o)+' '+couponPoints(o,st.amount)+(o.bonusKind==='discount'?'円相当':'pt相当'))).join(' ／ ')+'</div>':'';
+ const status=selected.length?'<div class="coupon-caution">反映中：'+selected.map(o=>esc(couponProviderLabel(o)+' '+(o.provider==='vpass'?'+'+couponVpassRate(o)+'%':couponPoints(o,st.amount)+(o.bonusKind==='discount'?'円相当':'pt相当')))).join(' ／ ')+'</div>':'';
  const when=COUPON_FEED.updatedAt?new Date(COUPON_FEED.updatedAt).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'未取得';
  return '<section class="auto-coupon-strip" aria-label="公開キャンペーン"><div class="coupon-line"><b>公開キャンペーン</b>'
-  +(chips||'<span class="coupon-chip">'+(couponLoading?'確認中':couponFailed?'取得未完了':'該当なし')+'</span>')+'</div>'+status+detail+vpHtml
+  +(chips||'<span class="coupon-chip">'+(couponLoading?'確認中':couponFailed?'取得未完了':couponFeedStale()?'情報が古いため不使用':'該当なし')+'</span>')+'</div>'+status+detail
   +'<div class="coupon-foot">公開情報だけを使用。掲載未検出＝配布なしではありません。アプリ個別配信・獲得済み状態・利用済み枠は取得しません。更新 '+esc(when)+(couponFailed?' · 一部取得失敗':'')+'</div></section>';
 }
 function bindCouponControls(store,context){
  const btn=$('couponApply');if(!btn)return;
  btn.onclick=()=>{
-  const checked=Array.from(document.querySelectorAll('[data-coupon-key]:checked')).map(el=>el.dataset.couponKey);
+  const boxes=Array.from(document.querySelectorAll('[data-coupon-key]:checked')),checked=boxes.map(el=>el.dataset.couponKey);
   const st=couponState(store);
   if(!checked.length){st.amount=0;st.checked={};refreshStoreSummary(store);renderPayment(store,context);return;}
-  const input=$('couponAmount'),amount=Number(input.value);
-  if(!Number.isFinite(amount)||amount<=0||!Number.isInteger(amount)){input.setCustomValidity('対象商品の支払額を1円以上の整数で入力してください。');input.reportValidity();return;}
+  const input=$('couponAmount'),raw=String(input.value||'').trim(),amount=raw===''?0:Number(raw);
+  const needsAmount=boxes.some(el=>!el.dataset.couponVpass);
+  if((needsAmount||raw!=='')&&(!Number.isFinite(amount)||amount<=0||!Number.isInteger(amount))){input.setCustomValidity('対象商品の支払額を1円以上の整数で入力してください。');input.reportValidity();return;}
   input.setCustomValidity('');st.amount=amount;st.checked={};for(const key of checked)st.checked[key]=true;
   refreshStoreSummary(store);renderPayment(store,context);
  };
@@ -317,7 +330,58 @@ async function loadPublicCoupons(){
  finally{clearTimeout(timer);couponLoading=false;STORE_DATA.forEach(refreshStoreSummary);if(lastSelectedStore&&!$('resultPanel').classList.contains('hidden'))renderPayment(lastSelectedStore,lastCouponContext);}
 }
 
+// Japan date (UTC+9) for dated programme ends; recalculated on every summary refresh.
+function jstToday(){return new Date(Date.now()+9*3600000).toISOString().slice(0,10);}
+function refreshPaymentExpiry(store){
+ const until=(store.local&&store.local.paymentUntil)||{},today=jstToday();
+ for(const payment of store.payments){
+  const end=until[payment.id];if(!end)continue;
+  if(!payment.untilBase)payment.untilBase={r:payment.r,x:payment.x,rankable:payment.rankable};
+  const ended=today>end;
+  payment.rankable=ended?false:payment.untilBase.rankable;
+  payment.r=ended?'終了':payment.untilBase.r;
+  payment.x=ended?end+'で優遇終了（順位に含めません）':payment.untilBase.x+'・'+end+'まで';
+ }
+}
+const OFFICIAL_RATE_KEY={olive:'olive',oliveStar:'olive',smbc:'smbc',smbcStar:'smbc',mufg:'mufg',mufgOnline:'mufg',mufgRecurring:'mufg',mufgStar:'mufg',mufgCoke:'mufg',paypay:'paypay',paypayCoke:'paypay',paypayPublicCoupon:'paypay',rakuten:'rakuten'};
+const PERSONAL_RATE_IDS=['olive','oliveStar','smbc','smbcStar','mufg','mufgOnline','mufgRecurring','mufgStar','mufgCoke','paypay','paypayCoke','paypayPublicCoupon'];
+// Official rates are shown beside the owner's comparison values; they never change the ranking.
+function officialRateItem(payment){const item=(AUDIT.officialRates||{})[OFFICIAL_RATE_KEY[payment.id]];return item&&payment.r!=='終了'&&!payment.mufgCapped?item:null;}
+function officialRateKind(payment){return PERSONAL_RATE_IDS.includes(payment.id)?'本人設定値':'条件達成時の値';}
+function officialRateShort(payment){
+ const item=officialRateItem(payment);if(!item)return '';
+ const short=typeof item.base==='number'&&payment.sevenBonusRate?'公式'+(item.base+payment.sevenBonusRate)+'%（セブン追加込み）':item.short;
+ return officialRateKind(payment)+'（'+short+'）';
+}
+function officialRateNote(payment){const item=officialRateItem(payment);return item?officialRateKind(payment)+' · '+item.text:'';}
+// UFJ: the personal 10% applies to the first 50,000 yen per period (16th to the 15th, JST).
+// The owner marks the cap as used; the mark expires automatically when the next period starts.
+const MUFG_IDS=['mufg','mufgOnline','mufgRecurring','mufgStar','mufgCoke'];
+const MUFG_CAP_KEY='payment-checker-mufg-cap-period';
+function mufgPeriodStart(){const d=jstToday(),y=Number(d.slice(0,4)),m=Number(d.slice(5,7)),day=Number(d.slice(8,10));const s=day>=16?new Date(Date.UTC(y,m-1,16)):new Date(Date.UTC(y,m-2,16));return s.toISOString().slice(0,10);}
+function mufgPeriodLabel(){const s=mufgPeriodStart(),start=new Date(s+'T00:00:00Z'),end=new Date(Date.UTC(start.getUTCFullYear(),start.getUTCMonth()+1,15));return (start.getUTCMonth()+1)+'/16〜'+(end.getUTCMonth()+1)+'/15';}
+let mufgCapPeriod='';
+try{const v=localStorage.getItem(MUFG_CAP_KEY);if(typeof v==='string'&&/^\d{4}-\d{2}-16$/.test(v))mufgCapPeriod=v;}catch(_){}
+function mufgCapReached(){return mufgCapPeriod===mufgPeriodStart();}
+function refreshMufgCap(store){
+ const reached=mufgCapReached();
+ for(const payment of store.payments){
+  if(!MUFG_IDS.includes(payment.id))continue;
+  if(payment.r==='終了'){payment.mufgCapped=false;continue;}
+  if(!payment.capBase)payment.capBase={r:payment.r,x:payment.x}; // first run is always uncapped (initial method values)
+  payment.mufgCapped=reached;
+  payment.r=reached?'0.4%':payment.capBase.r;
+  payment.x=reached?'今期（'+mufgPeriodLabel()+'）の5万円枠を使い切り・通常0.5%P＝0.4%相当':payment.capBase.x;
+ }
+}
+function mufgCapControls(store){
+ if(!store.payments.some(p=>MUFG_IDS.includes(p.id)&&p.r!=='終了'))return '';
+ const reached=mufgCapReached();
+ return '<div class="owners-setting"><label for="mufgCap">三菱UFJの5万円枠（'+mufgPeriodLabel()+'）</label><select id="mufgCap" aria-label="三菱UFJカードの今期の対象枠"><option value="open"'+(reached?'':' selected')+'>枠内（10%で比較）</option><option value="used"'+(reached?' selected':'')+'>今期は使い切った（0.4%相当）</option></select><small>対象店の合計で毎月16日〜翌月15日に5万円まで。次の16日に自動で枠内へ戻ります。</small></div>';
+}
 function refreshStoreSummary(store){
+ refreshPaymentExpiry(store);
+ refreshMufgCap(store);
  refreshSevenBonus(store);
  refreshCouponBonus(store);
  for(const payment of store.payments)if(payment.id==='jalTokyu'){
@@ -394,11 +458,11 @@ function renderPayment(store,context=null){
   const tied=i>0&&comparisonRate(p)===comparisonRate(payments[0]);
   const hint=p.autoCouponRate?(p.autoCoupon.provider==='paypay'?'確認したクーポン込み':'クーポン条件付き'):p.ownerRate?'株主優待込み':i===0?(store.local.partial?'確認済み候補':'おすすめ'):tied?'同じ還元率':'';
   const detail=p.autoCoupon?couponDetail(p):p.ownerRate?'決済 '+p.r+' ＋ 株主優待 '+p.ownerRate.toFixed(1)+'%':p.x;
-  return '<div class="rank-card r'+(i+1)+'"><div class="rank-top"><span class="rank-label">'+['🥇 1位','🥈 2位','🥉 3位'][i]+'</span><span class="rank-hint">'+hint+'</span></div><div class="pay-main"><span class="pay-name">'+escapeHtml(p.n)+'</span><strong class="pay-rate">'+escapeHtml(comparisonLabel(p)||'要確認')+'</strong></div>'+(detail?'<div class="pay-extra">'+escapeHtml(detail)+'</div>':'')+'</div>';
+  return '<div class="rank-card r'+(i+1)+'"><div class="rank-top"><span class="rank-label">'+['🥇 1位','🥈 2位','🥉 3位'][i]+'</span><span class="rank-hint">'+hint+'</span></div><div class="pay-main"><span class="pay-name">'+escapeHtml(p.n)+'</span><strong class="pay-rate">'+escapeHtml(comparisonLabel(p)||'要確認')+'</strong></div>'+(detail?'<div class="pay-extra">'+escapeHtml(detail)+'</div>':'')+(officialRateShort(p)?'<div class="pay-extra official-rate">'+escapeHtml(officialRateShort(p))+'</div>':'')+'</div>';
  }).join('');
  const pts=store.points.map(p=>'<span class="point-pill">'+escapeHtml(p.n)+' <strong>'+escapeHtml(p.r)+'</strong>'+(p.x?' · '+escapeHtml(p.x):'')+'</span>').join('');
  const single=store.points.filter(p=>['楽天','d','V','Ponta','WAON POINT'].includes(p.n)).length>1;
- $("result").innerHTML='<div class="store-head"><div><h3 class="store-name">'+escapeHtml(store.store)+'</h3><div class="meta">'+escapeHtml(meta)+(store.audit.status!=='ブランド条件確認'?' · '+escapeHtml(store.audit.status):'')+'</div></div><button id="changeStoreBtn" type="button" class="btn ghost small">店を変える</button></div>'+ownerControls(store)+couponStrip(store)+'<div class="rank-grid">'+(ranks||'<div class="note">支払方法を確認中です。未確認の還元率では順位を付けません。</div>')+'</div><section class="point-box"><div class="point-head"><h4>'+escapeHtml(store.local.pointHeading||'会計前に提示')+'</h4><small>'+escapeHtml(store.local.pointCaption||(single?'共通ポイントは1種類':'支払いポイントとは別'))+'</small></div><div class="point-pills">'+(pts||'<span class="micro">'+escapeHtml(store.audit.pointStatus)+'</span>')+'</div>'+(store.points.some(p=>p.x==='併用可')?'<p class="point-foot">「併用可」の店舗ポイントは別に貯められます。</p>':'')+'</section><div class="combo"><strong>＋ ポイントと支払いの組み合わせ</strong><p>'+escapeHtml(store.combination)+'</p></div><details class="more"><summary>還元条件・ほかの支払い</summary><div class="note"><h4>還元条件</h4>'+(store.conditions.map(c=>'<p>'+escapeHtml(c)+'</p>').join('')||'店舗・利用方法ごとの条件をご確認ください。')+'</div><div class="note"><h4>使える主な支払い候補</h4><div class="pay-options">'+allPayments.map(p=>'<div class="pay-option"><span>'+escapeHtml(p.n)+(p.x?'<small>'+escapeHtml(p.x)+'</small>':'')+(p.ownerRate?'<small>決済 '+escapeHtml(p.r)+' ＋ 株主優待 '+p.ownerRate.toFixed(1)+'%</small>':'')+'</span><strong>'+escapeHtml(comparisonLabel(p)||'要確認')+'</strong></div>').join('')+'</div></div><div class="note"><h4>備考</h4>'+escapeHtml(store.note)+'</div>'+auditDetails(store)+'<div class="detail-tools"><button id="copyBtn" type="button" class="btn ghost small">結果をコピー</button><button id="resultListBtn" type="button" class="btn secondary small">登録店一覧</button></div></details>';
+ $("result").innerHTML='<div class="store-head"><div><h3 class="store-name">'+escapeHtml(store.store)+'</h3><div class="meta">'+escapeHtml(meta)+(store.audit.status!=='ブランド条件確認'?' · '+escapeHtml(store.audit.status):'')+'</div></div><button id="changeStoreBtn" type="button" class="btn ghost small">店を変える</button></div>'+ownerControls(store)+'<div class="rank-grid">'+(ranks||'<div class="note">支払方法を確認中です。未確認の還元率では順位を付けません。</div>')+'</div>'+couponStrip(store)+mufgCapControls(store)+'<section class="point-box"><div class="point-head"><h4>'+escapeHtml(store.local.pointHeading||'会計前に提示')+'</h4><small>'+escapeHtml(store.local.pointCaption||(single?'共通ポイントは1種類':'支払いポイントとは別'))+'</small></div><div class="point-pills">'+(pts||'<span class="micro">'+escapeHtml(store.audit.pointStatus)+'</span>')+'</div>'+(store.points.some(p=>p.x==='併用可')?'<p class="point-foot">「併用可」の店舗ポイントは別に貯められます。</p>':'')+'</section><div class="combo"><strong>＋ ポイントと支払いの組み合わせ</strong><p>'+escapeHtml(store.combination)+'</p></div><details class="more"><summary>還元条件・ほかの支払い</summary><div class="note"><h4>還元条件</h4>'+(store.conditions.map(c=>'<p>'+escapeHtml(c)+'</p>').join('')||'店舗・利用方法ごとの条件をご確認ください。')+'</div><div class="note"><h4>使える主な支払い候補</h4><div class="pay-options">'+allPayments.map(p=>'<div class="pay-option"><span>'+escapeHtml(p.n)+(p.x?'<small>'+escapeHtml(p.x)+'</small>':'')+(p.ownerRate?'<small>決済 '+escapeHtml(p.r)+' ＋ 株主優待 '+p.ownerRate.toFixed(1)+'%</small>':'')+(officialRateNote(p)?'<small>'+escapeHtml(officialRateNote(p))+'</small>':'')+'</span><strong>'+escapeHtml(comparisonLabel(p)||'要確認')+'</strong></div>').join('')+'</div></div><div class="note"><h4>備考</h4>'+escapeHtml(store.note)+'</div>'+auditDetails(store)+'<div class="detail-tools"><button id="copyBtn" type="button" class="btn ghost small">結果をコピー</button><button id="resultListBtn" type="button" class="btn secondary small">登録店一覧</button></div></details>';
  bindCouponControls(store,context);show($("resultPanel"));$("changeStoreBtn").onclick=()=>{clearView();$("manualSearch").focus();};$("copyBtn").onclick=copyResult;$("resultListBtn").onclick=openStoreList;
  if(store.local.sevenApp)$("sevenBonus").onchange=event=>{
   sevenBonusEnabled=event.target.value==='on';
@@ -414,6 +478,11 @@ function renderPayment(store,context=null){
   const rate=Number(event.target.value);if(!OWNER_RATES.includes(rate))return;
   ownerSetting={rate,confirmed:true};try{localStorage.setItem(OWNER_KEY,String(rate));}catch(_){}
   STORE_DATA.filter(s=>s.local.aeonOwners).forEach(refreshStoreSummary);renderPayment(store,context);$("ownersRate").focus();
+ };
+ if($('mufgCap'))$('mufgCap').onchange=event=>{
+  const used=event.target.value==='used';mufgCapPeriod=used?mufgPeriodStart():'';
+  try{localStorage.setItem(MUFG_CAP_KEY,mufgCapPeriod);}catch(_){} // '' = within the cap
+  STORE_DATA.filter(s=>s.payments.some(p=>MUFG_IDS.includes(p.id))).forEach(refreshStoreSummary);renderPayment(store,context);$('mufgCap').focus();
  };
  if(store.store==='コーナン')$('kohnanPriority').onchange=event=>{
   kohnanBalancePriority=event.target.value==='balance';refreshStoreSummary(store);renderPayment(store,context);$('kohnanPriority').focus();
@@ -464,8 +533,10 @@ function recentStores(){try{const a=JSON.parse(localStorage.getItem(RECENT_KEY)|
 function rememberStore(name){try{localStorage.setItem(RECENT_KEY,JSON.stringify([name,...recentStores().filter(n=>n!==name)].slice(0,5)));}catch(_){}renderQuick();}
 function renderQuick(){const names=Array.from(new Set([...recentStores(),"ベルク","Fit Care DEPOT","ファミリーマート","コーナン","オーケー"])).slice(0,5);const box=$("quickStores");box.innerHTML="";for(const name of names){const store=STORE_DATA.find(s=>s.store===name);if(!store)continue;const btn=document.createElement('button');btn.type='button';btn.className='bubble';btn.textContent=name;btn.onclick=()=>renderPayment(store);box.appendChild(btn);}}
 function runManualSearch(submit=false){cancelGeo();const keyword=$("manualSearch").value.trim();hide($("resultPanel"));document.body.classList.remove("has-result");if(!keyword){hide($("candidatePanel"));hide($("allPanel"));setStatus("");show($("quickPanel"));return;}const results=searchManual(keyword),q=normalizeText(keyword);results.sort((a,b)=>Number(b.store.aliases.some(x=>normalizeText(x)===q))-Number(a.store.aliases.some(x=>normalizeText(x)===q)));if(submit&&(results.length===1||(results[0]&&results[0].store.aliases.some(x=>normalizeText(x)===q)))){renderPayment(results[0].store);return;}if(!results.length){hide($("candidatePanel"));hide($("allPanel"));show($("quickPanel"));setStatus("該当する店舗がありません。短い名前や別名でもお試しください。","error");return;}setStatus("");renderCandidates(results,"検索候補");}
+// Optional data files must not block search, but a silent partial dataset could rank wrongly.
+function missingDataMessage(){const missing=[];if(!window.PAYMENT_STORES_0911_READY)missing.push('9月11日の追加店舗');if(!window.PAYMENT_MALLS_READY)missing.push('トレッサ・ららぽーと');if(!window.PAYMENT_RATES_READY)missing.push('11月の還元率確認（終了日・公式率）');return missing.length?'一部のデータ（'+missing.join('、')+'）を読み込めませんでした。残りのデータで比較しています。再読み込みしてください。':'';}
 function setupEvents(){$("geoBtn").onclick=handleGeoSearch;$("resultGeoBtn").onclick=handleGeoSearch;$("clearBtn").onclick=clearView;$("listModeBtn").onclick=openStoreList;$("manualSearch").addEventListener("input",()=>runManualSearch());$("searchForm").onsubmit=e=>{e.preventDefault();runManualSearch(true);};$("inputClearBtn").onclick=()=>{clearView();$("manualSearch").focus();};$("showAllBtn").onclick=openStoreList;$("hideAllBtn").onclick=clearView;}
-setupEvents();renderQuick();setStatus("");window.PAYMENT_CHECKER_READY=true;loadPublicCoupons();
+setupEvents();renderQuick();setStatus(missingDataMessage(),"error");window.PAYMENT_CHECKER_READY=true;loadPublicCoupons();
  window.addEventListener('pageshow',e=>{if(e.persisted)loadPublicCoupons();});window.PAYMENT_STORE_COUNT=STORE_DATA.length;
 window.addEventListener('pagehide',cancelGeo);
 

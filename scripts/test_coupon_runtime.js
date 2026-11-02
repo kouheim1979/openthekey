@@ -30,8 +30,27 @@ assert.equal(run('couponPaymentProvider({id:"aupay",n:"au PAY"})'),'aupay');
 assert.equal(run('couponPaymentProvider({id:"aeonGroup",n:"AEON Pay"})'),'aeonpay');
 assert.equal(run('couponPaymentProvider({id:"famipay",n:"FamiPay"})'),'famipay');
 run('COUPON_FEED.offers=[{provider:"vpass",brand:"ジョリーパスタ",rate:10}];const jolly={store:"ジョリーパスタ",aliases:["ジョリパ"],payments:[{id:"paypay",n:"PayPay",r:"1.5%",rankable:true}]};refreshCouponBonus(jolly);');
+// A public listing is not an acquired coupon: Vクーポン must be confirmed before it can change the ranking.
+assert.equal(run('jolly.payments.some(p=>p.id==="vpassCouponCard")'),false,'unacquired V coupon must not be ranked');
+assert.equal(run('couponStoreOffer(jolly,"vpass")'),null);
+assert.equal(run('couponOffers(jolly,"vpass").length'),1,'the listing stays visible as a candidate');
+run('couponState(jolly).checked[couponOfferKey(COUPON_FEED.offers[0])]=true;refreshCouponBonus(jolly);');
 assert.equal(run('comparisonRate(jolly.payments.find(p=>p.id==="vpassCouponCard"))'),10.5);
 run('refreshCouponBonus(jolly)');assert.equal(run('jolly.payments.filter(p=>p.id==="vpassCouponCard").length'),1);
+run('couponState(jolly).checked={};refreshCouponBonus(jolly);');
+assert.equal(run('jolly.payments.some(p=>p.id==="vpassCouponCard")'),false,'unchecking removes the coupon route');
+// Offers without an id use the same key in the checkbox and in the ranking.
+run(`const noId={provider:'paypay',brand:'テスト店',rate:10,maxBonus:100,start,end,termsVerified:true};COUPON_FEED.offers=[noId];
+ const plain={store:'テスト店',aliases:[],payments:[{id:'paypay',n:'PayPay',r:'1.5%',rankable:true}]};
+ couponState(plain).amount=1000;couponState(plain).checked[couponOfferKey(noId)]=true;`);
+assert.equal(run('couponStoreOffer(plain,"paypay")===noId'),true,'checkbox key and ranking key must match');
+assert.equal(run('couponPoints(noId,100000)'),100,'cap is applied to large payments');
+// A feed older than 48 hours is labelled and never used.
+run('const savedAt=COUPON_FEED.updatedAt;COUPON_FEED.updatedAt="2000-01-01T00:00:00Z";');
+assert.equal(run('couponFeedStale()'),true);
+assert.equal(run('couponLive({provider:"vpass",brand:"x",rate:5})'),false);
+run('COUPON_FEED.updatedAt=savedAt;');
+assert.equal(run('couponFeedStale()'),false);
 run(`COUPON_FEED.offers=[{id:'au1',provider:'aupay',brand:'上島珈琲店',fixedBonus:100,bonusKind:'discount',minSpend:700,maxBonus:100,start,end,termsVerified:true,checkedAt:new Date().toISOString()}];
  const ucc={store:'上島珈琲店',aliases:[],payments:[{id:'aupay',n:'au PAY',r:'0.5%',rankable:true}]};
  couponState(ucc).amount=2000;couponState(ucc).checked={au1:true};refreshCouponBonus(ucc);`);
@@ -40,4 +59,4 @@ run(`COUPON_FEED.offers=[{id:'f1',provider:'famipay',brand:'*',rankable:false,ti
  const fami={store:'ファミリーマート',aliases:[],payments:[{id:'famipay',n:'FamiPay',r:'0.5%',rankable:true}]};`);
 assert.equal(run('couponOffers(fami,"famipay").length'),1,'display-only campaigns stay visible');
 assert.equal(run('couponStoreOffer(fami,"famipay")'),null,'display-only campaigns never alter ranking');
-console.log('Major Pay campaign eligibility, caps, fixed discounts, provider mapping and display-only safety checks passed');
+console.log('Major Pay campaign eligibility, V coupon opt-in, key matching, caps, stale feeds, fixed discounts, provider mapping and display-only safety checks passed');

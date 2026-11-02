@@ -22,6 +22,7 @@ function couponPaymentProvider(p){
  if(id==='vpassCouponCard'||n==='Olive'||n==='Olive通常'||n.includes('三井住友カード'))return'vpass';
  return'';
 }
+function couponFeedStale(now=Date.now()){const t=Date.parse(COUPON_FEED.updatedAt||'');return Number.isFinite(t)&&now-t>48*3600000;}
 function couponLive(o,now=Date.now()){
  const checked=Date.parse(o.checkedAt||COUPON_FEED.updatedAt||'');
  if(!Number.isFinite(checked)||now-checked>48*3600000||checked-now>3600000)return false;
@@ -53,11 +54,13 @@ function couponPoints(o,amount){
  if(o.maxBonus!=null&&Number.isFinite(Number(o.maxBonus)))bonus=Math.min(bonus,Number(o.maxBonus));
  return Math.max(0,bonus);
 }
+// Vクーポン require acquisition in Vpass before payment: never rank one that the user has not confirmed.
+function couponVpassRate(o){const rate=Number(o&&o.rate);return Number.isFinite(rate)&&rate>0&&rate<=100?rate:0;}
 function couponStoreOffer(store,provider,payment=null){
  const offers=couponOffers(store,provider,payment).filter(o=>o.rankable!==false);
- if(provider==='vpass')return offers.sort((a,b)=>Number(b.rate||0)-Number(a.rate||0))[0]||null;
  const st=couponState(store);
- return offers.filter(o=>st.checked[o.id||provider+'|'+o.brand]&&couponPoints(o,st.amount)>0)
+ if(provider==='vpass')return offers.filter(o=>st.checked[couponOfferKey(o)]&&couponVpassRate(o)>0).sort((a,b)=>couponVpassRate(b)-couponVpassRate(a))[0]||null;
+ return offers.filter(o=>st.checked[couponOfferKey(o)]&&couponPoints(o,st.amount)>0)
    .sort((a,b)=>couponPoints(b,st.amount)-couponPoints(a,st.amount)||Number(b.rate||0)-Number(a.rate||0))[0]||null;
 }
 function storeHasCouponProvider(store,provider){return store.payments.some(p=>couponPaymentProvider(p)===provider);}
@@ -71,7 +74,7 @@ function refreshCouponBonus(store){
   const provider=couponPaymentProvider(p),o=provider?couponStoreOffer(store,provider,p):null;
   if(!o||!p.rankable)continue;
   p.autoCoupon=o;
-  if(provider==='vpass')p.autoCouponRate=Number(o.rate)||0;
+  if(provider==='vpass')p.autoCouponRate=couponVpassRate(o);
   else{
    const amount=couponState(store).amount,points=couponPoints(o,amount);
    p.couponPoints=points;
@@ -85,7 +88,7 @@ function couponProviderLabel(o){return COUPON_PROVIDERS[o&&o.provider]?.label||S
 function couponDetail(p){
  if(!p.autoCoupon)return '';
  const o=p.autoCoupon,label=couponProviderLabel(o);
- if(o.provider==='vpass')return (p.sevenBonusRate?'決済 '+p.r+'（セブン追加2.5%込み）':'通常 '+p.r)+' ＋ '+label+' '+p.autoCouponRate+'%（獲得・対象条件を要確認）';
+ if(o.provider==='vpass')return (p.sevenBonusRate?'決済 '+p.r+'（セブン追加2.5%込み）':'通常 '+p.r)+' ＋ '+label+' '+p.autoCouponRate+'%（獲得済みと確認・上限と期間は公式で確認）';
  const benefit=Number.isFinite(Number(o.fixedBonus))&&Number(o.fixedBonus)>0
   ? p.couponPoints+'円相当（定額特典）'
   : p.couponPoints+'pt相当（上限反映）';
@@ -141,11 +144,20 @@ function couponStrip(store){
  );
  const byProvider={};for(const o of offers)(byProvider[o.provider]||(byProvider[o.provider]=[])).push(o);
  const chips=providers.filter(p=>byProvider[p]?.length).map(p=>'<span class="coupon-chip '+esc(p)+'">'+esc(COUPON_PROVIDERS[p].label)+' '+byProvider[p].length+'件</span>').join('');
- const selectable=offers.filter(o=>o.provider!=='vpass');
- const selected=selectable.filter(o=>st.checked[couponOfferKey(o)]&&o.rankable!==false&&couponPoints(o,st.amount)>0);
+ const selectable=offers;
+ const selected=selectable.filter(o=>st.checked[couponOfferKey(o)]&&o.rankable!==false&&(o.provider==='vpass'?couponVpassRate(o)>0:couponPoints(o,st.amount)>0));
  const rows=selectable.map(o=>{
   const key=couponOfferKey(o),bounds=couponOfferBounds(o);
-  const rankable=o.rankable!==false&&o.termsVerified;
+  const vpass=o.provider==='vpass';
+  const rankable=o.rankable!==false&&(vpass?couponVpassRate(o)>0:o.termsVerified);
+  if(vpass){
+   const source=couponSafeLink(o.sourceUrl);
+   return '<div class="coupon-offer"><b>'+esc(couponProviderLabel(o))+' · '+esc(o.title||o.brand)+' · +'+esc(couponVpassRate(o))+'%</b>'
+    +'<p class="coupon-caution">'+esc(o.requirements||o.note||'Vクーポンの獲得と対象カードが必要です。')+' 上限・期間・対象ルート（店頭／ネット注文など）は公式で確認してください。</p>'
+    +(source?'<a class="coupon-source" href="'+esc(source)+'" target="_blank" rel="noopener noreferrer">Vクーポン公式</a>':'')
+    +(rankable?'<label><input type="checkbox" data-coupon-vpass="1" data-coupon-key="'+esc(key)+'"'+(st.checked[key]?' checked':'')+'>Vクーポンを獲得済み・対象カードで支払う</label>':'')
+    +'</div>';
+  }
   const benefit=Number.isFinite(Number(o.fixedBonus))&&Number(o.fixedBonus)>0
    ? Number(o.fixedBonus).toLocaleString()+'円相当'
    : Number(o.rate)>0?(rankable?'+'+Number(o.rate)+'%':'最大・特典率 '+Number(o.rate)+'%'):'特典あり';
@@ -158,26 +170,25 @@ function couponStrip(store){
    +(rankable?'<label><input type="checkbox" data-coupon-key="'+esc(key)+'"'+(st.checked[key]?' checked':'')+'>今回使える（対象・エントリー・未使用枠などを確認）</label>':'<p class="coupon-caution">抽選・累計購入・対象商品などのため順位には自動反映しません。</p>')
    +'</div>';
  }).join('');
- const vp=byProvider.vpass||[];
- const vpHtml=vp.length?'<p><a class="coupon-source" href="'+esc(couponSafeLink(vp[0].sourceUrl))+'" target="_blank" rel="noopener noreferrer">Vクーポン公式で獲得・条件確認</a></p>':'';
  const detail=selectable.length?'<details class="coupon-expand"><summary>主要Payのキャンペーン条件を確認</summary>'
-  +'<div class="coupon-amount"><label for="couponAmount">対象商品の支払額（円）</label><input id="couponAmount" type="number" inputmode="numeric" min="1" step="1" placeholder="例 3000" value="'+(st.amount||'')+'"></div>'
-  +rows+'<p class="coupon-caution">同じ決済では今回の支払額に対して最も得な確認済み1件だけを比較。抽選・累計条件・商品限定など、単純な還元率にできない特典は順位へ足しません。</p>'
+  +'<div class="coupon-amount"><label for="couponAmount">対象商品の支払額（円・上限計算用）</label><input id="couponAmount" type="number" inputmode="numeric" min="1" step="1" placeholder="例 3000" value="'+(st.amount||'')+'"></div>'
+  +rows+'<p class="coupon-caution">Vクーポン・PayPay等は「獲得済み／今回使える」を確認したものだけ順位へ反映。同じ決済では今回の支払額に対して最も得な確認済み1件だけを比較。抽選・累計条件・商品限定など、単純な還元率にできない特典は順位へ足しません。</p>'
   +'<button id="couponApply" type="button" class="coupon-apply">確認した条件で順位を計算</button></details>':'';
- const status=selected.length?'<div class="coupon-caution">反映中：'+selected.map(o=>esc(couponProviderLabel(o)+' '+couponPoints(o,st.amount)+(o.bonusKind==='discount'?'円相当':'pt相当'))).join(' ／ ')+'</div>':'';
+ const status=selected.length?'<div class="coupon-caution">反映中：'+selected.map(o=>esc(couponProviderLabel(o)+' '+(o.provider==='vpass'?'+'+couponVpassRate(o)+'%':couponPoints(o,st.amount)+(o.bonusKind==='discount'?'円相当':'pt相当')))).join(' ／ ')+'</div>':'';
  const when=COUPON_FEED.updatedAt?new Date(COUPON_FEED.updatedAt).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'未取得';
  return '<section class="auto-coupon-strip" aria-label="公開キャンペーン"><div class="coupon-line"><b>公開キャンペーン</b>'
-  +(chips||'<span class="coupon-chip">'+(couponLoading?'確認中':couponFailed?'取得未完了':'該当なし')+'</span>')+'</div>'+status+detail+vpHtml
+  +(chips||'<span class="coupon-chip">'+(couponLoading?'確認中':couponFailed?'取得未完了':couponFeedStale()?'情報が古いため不使用':'該当なし')+'</span>')+'</div>'+status+detail
   +'<div class="coupon-foot">公開情報だけを使用。掲載未検出＝配布なしではありません。アプリ個別配信・獲得済み状態・利用済み枠は取得しません。更新 '+esc(when)+(couponFailed?' · 一部取得失敗':'')+'</div></section>';
 }
 function bindCouponControls(store,context){
  const btn=$('couponApply');if(!btn)return;
  btn.onclick=()=>{
-  const checked=Array.from(document.querySelectorAll('[data-coupon-key]:checked')).map(el=>el.dataset.couponKey);
+  const boxes=Array.from(document.querySelectorAll('[data-coupon-key]:checked')),checked=boxes.map(el=>el.dataset.couponKey);
   const st=couponState(store);
   if(!checked.length){st.amount=0;st.checked={};refreshStoreSummary(store);renderPayment(store,context);return;}
-  const input=$('couponAmount'),amount=Number(input.value);
-  if(!Number.isFinite(amount)||amount<=0||!Number.isInteger(amount)){input.setCustomValidity('対象商品の支払額を1円以上の整数で入力してください。');input.reportValidity();return;}
+  const input=$('couponAmount'),raw=String(input.value||'').trim(),amount=raw===''?0:Number(raw);
+  const needsAmount=boxes.some(el=>!el.dataset.couponVpass);
+  if((needsAmount||raw!=='')&&(!Number.isFinite(amount)||amount<=0||!Number.isInteger(amount))){input.setCustomValidity('対象商品の支払額を1円以上の整数で入力してください。');input.reportValidity();return;}
   input.setCustomValidity('');st.amount=amount;st.checked={};for(const key of checked)st.checked[key]=true;
   refreshStoreSummary(store);renderPayment(store,context);
  };

@@ -3,6 +3,9 @@
   'use strict';
   const ENDPOINTS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
   const LOCATION_MS = 4500, SEARCH_MS = 5000, POSITION_AGE_MS = 30000, CACHE_MS = 120000;
+  // Only a ~10 m grid point leaves the device; the extra radius covers the rounding error (< 8 m).
+  const ROUND_PAD_M = 10;
+  const roundCoord = n => Math.round(n * 1e4) / 1e4;
   function abortError() { return new DOMException('検索を中止しました', 'AbortError'); }
   function locationError(code, message) { return Object.assign(new Error(message), {code}); }
   function distance(a, b) {
@@ -113,10 +116,11 @@
       const hit = cache.find(item => Date.now() - item.at <= CACHE_MS && radius + distance(position, item) <= item.radius);
       if (hit) return {data: hit.data, cached: true};
       // Padding allows small movements to reuse a recent result without missing the new edge.
-      const requestedRadius = radius + 75;
-      const data = await fetchShops(buildQuery(position.lat, position.lng, requestedRadius), signal);
+      const center = {lat: roundCoord(position.lat), lng: roundCoord(position.lng)};
+      const requestedRadius = radius + 75 + ROUND_PAD_M;
+      const data = await fetchShops(buildQuery(center.lat, center.lng, requestedRadius), signal);
       if (signal.aborted) throw abortError();
-      cache.unshift({lat: position.lat, lng: position.lng, radius: requestedRadius, at: Date.now(), data});
+      cache.unshift({lat: center.lat, lng: center.lng, radius: requestedRadius, at: Date.now(), data});
       cache.splice(3);
       return {data, cached: false};
     }
