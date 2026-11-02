@@ -12,8 +12,9 @@ on:
 permissions:
   contents: write
 
+# One run per branch: a feature-branch push must not cancel the scheduled refresh on main.
 concurrency:
-  group: coupon-auto
+  group: coupon-auto-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -33,6 +34,7 @@ jobs:
         run: |
           python3 scripts/test_public_coupons.py
           node scripts/test_coupon_runtime.js
+          node --test tests/regression.cjs
       - name: Fetch official public coupons without login
         run: python3 scripts/update_coupon_feed.py
       - name: Build compact coupon-aware app
@@ -41,7 +43,7 @@ jobs:
         run: |
           node --check checker-20260907-autocoupons.js
           python3 -m json.tool coupon-feed.json >/dev/null
-          grep -q 'checker-20260907-autocoupons.js?v=20261004-personalrates1' index.html
+          grep -q 'checker-20260907-autocoupons.js?v=20261102-accuracy1' index.html
           python3 scripts/test_coupon_browser.py
       - name: Upload visual regression results
         if: always()
@@ -52,7 +54,10 @@ jobs:
           path: |
             test-results/
             coupon-feed.json
+      # Only the default branch publishes. Branch pushes are validated here and merged by a person via a PR;
+      # pushing HEAD:main from a feature branch would otherwise publish unreviewed commits.
       - name: Commit refreshed coupon data
+        if: github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

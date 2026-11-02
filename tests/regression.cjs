@@ -9,8 +9,8 @@ const crypto = require('node:crypto');
 const root = path.resolve(__dirname, '..');
 const read = name => fs.readFileSync(path.join(root, name), 'utf8');
 const flush = async () => { for (let i = 0; i < 20; i++) await Promise.resolve(); };
-function clock() {
-  let now = 1788739200000, nextId = 0;
+function clock(start = 1788739200000) {
+  let now = start, nextId = 0;
   const tasks = new Map();
   return {
     now: () => now,
@@ -28,8 +28,8 @@ function clock() {
     pending: () => tasks.size
   };
 }
-function world({loadLocation = true, storage = new Map(), blockedStorage = false, geolocation, fetcher, runtime = 'checker-20260907.js'} = {}) {
-  const time = clock(), nodes = new Map(), errors = [], geoCalls = [], requests = [];
+function world({loadLocation = true, storage = new Map(), blockedStorage = false, geolocation, fetcher, runtime = 'checker-20260907.js', now, skipData = []} = {}) {
+  const time = clock(now), nodes = new Map(), errors = [], geoCalls = [], requests = [], windowEvents = {};
   function element(id = '') {
     const el = {id, className: '', value: '', children: [], disabled: false, attrs: {}, events: {}, textContent: '', focus() {}, blur() {},
       appendChild(child) { this.children.push(child); },
@@ -57,23 +57,24 @@ function world({loadLocation = true, storage = new Map(), blockedStorage = false
     AbortController, DOMException, Blob, URL,
     Date: class extends Date { static now() { return time.now(); } },
     setTimeout: time.setTimeout, clearTimeout: time.clearTimeout,
-    requestIdleCallback() {}, scrollTo() {}, addEventListener() {},
+    requestIdleCallback() {}, scrollTo() {}, addEventListener(name, fn) { (windowEvents[name] ||= []).push(fn); },
     fetch: (url, options) => { requests.push({url, options}); return fetcher ? fetcher(url, options, requests.length) : new Promise(() => {}); }
   };
   sandbox.window = sandbox; vm.createContext(sandbox);
-  for (const name of ['audit-data-20260906.js', 'local-stores-20260907.js', 'stores-20260911.js', 'malls-20260913.js']) vm.runInContext(read(name), sandbox, {filename: name});
+  for (const name of DATA_FILES) if (!skipData.includes(name)) vm.runInContext(read(name), sandbox, {filename: name});
   if (loadLocation) vm.runInContext(read('location-search-20260907.js'), sandbox, {filename: 'location-search-20260907.js'});
-  const script = read(runtime).replace('setupEvents();renderQuick();', 'window.__test={STORE_DATA,renderPayment,paymentOrder,comparisonRate,buildCandidatesFromOsm,matchStoreFromText};setupEvents();renderQuick();');
+  const script = read(runtime).replace('setupEvents();renderQuick();', 'window.__test={STORE_DATA,renderPayment,paymentOrder,comparisonRate,comparisonLabel,buildCandidatesFromOsm,matchStoreFromText,refreshStoreSummary,officialRateShort,officialRateNote,couponState:typeof couponState===\'function\'?couponState:null,loadPublicCoupons:typeof loadPublicCoupons===\'function\'?loadPublicCoupons:null};setupEvents();renderQuick();');
   vm.runInContext(script, sandbox, {filename: runtime});
   assert.equal(errors.length, 0, errors.map(String).join('\n'));
   assert.equal(sandbox.PAYMENT_CHECKER_READY, true);
-  return {sandbox, time, errors, nodes, geoCalls, requests, storage, api: sandbox.__test,
+  return {sandbox, time, errors, nodes, geoCalls, requests, storage, windowEvents, api: sandbox.__test,
     store: name => sandbox.__test.STORE_DATA.find(s => s.store === name),
     start: () => nodes.get('geoBtn').onclick(),
     manual(name) { nodes.get('manualSearch').value = name; nodes.get('searchForm').onsubmit({preventDefault() {}}); },
     pos(accuracy = 20, lat = 35.558, lng = 139.579) { return {coords: {latitude: lat, longitude: lng, accuracy}, timestamp: time.now()}; }
   };
 }
+const DATA_FILES = ['audit-data-20260906.js', 'local-stores-20260907.js', 'stores-20260911.js', 'malls-20260913.js', 'rates-20261102.js'];
 const shops = {elements: [{type: 'node', id: 1, lat: 35.558, lon: 139.579, tags: {name: 'マルエツ 中川駅前店', shop: 'supermarket'}}]};
 const response = data => ({ok: true, json: async () => data});
 
@@ -147,8 +148,8 @@ test('all entrypoints have valid script integrity and keep the colorful design',
     assert.match(html, /いまのお店、何で払う？/);
     for (const color of ['#ff4fa3', '#ffe45c', '#4ac7ff', '#60f09b']) assert.ok(html.includes(color));
     const scripts = [...html.matchAll(/<script defer src="\.\/([^"?]+)(?:\?[^" ]+)?" integrity="sha384-([^"]+)"/g)];
-    assert.equal(scripts.length, 6);
-    assert.deepEqual(scripts.map(m => m[1]), ['audit-data-20260906.js','local-stores-20260907.js','stores-20260911.js','malls-20260913.js','location-search-20260907.js','checker-20260907-autocoupons.js']);
+    assert.equal(scripts.length, 7);
+    assert.deepEqual(scripts.map(m => m[1]), ['audit-data-20260906.js','local-stores-20260907.js','stores-20260911.js','malls-20260913.js','rates-20261102.js','location-search-20260907.js','checker-20260907-autocoupons.js']);
     for (const [, file, digest] of scripts) assert.equal(crypto.createHash('sha384').update(read(file)).digest('base64'), digest, file);
   }
   assert.equal(read('index.html'), read('app-v2.html')); assert.equal(read('index.html'), read('app-v3.html'));
@@ -398,4 +399,229 @@ test('cached padding is filtered by requested radius, branch matching and output
   assert.equal(w.api.matchStoreFromText('ベルクス'),null);
   const context = {...result[0],osmName:'マルエツ <img src=x onerror=alert(1)>'};w.api.renderPayment(context.store,context);
   assert.ok(!w.nodes.get('result').innerHTML.includes('<img'));assert.match(w.nodes.get('result').innerHTML,/&lt;img/);
+});
+
+// ---- 2026-11-02 audit additions ----
+const NOW = 1788739200000; // virtual clock start: 2026-09-07T00:00:00Z
+const iso = ms => new Date(ms).toISOString();
+const jstDate = ms => new Date(ms + 9 * 3600000).toISOString().slice(0, 10);
+const isCoupon = url => String(url).startsWith('./coupon-feed.json');
+const abortable = (_url, options) => new Promise((_, reject) => options.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))));
+function couponWorld(feed, extra = {}) {
+  return world({runtime: 'checker-20260907-autocoupons.js', ...extra,
+    fetcher: (url, options, n) => isCoupon(url) ? (typeof feed === 'function' ? feed(url, options, n) : Promise.resolve(response(feed))) : (extra.overpass ? extra.overpass(url, options, n) : new Promise(() => {}))});
+}
+
+test('every ranked payment is verified and numeric; presentation points never change the ranking', () => {
+  for (const runtime of ['checker-20260907.js', 'checker-20260907-autocoupons.js']) {
+    const w = world({runtime});
+    for (const store of w.api.STORE_DATA) {
+      const ranked = store.payments.filter(p => p.rankable).sort(w.api.paymentOrder);
+      for (const p of ranked) assert.match(String(p.r), /\d(?:\.\d+)?%/, store.store + ':' + p.id);
+      for (const p of store.payments.filter(p => !p.rankable)) assert.ok(!store.first.startsWith(p.n + '（' + p.r), store.store);
+      const before = [store.first, store.second, store.third];
+      const savedPoints = store.points; store.points = [];
+      w.api.refreshStoreSummary(store);
+      assert.deepEqual([store.first, store.second, store.third], before, 'presentation points leaked into ranking: ' + store.store);
+      store.points = savedPoints; w.api.refreshStoreSummary(store);
+      // The headline rate equals the payment's own comparison rate, never payment + presentation.
+      if (ranked[0]) assert.equal(w.api.comparisonRate(ranked[0]), Number(String(w.api.comparisonLabel(ranked[0])).match(/\d+(?:\.\d+)?/)[0]), store.store);
+    }
+  }
+});
+
+test('equal rates keep the owner order: PayPay, then Rakuten Pay, then the listed order', () => {
+  const w = world();
+  for (const store of w.api.STORE_DATA) {
+    const ranked = store.payments.filter(p => p.rankable).sort(w.api.paymentOrder);
+    for (let i = 1; i < ranked.length; i++) {
+      const a = ranked[i - 1], b = ranked[i];
+      assert.ok(w.api.comparisonRate(a) >= w.api.comparisonRate(b), store.store);
+      if (w.api.comparisonRate(a) === w.api.comparisonRate(b)) {
+        const order = p => p.n === 'PayPay' ? 0 : p.n === '楽天ペイ' ? 1 : 2;
+        assert.ok(order(a) <= order(b), store.store + ': ' + a.n + ' / ' + b.n);
+        if (order(a) === 2 && order(b) === 2) assert.ok(store.payments.indexOf(a) < store.payments.indexOf(b), 'stable order ' + store.store);
+      }
+    }
+  }
+  w.manual('ベルク');
+  assert.match(w.store('ベルク').first, /^PayPay（1\.5%/); assert.match(w.store('ベルク').second, /^楽天ペイ（1\.5%/);
+  assert.match(w.nodes.get('result').innerHTML, /同じ還元率/);
+});
+
+test('personal comparison values are labelled beside official base rates without changing the ranking', () => {
+  for (const runtime of ['checker-20260907.js', 'checker-20260907-autocoupons.js']) {
+    const w = world({runtime});
+    const data = w.sandbox.PAYMENT_AUDIT_DATA;
+    assert.equal(data.settings.olive, 9); assert.equal(data.settings.smbc, 8); assert.equal(data.settings.mufg, 10);
+    assert.equal(data.officialRates.olive.base, 8); assert.equal(data.officialRates.smbc.base, 7); assert.equal(data.officialRates.mufg.base, 7);
+    w.manual('ローソン'); const lawson = w.store('ローソン'), html = w.nodes.get('result').innerHTML;
+    assert.match(lawson.first, /三菱UFJカード（10%/);
+    assert.match(html, /本人設定値（公式7%・条件で最大20%）/);
+    assert.match(html, /本人設定値（公式8%）/); assert.match(html, /本人設定値（公式7%）/);
+    assert.equal(w.api.comparisonRate(lawson.payments.find(p => p.id === 'olive')), 9, 'official 8% is a label only');
+    w.manual('ベルク'); assert.match(w.nodes.get('result').innerHTML, /条件達成時の値（未達時1\.0%）/);
+    assert.match(w.nodes.get('result').innerHTML, /見合わせ中で新時期未定のため要確認/);
+    w.manual('セブン'); w.nodes.get('sevenBonus').onchange({target: {value: 'on'}});
+    assert.match(w.nodes.get('result').innerHTML, /本人設定値（公式10\.5%（セブン追加込み））/);
+    assert.ok(w.store('セブン-イレブン').audit.sources.includes('smbc202602'));
+    assert.ok(w.store('セブン-イレブン').conditions.some(c => /最大11%＝8%＋3%/.test(c)));
+    assert.ok(w.store('オーケー').conditions.some(c => /アメリカン・エキスプレスは2026年12月15日利用分まで/.test(c)));
+  }
+});
+
+test('dated programme ends drop out of the ranking on the next Japanese calendar day', () => {
+  for (const runtime of ['checker-20260907.js', 'checker-20260907-autocoupons.js']) {
+    const last = world({runtime, now: Date.parse('2026-12-15T23:59:00+09:00')});
+    assert.match(last.store('ドミー').first, /三菱UFJカード（10%・.*2026-12-15まで/);
+    const after = world({runtime, now: Date.parse('2026-12-16T00:00:00+09:00')}), dommy = after.store('ドミー');
+    const mufg = dommy.payments.find(p => p.id === 'mufg');
+    assert.equal(mufg.rankable, false); assert.equal(mufg.r, '終了');
+    assert.match(dommy.first, /^楽天ペイ（1\.5%/);
+    after.manual('ドミー'); const html = after.nodes.get('result').innerHTML;
+    assert.match(html, /2026-12-15で優遇終了/); assert.doesNotMatch(html, /pay-name">三菱UFJカード/);
+    // Other UFJ stores are unaffected by the Dommy end date.
+    assert.match(after.store('オーケー').first, /三菱UFJカード（10%/);
+    assert.ok(dommy.conditions.some(c => /2026年12月15日利用分まで/.test(c)));
+  }
+});
+
+test('V coupons from the public list are candidates only until acquisition is confirmed', async () => {
+  const feed = {updatedAt: iso(NOW), errors: [], offers: [{provider: 'vpass', brand: 'アカチャンホンポ', rate: 3, sourceUrl: 'https://www.smbc-card.com/camp/vcoupon/index.jsp', note: 'Vクーポン公開掲載。獲得済み・対象カードであることが必要'}]};
+  const w = couponWorld(feed); await flush();
+  w.manual('アカチャンホンポ'); const store = w.store('アカチャンホンポ');
+  const card = () => store.payments.find(p => p.id === 'card');
+  assert.equal(w.api.comparisonRate(card()), 0.5, 'not applied before confirmation');
+  assert.match(w.nodes.get('result').innerHTML, /Vクーポンを獲得済み・対象カードで支払う/);
+  assert.doesNotMatch(w.nodes.get('result').innerHTML, /クーポン条件付き/);
+  const key = 'vpass|アカチャンホンポ||';
+  assert.match(w.nodes.get('result').innerHTML, new RegExp('data-coupon-key="' + key.replace(/[|]/g, '\\|') + '"'));
+  w.api.couponState(store).checked[key] = true; w.api.refreshStoreSummary(store); w.api.renderPayment(store);
+  assert.equal(w.api.comparisonRate(card()), 3.5);
+  assert.match(store.second, /Olive通常（3\.5%/); assert.match(store.first, /三菱UFJカード（10%/);
+  assert.match(w.nodes.get('result').innerHTML, /獲得済みと確認・上限と期間は公式で確認/);
+  assert.equal(w.errors.length, 0);
+});
+
+test('expired, capped and stale coupons are handled; normal ranking survives coupon timeouts', async () => {
+  const today = jstDate(NOW), yesterday = jstDate(NOW - 86400000), tomorrow = jstDate(NOW + 86400000);
+  const offers = [
+    {id: 'old', provider: 'paypay', brand: 'ベルク', rate: 20, maxBonus: 500, start: '2026-08-01', end: yesterday, termsVerified: true, title: '終了済み'},
+    {id: 'cap', provider: 'paypay', brand: 'ベルク', rate: 5, maxBonus: 100, capScope: 'transaction', maxUses: 1, start: today, end: tomorrow, termsVerified: true, title: '上限付き'}];
+  const w = couponWorld({updatedAt: iso(NOW), errors: [], offers}); await flush();
+  w.manual('ベルク'); const store = w.store('ベルク'); let html = w.nodes.get('result').innerHTML;
+  assert.doesNotMatch(html, /終了済み/); assert.match(html, /上限付き/); assert.match(html, /上限100pt\/transaction/);
+  w.api.couponState(store).checked.cap = true; w.api.couponState(store).amount = 20000; w.api.refreshStoreSummary(store);
+  const pp = store.payments.find(p => p.id === 'paypay');
+  assert.equal(pp.couponPoints, 100, 'cap reached'); assert.equal(w.api.comparisonRate(pp), 2);
+  w.api.couponState(store).amount = 1000; w.api.refreshStoreSummary(store); assert.equal(w.api.comparisonRate(pp), 6.5);
+  w.api.couponState(store).checked.old = true; w.api.couponState(store).checked.cap = false; w.api.refreshStoreSummary(store);
+  assert.equal(w.api.comparisonRate(pp), 1.5, 'an expired coupon is never applied');
+
+  const stale = couponWorld({updatedAt: iso(NOW - 49 * 3600000), errors: [], offers}); await flush();
+  stale.manual('ベルク'); assert.match(stale.nodes.get('result').innerHTML, /情報が古いため不使用/);
+  stale.api.couponState(stale.store('ベルク')).checked.cap = true; stale.api.couponState(stale.store('ベルク')).amount = 1000;
+  stale.api.refreshStoreSummary(stale.store('ベルク')); assert.equal(stale.api.comparisonRate(stale.store('ベルク').payments.find(p => p.id === 'paypay')), 1.5);
+
+  const slow = couponWorld(abortable); slow.manual('ベルク');
+  assert.match(slow.nodes.get('result').innerHTML, /確認中/); assert.match(slow.store('ベルク').first, /^PayPay（1\.5%/);
+  await slow.time.tick(12000);
+  assert.match(slow.nodes.get('result').innerHTML, /取得未完了/); assert.match(slow.store('ベルク').first, /^PayPay（1\.5%/);
+  assert.equal(slow.time.pending(), 0);
+  const failed = couponWorld(async () => ({ok: false, status: 503, json: async () => ({})})); await flush();
+  failed.manual('セブン'); assert.match(failed.store('セブン-イレブン').first, /三菱UFJカード（10%/);
+  assert.equal(failed.errors.length + slow.errors.length + w.errors.length + stale.errors.length, 0);
+});
+
+test('coupon refresh after a back-forward restore re-fetches without cache and keeps the chosen store', async () => {
+  let n = 0;
+  const w = couponWorld(() => { n++; return Promise.resolve(response({updatedAt: iso(NOW), errors: [], offers: []})); }); await flush();
+  assert.equal(n, 1);
+  w.manual('ローソン'); const html = w.nodes.get('result').innerHTML;
+  for (const fn of w.windowEvents.pageshow || []) fn({persisted: false}); await flush(); assert.equal(n, 1);
+  await w.time.tick(1000);
+  for (const fn of w.windowEvents.pageshow || []) fn({persisted: true}); await flush(); assert.equal(n, 2);
+  const couponRequests = w.requests.filter(r => isCoupon(r.url));
+  assert.ok(couponRequests.every(r => r.options.cache === 'no-store'));
+  assert.notEqual(couponRequests[0].url, couponRequests[1].url, 'cache-busting query changes');
+  assert.match(w.nodes.get('result').innerHTML, /store-name">ローソン/); assert.equal(w.nodes.get('result').innerHTML.length > 0, true);
+  // A late coupon response must not reopen a result the user already closed.
+  let release; const late = couponWorld(() => new Promise(resolve => { release = resolve; }));
+  late.manual('ローソン'); late.nodes.get('clearBtn').onclick();
+  release(response({updatedAt: iso(NOW), errors: [], offers: []})); await flush();
+  assert.ok(late.nodes.get('resultPanel').classList.contains('hidden'));
+  assert.ok(html.includes('ローソン'));
+});
+
+test('a missing optional data file is reported while manual search keeps working', () => {
+  const ok = world(); assert.equal(ok.nodes.get('status').innerHTML, '');
+  const w = world({skipData: ['rates-20261102.js']});
+  assert.match(w.nodes.get('status').innerHTML, /11月の還元率確認/);
+  assert.match(w.nodes.get('status').className, /error/);
+  w.manual('ローソン'); assert.match(w.store('ローソン').first, /三菱UFJカード（10%/);
+  assert.doesNotMatch(w.nodes.get('result').innerHTML, /本人設定値（/);
+  const malls = world({skipData: ['malls-20260913.js']}); assert.match(malls.nodes.get('status').innerHTML, /トレッサ・ららぽーと/);
+});
+
+test('location requests send a rounded point, keep precise distances local and reuse the padded cache', async () => {
+  const w = world({fetcher: async () => response(shops)}); const running = w.start();
+  w.geoCalls[0].ok(w.pos(20, 35.558123456, 139.579987654)); await running;
+  const body = w.requests[0].options.body;
+  assert.match(body, /around:335,35\.5581,139\.58\)/);
+  assert.doesNotMatch(body, /35\.55812|139\.57998/);
+  assert.equal(w.nodes.get('bubbles').children.length, 1);
+  const shown = w.nodes.get('bubbles').children[0].innerHTML;
+  assert.match(shown, /dist">\d+m/);
+  await w.start(); assert.equal(w.requests.length, 1, 'same place reuses the padded result');
+  assert.equal(w.storage.size, 0, 'coordinates are not stored');
+});
+
+test('versioned URLs, data versions and SRI stay consistent across the three entry pages', () => {
+  const build = read('scripts/build_auto_coupon_checker.py');
+  const version = build.match(/VERSION='([^']+)'/)[1];
+  for (const name of ['index.html', 'app-v2.html', 'app-v3.html']) {
+    const html = read(name);
+    assert.match(html, new RegExp('data-ui-version="' + version + '"'));
+    const versions = [...html.matchAll(/<script defer src="\.\/[^"?]+\?v=([^"]+)"/g)].map(m => m[1]);
+    assert.equal(versions.length, 7); assert.ok(versions.every(v => v === version), name);
+    assert.match(html, /rates-20261102\.js\?v=[^"]+" integrity="sha384-[A-Za-z0-9+/=]+" onerror=/);
+  }
+  assert.match(read('.github/workflows/coupon-auto.yml'), new RegExp('autocoupons\\.js\\?v=' + version));
+  assert.match(read('.github/workflows/coupon-auto.yml'), /if: github\.ref == 'refs\/heads\/main'/);
+});
+
+test('UFJ 50,000-yen cap: marking the period as used re-ranks every UFJ store and resets on the 16th (JST)', () => {
+  for (const runtime of ['checker-20260907.js', 'checker-20260907-autocoupons.js']) {
+    const w = world({runtime}); w.manual('オーケー');
+    let html = w.nodes.get('result').innerHTML;
+    assert.match(html, /三菱UFJの5万円枠（8\/16〜9\/15）/); assert.match(w.store('オーケー').first, /三菱UFJカード（10%/);
+    w.nodes.get('mufgCap').onchange({target: {value: 'used'}});
+    const okMufg = w.store('オーケー').payments.find(p => p.id === 'mufg');
+    assert.equal(okMufg.r, '0.4%'); assert.equal(w.api.officialRateShort(okMufg), '');
+    // OK Club cash discount on food (3/103 = 2.91%) is then the best option, ahead of PayPay.
+    assert.match(w.store('オーケー').first, /^OKクラブ＋現金（約2\.9%割引/); assert.match(w.store('オーケー').second, /^PayPay（1\.5%/);
+    assert.match(w.store('ローソン').first, /^Olive（9%/, 'cap is shared by every UFJ store');
+    assert.match(w.store('スタバ').first, /^Olive（9%/);
+    assert.match(w.store('オーケー').combination, /使い切ったため0\.4%相当/); assert.doesNotMatch(w.store('オーケー').combination, /対象決済10%/);
+    assert.match(w.store('スタバ').combination, /使い切ったため0\.4%相当/);
+    assert.equal(w.storage.get('payment-checker-mufg-cap-period'), '2026-08-16');
+    html = w.nodes.get('result').innerHTML; assert.match(html, /今期は使い切った（0\.4%相当）" selected|value="used" selected/);
+    const sameDay = world({runtime, storage: w.storage, now: Date.parse('2026-09-15T23:59:00+09:00')});
+    assert.match(sameDay.store('オーケー').first, /^OKクラブ＋現金/);
+    const nextPeriod = world({runtime, storage: w.storage, now: Date.parse('2026-09-16T00:00:00+09:00')});
+    assert.match(nextPeriod.store('オーケー').first, /三菱UFJカード（10%/); nextPeriod.manual('オーケー');
+    assert.match(nextPeriod.nodes.get('result').innerHTML, /三菱UFJの5万円枠（9\/16〜10\/15）/);
+    w.nodes.get('mufgCap').onchange({target: {value: 'open'}});
+    assert.match(w.store('オーケー').first, /三菱UFJカード（10%/); assert.equal(w.storage.get('payment-checker-mufg-cap-period'), '');
+    // Ended programmes stay ended even when the cap is toggled.
+    const ended = world({runtime, now: Date.parse('2026-12-20T12:00:00+09:00')}); ended.manual('ドミー');
+    assert.doesNotMatch(ended.nodes.get('result').innerHTML, /id="mufgCap"/);
+    ended.manual('オーケー'); ended.nodes.get('mufgCap').onchange({target: {value: 'used'}});
+    assert.equal(ended.store('ドミー').payments.find(p => p.id === 'mufg').r, '終了');
+  }
+  const newYear = world({now: Date.parse('2027-01-10T12:00:00+09:00')}); newYear.manual('オーケー');
+  assert.match(newYear.nodes.get('result').innerHTML, /三菱UFJの5万円枠（12\/16〜1\/15）/);
+  const blocked = world({blockedStorage: true}); blocked.manual('オーケー'); blocked.nodes.get('mufgCap').onchange({target: {value: 'used'}});
+  assert.match(blocked.store('オーケー').first, /^OKクラブ＋現金/);
+  assert.equal(blocked.errors.length, 0);
 });
