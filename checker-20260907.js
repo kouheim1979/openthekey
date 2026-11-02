@@ -314,7 +314,7 @@ async function handleGeoSearch(){
   const candidates=buildCandidatesFromOsm(result.data,position.lat,position.lng,searchRadius);
   if(!candidates.length){setStatus('候補が見つかりませんでした。検索半径を広げるか、店名を入力してください。','error');return;}
   for(const candidate of candidates){candidate.accuracy=position.accuracy;candidate.approximate=approximate;}
-  setStatus((result.cached?'直近の周辺データを使用 · ':'')+(approximate?'位置の誤差が約'+accuracy+'mと大きいため、半径'+searchRadius+'mの候補を表示しています。距離は目安です。いるお店を選んでください。':'位置の誤差 約'+accuracy+'m・距離は目安です。'));
+  setStatus((result.local?'端末内の店舗データ（OpenStreetMap '+escapeHtml(result.dataDate||'')+'時点）で検索 · ':result.cached?'直近の周辺データを使用 · ':'')+(approximate?'位置の誤差が約'+accuracy+'mと大きいため、半径'+searchRadius+'mの候補を表示しています。距離は目安です。いるお店を選んでください。':'位置の誤差 約'+accuracy+'m・距離は目安です。'));
   renderCandidates(candidates,approximate?'現在地候補（目安）':'現在地候補');
  }catch(error){
   if(request!==geoRequest||error.name==='AbortError')return;
