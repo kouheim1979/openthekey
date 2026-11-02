@@ -1,0 +1,38 @@
+name: Overpass diagnostics (temporary)
+on:
+  push:
+    branches: [diag/overpass-20261102]
+permissions:
+  contents: read
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Measure public Overpass servers with the app query and a bbox query
+        run: |
+          LAT=35.5949; LNG=139.5739; R=335
+          AMEN='"amenity"~"^(restaurant|cafe|fast_food|bar|pub|fuel|pharmacy|vending_machine)$"'
+          AR="(around:$R,$LAT,$LNG)"
+          Q_AROUND="[out:json][timeout:8];(nwr$AR[\"shop\"];nwr$AR[$AMEN];nwr$AR[\"brand\"];);out center tags;"
+          BB=$(python3 -c "import math;lat,lng,r=$LAT,$LNG,$R;d=r/111320;e=r/(111320*math.cos(math.radians(lat)));print(f'{lat-d:.5f},{lng-e:.5f},{lat+d:.5f},{lng+e:.5f}')")
+          Q_BBOX="[out:json][timeout:8][bbox:$BB];(nwr[\"shop\"];nwr[$AMEN];nwr[\"brand\"];);out center tags;"
+          UA='Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1'
+          for EP in https://overpass-api.de https://overpass.kumi.systems https://overpass.osm.jp https://overpass.private.coffee; do
+            echo "=== $EP"
+            curl -sS -m 15 -o /dev/null -w "status page: HTTP %{http_code} %{time_total}s\n" -A "$UA" "$EP/api/status" || echo "status page: failed"
+            for NAME in AROUND BBOX; do
+              if [ $NAME = AROUND ]; then Q="$Q_AROUND"; else Q="$Q_BBOX"; fi
+              rm -f body h
+              META=$(curl -sS -m 30 -D h -o body -w "%{http_code} %{time_total}" -A "$UA" -H 'Origin: https://kouheim1979.github.io' -H 'Content-Type: text/plain;charset=UTF-8' --data-binary "$Q" "$EP/api/interpreter" 2>&1) || META="curl-failed $META"
+              ACAO=$(grep -i '^access-control-allow-origin' h 2>/dev/null | tr -d '\r' | head -1)
+              SUMMARY=$(python3 -c "
+          import json
+          try:
+              d=json.load(open('body'));print('elements',len(d.get('elements',[])),'remark',(d.get('remark') or '')[:120],'osm_base',d.get('osm3s',{}).get('timestamp_osm_base'))
+          except Exception as e:
+              print('non-json',open('body','rb').read(160) if __import__('os').path.exists('body') else b'')
+          " 2>&1)
+              echo "$NAME: HTTP/time=$META | ${ACAO:-no ACAO} | $SUMMARY"
+            done
+          done
