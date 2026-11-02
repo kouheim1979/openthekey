@@ -201,5 +201,5 @@ async function loadPublicCoupons(){
   const d=await r.json();if(!d||!Array.isArray(d.offers))throw new Error('invalid coupon feed');
   COUPON_FEED=d;couponFailed=Array.isArray(d.errors)&&d.errors.length>0;
  }catch(e){couponFailed=true;console.warn('Public campaign refresh failed:',e.message);}
- finally{clearTimeout(timer);couponLoading=false;STORE_DATA.forEach(refreshStoreSummary);if(lastSelectedStore&&!$('resultPanel').classList.contains('hidden'))renderPayment(lastSelectedStore,lastCouponContext);}
+ finally{clearTimeout(timer);couponLoading=false;STORE_DATA.forEach(refreshStoreSummary);if(lastSelectedStore&&!$('resultPanel').classList.contains('hidden')){keepGeoOnRender=true;try{renderPayment(lastSelectedStore,lastCouponContext);}finally{keepGeoOnRender=false;}}}
 }

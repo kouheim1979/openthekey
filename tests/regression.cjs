@@ -366,10 +366,30 @@ test('slow first Overpass endpoint starts backup at 800ms and cancels losing req
   assert.equal(w.nodes.get('bubbles').children.length, 1);
 });
 
-test('both stalled Overpass endpoints stop after 5 seconds and leave search usable', async () => {
-  const w = world(); const running = w.start(); w.geoCalls[0].ok(w.pos()); await flush(); await w.time.tick(5000); await running;
-  assert.equal(w.requests.length, 2); assert.ok(w.requests.every(r => r.options.signal.aborted)); assert.equal(w.time.pending(), 0);
-  assert.match(w.nodes.get('status').innerHTML, /周辺店舗を取得できません/); w.manual('イオン'); assert.match(w.nodes.get('result').innerHTML, /オーナーズカード/);
+test('stalled Overpass servers are tried in turn, all stop after 9 seconds and leave search usable', async () => {
+  const w = world(); const running = w.start(); w.geoCalls[0].ok(w.pos()); await flush();
+  await w.time.tick(799); assert.equal(w.requests.length, 1);
+  await w.time.tick(1); assert.equal(w.requests.length, 2);
+  await w.time.tick(1600); assert.equal(w.requests.length, 4, 'one more server every 800 ms');
+  assert.deepEqual(w.requests.map(r => new URL(r.url).hostname), ['overpass-api.de', 'overpass.kumi.systems', 'overpass.osm.jp', 'overpass.private.coffee']);
+  await w.time.tick(9000 - 2400 - 1); assert.ok(!w.requests[0].options.signal.aborted, 'still waiting just before 9 s');
+  await w.time.tick(1); await running;
+  assert.equal(w.requests.length, 4); assert.ok(w.requests.every(r => r.options.signal.aborted)); assert.equal(w.time.pending(), 0);
+  assert.match(w.nodes.get('status').innerHTML, /周辺店舗を取得できません/); assert.match(w.nodes.get('status').innerHTML, /時間がかかっています/);
+  w.manual('イオン'); assert.match(w.nodes.get('result').innerHTML, /オーナーズカード/);
+});
+
+test('a busy (429) or unreachable server moves on to the next one immediately', async () => {
+  const w = world({fetcher: async (_u, _o, n) => n === 1 ? {ok: false, status: 429, json: async () => ({})} : n === 2 ? Promise.reject(new TypeError('Load failed')) : response(shops)});
+  const running = w.start(); w.geoCalls[0].ok(w.pos()); await running;
+  assert.equal(w.requests.length, 3, 'no 800 ms wait after a refusal'); assert.equal(w.nodes.get('bubbles').children.length, 1);
+  assert.equal(w.time.pending(), 0);
+  const allBusy = world({fetcher: async () => ({ok: false, status: 429, json: async () => ({})})});
+  const busy = allBusy.start(); allBusy.geoCalls[0].ok(allBusy.pos()); await busy;
+  assert.equal(allBusy.requests.length, 4); assert.equal(allBusy.time.pending(), 0);
+  assert.match(allBusy.nodes.get('status').innerHTML, /周辺店舗を取得できませんでした（地図サーバーが混み合っています）/);
+  assert.match(allBusy.nodes.get('status').innerHTML, /店名で検索/);
+  allBusy.manual('ベルク'); assert.match(allBusy.nodes.get('result').innerHTML, /store-name">ベルク/);
 });
 
 test('manual search aborts outstanding requests and ignores a delayed server response', async () => {
@@ -624,4 +644,43 @@ test('UFJ 50,000-yen cap: marking the period as used re-ranks every UFJ store an
   const blocked = world({blockedStorage: true}); blocked.manual('オーケー'); blocked.nodes.get('mufgCap').onchange({target: {value: 'used'}});
   assert.match(blocked.store('オーケー').first, /^OKクラブ＋現金/);
   assert.equal(blocked.errors.length, 0);
+});
+
+test('imprecise but usable location widens the search and labels results as approximate', async () => {
+  const w = world({fetcher: async () => response(shops)}); const running = w.start();
+  w.geoCalls[0].ok(w.pos(580)); await flush();
+  assert.equal(w.geoCalls[1].options.enableHighAccuracy, true, 'tries to refine first');
+  await w.time.tick(4500); await running;
+  assert.equal(w.requests.length, 1); assert.match(w.requests[0].options.body, /around:685,/, '600 m error circle + padding');
+  assert.equal(w.nodes.get('bubbles').children.length, 1);
+  assert.match(w.nodes.get('candidateHeading').textContent, /近くのお店（目安） · 1件/);
+  assert.match(w.nodes.get('status').innerHTML, /誤差が約580mと大きいため、半径600mの候補/);
+  assert.ok(w.nodes.get('resultPanel').classList.contains('hidden'), 'never auto-selects a store');
+  assert.equal(w.time.pending(), 0);
+  const refined = world({fetcher: async () => response(shops)}); const again = refined.start();
+  refined.geoCalls[0].ok(refined.pos(580)); await flush(); refined.geoCalls[1].ok(refined.pos(30)); await again;
+  assert.match(refined.requests[0].options.body, /around:335,/, 'a refined fix keeps the chosen radius');
+  assert.doesNotMatch(refined.nodes.get('candidateHeading').textContent, /目安/);
+});
+
+test('very coarse location (approximate-location mode) explains the iPhone setting and sends nothing', async () => {
+  const w = world({fetcher: async () => response(shops)}); const running = w.start();
+  w.geoCalls[0].ok(w.pos(3000)); await flush(); await w.time.tick(4500); await running;
+  assert.equal(w.requests.length, 0);
+  assert.match(w.nodes.get('status').innerHTML, /誤差が約3000m/); assert.match(w.nodes.get('status').innerHTML, /正確な位置情報/);
+  assert.ok(!w.nodes.get('quickPanel').classList.contains('hidden'));
+  w.manual('ベルク'); assert.match(w.nodes.get('result').innerHTML, /store-name">ベルク/);
+});
+
+test('coupon data arriving during a location search from the result view does not cancel it', async () => {
+  let release;
+  const w = couponWorld(() => new Promise(resolve => { release = resolve; }), {overpass: async () => response(shops)});
+  w.manual('ローソン'); assert.ok(!w.nodes.get('resultPanel').classList.contains('hidden'));
+  const running = w.nodes.get('resultGeoBtn').onclick();
+  release(response({updatedAt: iso(NOW), errors: [], offers: []})); await flush();
+  assert.match(w.nodes.get('status').innerHTML, /位置情報を確認しています/, 'status of the running search is kept');
+  assert.equal(w.nodes.get('resultGeoBtn').attrs['aria-busy'], 'true');
+  w.geoCalls[0].ok(w.pos()); await running;
+  assert.equal(w.nodes.get('bubbles').children.length, 1, 'location search completed');
+  assert.equal(w.errors.length, 0);
 });
