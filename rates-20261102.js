@@ -48,6 +48,39 @@
     const keys = a.pay[r[2]].flatMap(p => sourceByPayment[p.id] || []);
     if (keys.length) r[4] = Array.from(new Set([...r[4], ...keys]));
   }
+  // Map-name matching corrections, checked against every registered-brand name in the OpenStreetMap
+  // snapshot of 2026-11-01 (Yokohama/Kawasaki). excludeTerms reject a name; osmIgnoreAliases are aliases
+  // kept for typed search but too generic for map names.
+  const osmFixes = {
+    'セブン-イレブン': {ignore: ['セブン', 'seven']},
+    'イオン': {exclude: ['シネマ', 'cinema', 'liquor']},
+    'オリーブの丘': {ignore: ['オリーブ', 'おりーぶ', 'olive']},
+    'ヴィクトリアステーション': {ignore: ['ヴィクトリア', 'ビクトリア', 'victoria']},
+    'かつや': {exclude: ['商会']},
+    'くら寿司': {ignore: ['くら', 'クラ', 'kura']},
+    'コカ・コーラ自販機': {ignore: ['自販機']},
+    'サミット': {exclude: ['green summit']},
+    'サンリブ': {ignore: ['サンク', 'BUONO']},
+    'すき家': {exclude: ['すきやき']},
+    'フィール': {ignore: ['feel']},
+    'マクドナルド': {exclude: ['マックス', 'マックレガー', 'マック本店']},
+    '天狗': {exclude: ['テング酒場', 'てんぐ寿司', 'てんぐ大ホール']},
+    '東急ストア': {ignore: ['東急', 'tokyu']},
+    '松屋': {ignore: ['まつや', 'マツヤ']},
+    '横浜家': {exclude: ['横濱家系']},
+    '熟成焼肉いちばん': {ignore: ['いちばん', 'ichiban']},
+    '純喫茶パール': {ignore: ['パール', 'pearl']},
+    '茶茶': {ignore: ['ちゃちゃ', 'chacha', 'チャチャ']},
+    '華屋与兵衛': {ignore: ['はなや', '華屋', '与兵衛', 'よへい']},
+    '藍屋': {ignore: ['あいや', 'aiya', 'アイヤ']},
+    'AOKI': {exclude: ['ドラッグ', '青果']}
+  };
+  for (const [name, fix] of Object.entries(osmFixes)) {
+    if (!a.rows.some(row => row[0] === name)) throw new Error('監査対象の店舗がありません：' + name);
+    const meta = a.storeMeta[name] || (a.storeMeta[name] = {});
+    if (fix.exclude) meta.excludeTerms = [...(meta.excludeTerms || []), ...fix.exclude];
+    if (fix.ignore) meta.osmIgnoreAliases = [...(meta.osmIgnoreAliases || []), ...fix.ignore];
+  }
   a.rateAudit = {date: checked, personalRatesKept: true, expiries: [{store: 'ドミー', payment: 'mufg', until: '2026-12-15'}]};
   window.PAYMENT_RATES_READY = true;
 })();

@@ -749,3 +749,29 @@ test('store-location builder keeps registered brands inside the area and centres
   assert.deepEqual(rows.map(r => r.slice(0, 2)), [[35.5581, 139.5791], [35.591, 139.571]]);
   assert.equal(rows[1][3], 'セブン-イレブン');
 });
+
+test('map names match registered stores word by word, without generic or mid-word hits', () => {
+  for (const runtime of ['checker-20260907.js', 'checker-20260907-autocoupons.js']) {
+    const w = world({runtime}), m = text => w.api.matchStoreFromText(text)?.store.store || null;
+    for (const [text, expected] of [
+      ['カラオケ まねきねこ', null], ['TSUTAYA BOOKSTORE 川崎駅前店', null], ['東洋カーマックス 千鳥町駐車場', null],
+      ['COSMOS', null], ['Shake Shack', null], ['HACHI', null], ['自販機2台', null], ['イオンシネマ', null],
+      ['マツヤデンキ 西小山店', null], ['テング酒場', null], ['すきやき 松木家', null], ['セブン銀行', null], ['Green Summit', null],
+      ['おもちゃのまつもと', null], ['サイクルオリンピック東戸塚', null], ['Victoria GOLF', null],
+      ['セブン-イレブン 横浜センター北店', 'セブン-イレブン'], ['Seven Eleven', 'セブン-イレブン'], ['OKストア 妙蓮寺店', 'オーケー'],
+      ['オーケー 港北店', 'オーケー'], ['薬 HAC welcia', 'ウエルシア'], ['HAC ドラッグ', 'ハックドラッグ'], ['MOS Cafe', 'モスバーガー'],
+      ['Coca-Cola', 'コカ・コーラ自販機'], ['松屋 上大岡店', '松屋'], ['東急ストア 中山店', '東急ストア'], ['Kura Sushi', 'くら寿司'],
+      ['マクドナルド 港北ニュータウン店', 'マクドナルド'], ['McDonald\'s', 'マクドナルド'], ['フィットケアデポ 北山田店', 'Fit Care DEPOT']]) {
+      assert.equal(m(text), expected, text);
+    }
+  }
+  if (fs.existsSync(path.join(root, 'nearby-stores.json'))) {
+    const w = world(), data = JSON.parse(read('nearby-stores.json'));
+    assert.ok(data.rows.length >= 500);
+    for (const row of data.rows) {
+      const text = [row[4], row[2], row[3]].filter(Boolean).join(' / '), match = w.api.matchStoreFromText(text);
+      if (!match) continue;
+      assert.doesNotMatch(text, /カラオケ|bookstore|カーマックス|COSMOS|Shake Shack|シネマ|テング酒場|マツヤデンキ/i, text + ' → ' + match.store.store);
+    }
+  }
+});
