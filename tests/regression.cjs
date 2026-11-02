@@ -734,3 +734,18 @@ test('the store-location builder uses the same alias rules as the app', () => {
   assert.match(src, /a\.length >= 3 \|\| a === storeName/); assert.match(app, /if\(a\.length<3&&a!==normalizeText\(store\.store\)\)continue;/);
   assert.match(src, /'rates-20261102\.js'/);
 });
+
+test('store-location builder keeps registered brands inside the area and centres polygons', async () => {
+  const builder = await import(path.join(root, 'scripts/build_nearby_stores.mjs'));
+  const aliases = builder.registeredAliases();
+  const line = feature => '\u001e' + JSON.stringify(feature);
+  const lines = [
+    line({type: 'Feature', geometry: {type: 'Point', coordinates: [139.5791, 35.5581]}, properties: {'@type': 'node', '@id': 1, name: 'マルエツ 中川駅前店', shop: 'supermarket'}}),
+    line({type: 'Feature', geometry: {type: 'Polygon', coordinates: [[[139.570, 35.590], [139.572, 35.590], [139.572, 35.592], [139.570, 35.592], [139.570, 35.590]]]}, properties: {'@type': 'way', '@id': 2, brand: 'セブン-イレブン', shop: 'convenience'}}),
+    line({type: 'Feature', geometry: {type: 'Point', coordinates: [139.7671, 35.6812]}, properties: {name: 'ローソン 東京駅店'}}),
+    line({type: 'Feature', geometry: {type: 'Point', coordinates: [139.58, 35.56]}, properties: {name: '山田書店', shop: 'books'}}),
+    'not json', ''];
+  const rows = builder.buildRows(lines, aliases);
+  assert.deepEqual(rows.map(r => r.slice(0, 2)), [[35.5581, 139.5791], [35.591, 139.571]]);
+  assert.equal(rows[1][3], 'セブン-イレブン');
+});
