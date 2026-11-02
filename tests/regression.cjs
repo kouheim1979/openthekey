@@ -366,10 +366,30 @@ test('slow first Overpass endpoint starts backup at 800ms and cancels losing req
   assert.equal(w.nodes.get('bubbles').children.length, 1);
 });
 
-test('both stalled Overpass endpoints stop after 5 seconds and leave search usable', async () => {
-  const w = world(); const running = w.start(); w.geoCalls[0].ok(w.pos()); await flush(); await w.time.tick(5000); await running;
-  assert.equal(w.requests.length, 2); assert.ok(w.requests.every(r => r.options.signal.aborted)); assert.equal(w.time.pending(), 0);
-  assert.match(w.nodes.get('status').innerHTML, /周辺店舗を取得できません/); w.manual('イオン'); assert.match(w.nodes.get('result').innerHTML, /オーナーズカード/);
+test('stalled Overpass servers are tried in turn, all stop after 9 seconds and leave search usable', async () => {
+  const w = world(); const running = w.start(); w.geoCalls[0].ok(w.pos()); await flush();
+  await w.time.tick(799); assert.equal(w.requests.length, 1);
+  await w.time.tick(1); assert.equal(w.requests.length, 2);
+  await w.time.tick(1600); assert.equal(w.requests.length, 4, 'one more server every 800 ms');
+  assert.deepEqual(w.requests.map(r => new URL(r.url).hostname), ['overpass-api.de', 'overpass.kumi.systems', 'overpass.osm.jp', 'overpass.private.coffee']);
+  await w.time.tick(9000 - 2400 - 1); assert.ok(!w.requests[0].options.signal.aborted, 'still waiting just before 9 s');
+  await w.time.tick(1); await running;
+  assert.equal(w.requests.length, 4); assert.ok(w.requests.every(r => r.options.signal.aborted)); assert.equal(w.time.pending(), 0);
+  assert.match(w.nodes.get('status').innerHTML, /周辺店舗を取得できません/); assert.match(w.nodes.get('status').innerHTML, /時間がかかっています/);
+  w.manual('イオン'); assert.match(w.nodes.get('result').innerHTML, /オーナーズカード/);
+});
+
+test('a busy (429) or unreachable server moves on to the next one immediately', async () => {
+  const w = world({fetcher: async (_u, _o, n) => n === 1 ? {ok: false, status: 429, json: async () => ({})} : n === 2 ? Promise.reject(new TypeError('Load failed')) : response(shops)});
+  const running = w.start(); w.geoCalls[0].ok(w.pos()); await running;
+  assert.equal(w.requests.length, 3, 'no 800 ms wait after a refusal'); assert.equal(w.nodes.get('bubbles').children.length, 1);
+  assert.equal(w.time.pending(), 0);
+  const allBusy = world({fetcher: async () => ({ok: false, status: 429, json: async () => ({})})});
+  const busy = allBusy.start(); allBusy.geoCalls[0].ok(allBusy.pos()); await busy;
+  assert.equal(allBusy.requests.length, 4); assert.equal(allBusy.time.pending(), 0);
+  assert.match(allBusy.nodes.get('status').innerHTML, /周辺店舗を取得できませんでした（地図サーバーが混み合っています）/);
+  assert.match(allBusy.nodes.get('status').innerHTML, /店名で検索/);
+  allBusy.manual('ベルク'); assert.match(allBusy.nodes.get('result').innerHTML, /store-name">ベルク/);
 });
 
 test('manual search aborts outstanding requests and ignores a delayed server response', async () => {

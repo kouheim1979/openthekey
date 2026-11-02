@@ -72,7 +72,7 @@ with sync_playwright() as p:
                 def handle(route):
                     sent.append(route.request.post_data or '');route.fulfill(json=osm,headers={'Access-Control-Allow-Origin':'*'})
                 return handle
-            for host in ('https://overpass-api.de/**','https://overpass.kumi.systems/**'):ctx.route(host,make_overpass(sent))
+            for host in ('https://overpass-api.de/**','https://overpass.kumi.systems/**','https://overpass.osm.jp/**','https://overpass.private.coffee/**'):ctx.route(host,make_overpass(sent))
             page=ctx.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
             page.goto(url,wait_until='networkidle');page.wait_for_function('window.PAYMENT_CHECKER_READY===true')
             page.locator('#geoBtn').click()
@@ -89,5 +89,16 @@ with sync_playwright() as p:
             assert page.evaluate('document.documentElement.scrollWidth')<=391
             assert not errors,errors
             ctx.close()
-        print('Mobile/browser checks passed at 320x568, 375x667, 390x844, 430x932, 667x375, 844x390 and 820x1180; SRI, V coupon opt-in, official-rate labels, PayPay 100pt cap, location accuracy 20/600/3000 m verified')
+        ctx=browser.new_context(locale='ja-JP',viewport={'width':390,'height':844},is_mobile=True,has_touch=True,
+                                geolocation={'latitude':35.5600,'longitude':139.5800,'accuracy':20},permissions=['geolocation'])
+        hits=[]
+        def busy(route):hits.append('main');route.fulfill(status=429,body='rate_limited',headers={'Access-Control-Allow-Origin':'*'})
+        def ok(route):hits.append(route.request.url);route.fulfill(json=osm,headers={'Access-Control-Allow-Origin':'*'})
+        ctx.route('https://overpass-api.de/**',busy)
+        for host in ('https://overpass.kumi.systems/**','https://overpass.osm.jp/**','https://overpass.private.coffee/**'):ctx.route(host,ok)
+        page=ctx.new_page();page.goto(url,wait_until='networkidle');page.wait_for_function('window.PAYMENT_CHECKER_READY===true')
+        page.locator('#geoBtn').click();page.wait_for_selector('#candidatePanel:not(.hidden)')
+        assert hits[0]=='main' and 'kumi.systems' in hits[1],hits
+        ctx.close()
+        print('Mobile/browser checks passed at 320x568, 375x667, 390x844, 430x932, 667x375, 844x390 and 820x1180; SRI, V coupon opt-in, official-rate labels, PayPay 100pt cap, location accuracy 20/600/3000 m and busy-server fallback verified')
     finally:browser.close();server.shutdown()

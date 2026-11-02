@@ -527,7 +527,7 @@ async function handleGeoSearch(){
  }catch(error){
   if(request!==geoRequest||error.name==='AbortError')return;
   const messages={1:'位置情報が許可されていません。ブラウザのサイト設定を確認するか、店名で検索してください。',2:'現在地を特定できませんでした。店名検索はそのまま使えます。',3:'位置情報の確認に時間がかかっています。再試行するか、店名で検索してください。'};
-  setStatus(messages[error.code]||'周辺店舗を取得できませんでした。再試行するか、店名で検索してください。','error');
+  setStatus(messages[error.code]||'周辺店舗を取得できませんでした'+(error&&error.message?'（'+escapeHtml(error.message)+'）':'')+'。地図データ（OpenStreetMap）の公開サーバーが混雑している可能性があります。少し待って再試行するか、店名で検索してください。','error');
  }finally{
   if(request===geoRequest){geoController=null;resetGeoButtons();if($('resultPanel').classList.contains('hidden')&&$('candidatePanel').classList.contains('hidden')&&$('allPanel').classList.contains('hidden'))show($('quickPanel'));}
  }

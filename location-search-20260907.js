@@ -1,8 +1,11 @@
 /* Optional location service. Failure here must never block the payment checker. */
 (function () {
   'use strict';
-  const ENDPOINTS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
-  const LOCATION_MS = 4500, SEARCH_MS = 5000, POSITION_AGE_MS = 30000, CACHE_MS = 120000;
+  // Public Overpass servers, tried in order. The main server limits each IP to two slots, which shared
+  // mobile-network addresses often exhaust (HTTP 429), so a refusal moves on to the next server at once.
+  const ENDPOINTS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter',
+    'https://overpass.osm.jp/api/interpreter', 'https://overpass.private.coffee/api/interpreter'];
+  const LOCATION_MS = 4500, SEARCH_MS = 9000, HEDGE_MS = 800, POSITION_AGE_MS = 30000, CACHE_MS = 600000;
   // Only a ~10 m grid point leaves the device; the extra radius covers the rounding error (< 8 m).
   const ROUND_PAD_M = 10;
   const roundCoord = n => Math.round(n * 1e4) / 1e4;
@@ -19,7 +22,7 @@
   function buildQuery(lat, lng, radius) {
     if (!validPosition({lat, lng, accuracy: 0}) || !Number.isFinite(radius) || radius < 1 || radius > 1200) throw new Error('検索範囲が不正です');
     const around = '(around:' + radius + ',' + lat + ',' + lng + ')';
-    return '[out:json][timeout:5];(nwr' + around + '["shop"];nwr' + around + '["amenity"~"^(restaurant|cafe|fast_food|bar|pub|fuel|pharmacy|vending_machine)$"];nwr' + around + '["brand"];);out center tags;';
+    return '[out:json][timeout:8];(nwr' + around + '["shop"];nwr' + around + '["amenity"~"^(restaurant|cafe|fast_food|bar|pub|fuel|pharmacy|vending_machine)$"];nwr' + around + '["brand"];);out center tags;';
   }
   function createClient(options = {}) {
     const geo = options.geolocation || navigator.geolocation;
@@ -77,7 +80,7 @@
     function fetchShops(query, signal) {
       return new Promise((resolve, reject) => {
         if (signal.aborted) { reject(abortError()); return; }
-        let settled = false, failures = 0, backupStarted = false;
+        let settled = false, started = 0, failures = 0;
         const controllers = [], timers = [];
         const finish = (error, value) => {
           if (settled) return;
@@ -89,26 +92,31 @@
         };
         const onAbort = () => finish(abortError());
         signal.addEventListener('abort', onAbort, {once: true});
-        const startBackup = () => { if (!settled && !backupStarted) { backupStarted = true; run(ENDPOINTS[1]); } };
+        // Start the next server now; while nothing has answered, add another one every HEDGE_MS.
+        const startNext = () => {
+          if (settled || started >= ENDPOINTS.length) return;
+          run(ENDPOINTS[started++]);
+          if (started < ENDPOINTS.length) timers.push(setTimeout(startNext, HEDGE_MS));
+        };
         async function run(endpoint) {
           const controller = new AbortController();
           controllers.push(controller);
           try {
-            const response = await request(endpoint, {method: 'POST', headers: {'Content-Type': 'text/plain;charset=UTF-8'}, body: query, signal: controller.signal});
-            if (!response.ok) throw new Error('店舗検索の接続先が混み合っています');
+            let response;
+            try { response = await request(endpoint, {method: 'POST', headers: {'Content-Type': 'text/plain;charset=UTF-8'}, body: query, signal: controller.signal}); }
+            catch (error) { if (error && error.name === 'AbortError') throw error; throw new Error('地図サーバーに接続できませんでした'); }
+            if (!response.ok) throw new Error(response.status === 429 || response.status >= 500 ? '地図サーバーが混み合っています' : '地図サーバーが応答しませんでした');
             const json = await response.json();
             if (!json || !Array.isArray(json.elements) || json.remark) throw new Error('店舗検索の結果を確認できませんでした');
             finish(null, json);
           } catch (error) {
             if (settled) return;
             failures++;
-            if (failures >= ENDPOINTS.length) finish(error); else startBackup();
+            if (failures >= ENDPOINTS.length) finish(error); else startNext();
           }
         }
-        timers.push(setTimeout(() => finish(new Error('店舗検索に時間がかかっています')), SEARCH_MS));
-        // Avoid serial 14-second waits: try the second server only if the first is slow.
-        timers.push(setTimeout(startBackup, 800));
-        run(ENDPOINTS[0]);
+        timers.push(setTimeout(() => finish(new Error('地図サーバーの応答に時間がかかっています')), SEARCH_MS));
+        startNext();
       });
     }
     async function search(position, radius, signal) {
