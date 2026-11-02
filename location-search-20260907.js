@@ -3,9 +3,18 @@
   'use strict';
   // Public Overpass servers, tried in order. The main server limits each IP to two slots, which shared
   // mobile-network addresses often exhaust (HTTP 429), so a refusal moves on to the next server at once.
+  // (overpass.osm.jp is not used: its TLS certificate had expired on 2026-11-02, so browsers refuse it.)
   const ENDPOINTS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter',
-    'https://overpass.osm.jp/api/interpreter', 'https://overpass.private.coffee/api/interpreter'];
-  const LOCATION_MS = 4500, SEARCH_MS = 9000, HEDGE_MS = 800, POSITION_AGE_MS = 30000, CACHE_MS = 600000;
+    'https://overpass.private.coffee/api/interpreter'];
+  const LOCATION_MS = 4500, SEARCH_MS = 9000, HEDGE_MS = 800, POSITION_AGE_MS = 30000, CACHE_MS = 600000, LOCAL_MS = 4000;
+  // Store locations bundled with the app (weekly OpenStreetMap snapshot). Inside its area the search runs
+  // on the device: nothing is sent and the overloaded public servers are not needed.
+  const DEFAULT_LOCAL_URL = './nearby-stores.json';
+  function coversCircle(bbox, position, radius) {
+    if (!Array.isArray(bbox) || bbox.length !== 4) return false;
+    const [s, w, n, e] = bbox, dLat = radius / 111320, dLng = radius / (111320 * Math.cos(position.lat * Math.PI / 180));
+    return position.lat - dLat >= s && position.lat + dLat <= n && position.lng - dLng >= w && position.lng + dLng <= e;
+  }
   // Only a ~10 m grid point leaves the device; the extra radius covers the rounding error (< 8 m).
   const ROUND_PAD_M = 10;
   const roundCoord = n => Math.round(n * 1e4) / 1e4;
@@ -27,6 +36,34 @@
   function createClient(options = {}) {
     const geo = options.geolocation || navigator.geolocation;
     const request = options.fetch || ((...args) => fetch(...args));
+    const localUrl = typeof options.localDataUrl === 'string' ? options.localDataUrl :
+      typeof window.PAYMENT_NEARBY_DATA_URL === 'string' ? window.PAYMENT_NEARBY_DATA_URL : DEFAULT_LOCAL_URL;
+    let localPromise = null;
+    // Loaded once per page on the first location search; a failure falls back to Overpass and is retried next time.
+    function loadLocal() {
+      if (!localUrl) return Promise.resolve(null);
+      if (!localPromise) localPromise = (async () => {
+        const controller = new AbortController(), timer = setTimeout(() => controller.abort(), LOCAL_MS);
+        try {
+          const response = await request(localUrl, {signal: controller.signal});
+          if (!response.ok) throw new Error('local data HTTP ' + response.status);
+          const data = await response.json();
+          if (!data || data.version !== 1 || !Array.isArray(data.rows) || !Array.isArray(data.bbox)) throw new Error('local data invalid');
+          const elements = [];
+          data.rows.forEach((row, i) => {
+            if (!Array.isArray(row) || !Number.isFinite(row[0]) || !Number.isFinite(row[1])) return;
+            const tags = {};
+            if (row[2]) tags.name = String(row[2]);
+            if (row[3]) tags.brand = String(row[3]);
+            if (row[4]) tags['name:ja'] = String(row[4]);
+            elements.push({type: 'local', id: i, lat: row[0], lon: row[1], tags});
+          });
+          return {bbox: data.bbox, osmBase: String(data.osmBase || ''), elements};
+        } catch (_) { localPromise = null; return null; }
+        finally { clearTimeout(timer); }
+      })();
+      return localPromise;
+    }
     let lastPosition = null;
     // Memory only: coordinates and shop results disappear when this page closes.
     const cache = [];
@@ -121,6 +158,14 @@
     }
     async function search(position, radius, signal) {
       if (signal.aborted) throw abortError();
+      const local = await loadLocal();
+      if (signal.aborted) throw abortError();
+      if (local && coversCircle(local.bbox, position, radius)) {
+        // Cheap box prefilter; the checker applies the exact distance and brand matching.
+        const dLat = radius / 111320, dLng = radius / (111320 * Math.cos(position.lat * Math.PI / 180));
+        const elements = local.elements.filter(el => Math.abs(el.lat - position.lat) <= dLat && Math.abs(el.lon - position.lng) <= dLng);
+        return {data: {elements}, cached: false, local: true, dataDate: local.osmBase.slice(0, 10)};
+      }
       const hit = cache.find(item => Date.now() - item.at <= CACHE_MS && radius + distance(position, item) <= item.radius);
       if (hit) return {data: hit.data, cached: true};
       // Padding allows small movements to reuse a recent result without missing the new edge.

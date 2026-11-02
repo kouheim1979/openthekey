@@ -28,8 +28,8 @@ function clock(start = 1788739200000) {
     pending: () => tasks.size
   };
 }
-function world({loadLocation = true, storage = new Map(), blockedStorage = false, geolocation, fetcher, runtime = 'checker-20260907.js', now, skipData = []} = {}) {
-  const time = clock(now), nodes = new Map(), errors = [], geoCalls = [], requests = [], windowEvents = {};
+function world({loadLocation = true, storage = new Map(), blockedStorage = false, geolocation, fetcher, runtime = 'checker-20260907.js', now, skipData = [], nearby = null} = {}) {
+  const time = clock(now), nodes = new Map(), errors = [], geoCalls = [], requests = [], nearbyRequests = [], windowEvents = {};
   function element(id = '') {
     const el = {id, className: '', value: '', children: [], disabled: false, attrs: {}, events: {}, textContent: '', focus() {}, blur() {},
       appendChild(child) { this.children.push(child); },
@@ -58,8 +58,13 @@ function world({loadLocation = true, storage = new Map(), blockedStorage = false
     Date: class extends Date { static now() { return time.now(); } },
     setTimeout: time.setTimeout, clearTimeout: time.clearTimeout,
     requestIdleCallback() {}, scrollTo() {}, addEventListener(name, fn) { (windowEvents[name] ||= []).push(fn); },
-    fetch: (url, options) => { requests.push({url, options}); return fetcher ? fetcher(url, options, requests.length) : new Promise(() => {}); }
+    fetch: (url, options) => {
+      if (url === './nearby-stores.json') { nearbyRequests.push({url, options}); return typeof nearby === 'function' ? nearby(url, options) : Promise.resolve(response(nearby)); }
+      requests.push({url, options}); return fetcher ? fetcher(url, options, requests.length) : new Promise(() => {});
+    }
   };
+  // Bundled store locations are off unless a test passes `nearby`; Overpass tests stay deterministic.
+  sandbox.PAYMENT_NEARBY_DATA_URL = nearby ? './nearby-stores.json' : '';
   sandbox.window = sandbox; vm.createContext(sandbox);
   for (const name of DATA_FILES) if (!skipData.includes(name)) vm.runInContext(read(name), sandbox, {filename: name});
   if (loadLocation) vm.runInContext(read('location-search-20260907.js'), sandbox, {filename: 'location-search-20260907.js'});
@@ -67,7 +72,7 @@ function world({loadLocation = true, storage = new Map(), blockedStorage = false
   vm.runInContext(script, sandbox, {filename: runtime});
   assert.equal(errors.length, 0, errors.map(String).join('\n'));
   assert.equal(sandbox.PAYMENT_CHECKER_READY, true);
-  return {sandbox, time, errors, nodes, geoCalls, requests, storage, windowEvents, api: sandbox.__test,
+  return {sandbox, time, errors, nodes, geoCalls, requests, nearbyRequests, storage, windowEvents, api: sandbox.__test,
     store: name => sandbox.__test.STORE_DATA.find(s => s.store === name),
     start: () => nodes.get('geoBtn').onclick(),
     manual(name) { nodes.get('manualSearch').value = name; nodes.get('searchForm').onsubmit({preventDefault() {}}); },
@@ -370,11 +375,11 @@ test('stalled Overpass servers are tried in turn, all stop after 9 seconds and l
   const w = world(); const running = w.start(); w.geoCalls[0].ok(w.pos()); await flush();
   await w.time.tick(799); assert.equal(w.requests.length, 1);
   await w.time.tick(1); assert.equal(w.requests.length, 2);
-  await w.time.tick(1600); assert.equal(w.requests.length, 4, 'one more server every 800 ms');
-  assert.deepEqual(w.requests.map(r => new URL(r.url).hostname), ['overpass-api.de', 'overpass.kumi.systems', 'overpass.osm.jp', 'overpass.private.coffee']);
-  await w.time.tick(9000 - 2400 - 1); assert.ok(!w.requests[0].options.signal.aborted, 'still waiting just before 9 s');
+  await w.time.tick(800); assert.equal(w.requests.length, 3, 'one more server every 800 ms');
+  assert.deepEqual(w.requests.map(r => new URL(r.url).hostname), ['overpass-api.de', 'overpass.kumi.systems', 'overpass.private.coffee']);
+  await w.time.tick(9000 - 1600 - 1); assert.ok(!w.requests[0].options.signal.aborted, 'still waiting just before 9 s');
   await w.time.tick(1); await running;
-  assert.equal(w.requests.length, 4); assert.ok(w.requests.every(r => r.options.signal.aborted)); assert.equal(w.time.pending(), 0);
+  assert.equal(w.requests.length, 3); assert.ok(w.requests.every(r => r.options.signal.aborted)); assert.equal(w.time.pending(), 0);
   assert.match(w.nodes.get('status').innerHTML, /周辺店舗を取得できません/); assert.match(w.nodes.get('status').innerHTML, /時間がかかっています/);
   w.manual('イオン'); assert.match(w.nodes.get('result').innerHTML, /オーナーズカード/);
 });
@@ -386,7 +391,7 @@ test('a busy (429) or unreachable server moves on to the next one immediately', 
   assert.equal(w.time.pending(), 0);
   const allBusy = world({fetcher: async () => ({ok: false, status: 429, json: async () => ({})})});
   const busy = allBusy.start(); allBusy.geoCalls[0].ok(allBusy.pos()); await busy;
-  assert.equal(allBusy.requests.length, 4); assert.equal(allBusy.time.pending(), 0);
+  assert.equal(allBusy.requests.length, 3); assert.equal(allBusy.time.pending(), 0);
   assert.match(allBusy.nodes.get('status').innerHTML, /周辺店舗を取得できませんでした（地図サーバーが混み合っています）/);
   assert.match(allBusy.nodes.get('status').innerHTML, /店名で検索/);
   allBusy.manual('ベルク'); assert.match(allBusy.nodes.get('result').innerHTML, /store-name">ベルク/);
@@ -683,4 +688,90 @@ test('coupon data arriving during a location search from the result view does no
   w.geoCalls[0].ok(w.pos()); await running;
   assert.equal(w.nodes.get('bubbles').children.length, 1, 'location search completed');
   assert.equal(w.errors.length, 0);
+});
+
+const NEARBY = {version: 1, osmBase: '2026-11-02T14:06:06Z', bbox: [35.31, 139.47, 35.66, 139.79], fields: ['lat', 'lng', 'name', 'brand', 'name:ja'],
+  rows: [[35.5581, 139.5791, 'マルエツ 中川駅前店', 'マルエツ', ''], [35.5585, 139.5795, 'セブン-イレブン 横浜中川駅前店', 'セブン-イレブン', ''], [35.6, 139.6, 'ローソン 遠くの店', 'ローソン', ''], [35.5582, 139.5792, '山田書店', '', '']]};
+
+test('inside the bundled area, nearby search runs on the device and sends no location', async () => {
+  const w = world({nearby: NEARBY, fetcher: async () => response(shops)}); const running = w.start();
+  w.geoCalls[0].ok(w.pos(20, 35.558, 139.579)); await running;
+  assert.equal(w.requests.length, 0, 'no Overpass request'); assert.equal(w.nearbyRequests.length, 1);
+  const names = w.nodes.get('bubbles').children.map(b => b.innerHTML).join(' ');
+  assert.match(names, /マルエツ/); assert.match(names, /セブン/); assert.doesNotMatch(names, /遠くの店|山田書店/);
+  assert.match(w.nodes.get('status').innerHTML, /端末内の店舗データ（OpenStreetMap 2026-11-02時点）で検索/);
+  await w.start(); assert.equal(w.nearbyRequests.length, 1, 'loaded once per page'); assert.equal(w.requests.length, 0);
+  assert.equal(w.time.pending(), 0); assert.equal(w.storage.size, 0);
+});
+
+test('outside the bundled area, at its edge, or without the file, nearby search falls back to Overpass', async () => {
+  const outside = world({nearby: NEARBY, fetcher: async () => response({elements: [{type: 'node', id: 9, lat: 35.6812, lon: 139.7671, tags: {name: 'セブン-イレブン 東京駅店'}}]})});
+  let running = outside.start(); outside.geoCalls[0].ok(outside.pos(20, 35.6812, 139.7671)); await running;
+  assert.equal(outside.requests.length, 1); assert.match(outside.nodes.get('bubbles').children[0].innerHTML, /セブン/);
+  assert.doesNotMatch(outside.nodes.get('status').innerHTML, /端末内/);
+  const edge = world({nearby: NEARBY, fetcher: async () => response(shops)});
+  running = edge.start(); edge.geoCalls[0].ok(edge.pos(20, 35.6585, 139.6)); await running;
+  assert.equal(edge.requests.length, 1, 'a circle crossing the area edge is searched online');
+  const missing = world({nearby: async () => ({ok: false, status: 404, json: async () => ({})}), fetcher: async () => response(shops)});
+  running = missing.start(); missing.geoCalls[0].ok(missing.pos()); await running;
+  assert.equal(missing.requests.length, 1); assert.equal(missing.nodes.get('bubbles').children.length, 1);
+  const broken = world({nearby: {version: 2, rows: 'x'}, fetcher: async () => response(shops)});
+  running = broken.start(); broken.geoCalls[0].ok(broken.pos()); await running;
+  assert.equal(broken.requests.length, 1, 'an invalid file is ignored');
+  const slow = world({nearby: (_u, options) => new Promise((_, reject) => options.signal.addEventListener('abort', () => reject(new DOMException('a', 'AbortError')))), fetcher: async () => response(shops)});
+  running = slow.start(); slow.geoCalls[0].ok(slow.pos()); await flush(); await slow.time.tick(4000); await running;
+  assert.equal(slow.requests.length, 1, 'a stalled file gives way to Overpass after 4 s'); assert.equal(slow.time.pending(), 0);
+});
+
+test('the store-location builder uses the same alias rules as the app', () => {
+  const src = read('scripts/build_nearby_stores.mjs'), app = read('checker-20260907.js');
+  const builderNorm = vm.runInNewContext('(' + src.match(/const normalizeText = (value => .+);\n/)[1] + ')');
+  const appNorm = vm.runInNewContext('(' + app.match(/function normalizeText\(value\)\{.+?\}(?=\nfunction escapeHtml)/s)[0] + ')');
+  const w = world();
+  const samples = ['セブン-イレブン 横浜センター北店', 'ＭＯＳ　ＢＵＲＧＥＲ', "McDonald's", 'ローソン・スリーエフ', '株式会社オーケー', 'まいばすけっと 北山田駅前店'];
+  for (const store of w.api.STORE_DATA) samples.push(...store.aliases);
+  for (const text of samples) assert.equal(builderNorm(text), appNorm(text), text);
+  assert.match(src, /a\.length >= 3 \|\| a === storeName/); assert.match(app, /if\(a\.length<3&&a!==normalizeText\(store\.store\)\)continue;/);
+  assert.match(src, /'rates-20261102\.js'/);
+});
+
+test('store-location builder keeps registered brands inside the area and centres polygons', async () => {
+  const builder = await import(path.join(root, 'scripts/build_nearby_stores.mjs'));
+  const aliases = builder.registeredAliases();
+  const line = feature => '\u001e' + JSON.stringify(feature);
+  const lines = [
+    line({type: 'Feature', geometry: {type: 'Point', coordinates: [139.5791, 35.5581]}, properties: {'@type': 'node', '@id': 1, name: 'マルエツ 中川駅前店', shop: 'supermarket'}}),
+    line({type: 'Feature', geometry: {type: 'Polygon', coordinates: [[[139.570, 35.590], [139.572, 35.590], [139.572, 35.592], [139.570, 35.592], [139.570, 35.590]]]}, properties: {'@type': 'way', '@id': 2, brand: 'セブン-イレブン', shop: 'convenience'}}),
+    line({type: 'Feature', geometry: {type: 'Point', coordinates: [139.7671, 35.6812]}, properties: {name: 'ローソン 東京駅店'}}),
+    line({type: 'Feature', geometry: {type: 'Point', coordinates: [139.58, 35.56]}, properties: {name: '山田書店', shop: 'books'}}),
+    'not json', ''];
+  const rows = builder.buildRows(lines, aliases);
+  assert.deepEqual(rows.map(r => r.slice(0, 2)), [[35.5581, 139.5791], [35.591, 139.571]]);
+  assert.equal(rows[1][3], 'セブン-イレブン');
+});
+
+test('map names match registered stores word by word, without generic or mid-word hits', () => {
+  for (const runtime of ['checker-20260907.js', 'checker-20260907-autocoupons.js']) {
+    const w = world({runtime}), m = text => w.api.matchStoreFromText(text)?.store.store || null;
+    for (const [text, expected] of [
+      ['カラオケ まねきねこ', null], ['TSUTAYA BOOKSTORE 川崎駅前店', null], ['東洋カーマックス 千鳥町駐車場', null],
+      ['COSMOS', null], ['Shake Shack', null], ['HACHI', null], ['自販機2台', null], ['イオンシネマ', null],
+      ['マツヤデンキ 西小山店', null], ['テング酒場', null], ['すきやき 松木家', null], ['セブン銀行', null], ['Green Summit', null],
+      ['おもちゃのまつもと', null], ['サイクルオリンピック東戸塚', null], ['Victoria GOLF', null],
+      ['セブン-イレブン 横浜センター北店', 'セブン-イレブン'], ['Seven Eleven', 'セブン-イレブン'], ['OKストア 妙蓮寺店', 'オーケー'],
+      ['オーケー 港北店', 'オーケー'], ['薬 HAC welcia', 'ウエルシア'], ['HAC ドラッグ', 'ハックドラッグ'], ['MOS Cafe', 'モスバーガー'],
+      ['Coca-Cola', 'コカ・コーラ自販機'], ['松屋 上大岡店', '松屋'], ['東急ストア 中山店', '東急ストア'], ['Kura Sushi', 'くら寿司'],
+      ['マクドナルド 港北ニュータウン店', 'マクドナルド'], ['McDonald\'s', 'マクドナルド'], ['フィットケアデポ 北山田店', 'Fit Care DEPOT']]) {
+      assert.equal(m(text), expected, text);
+    }
+  }
+  if (fs.existsSync(path.join(root, 'nearby-stores.json'))) {
+    const w = world(), data = JSON.parse(read('nearby-stores.json'));
+    assert.ok(data.rows.length >= 500);
+    for (const row of data.rows) {
+      const text = [row[4], row[2], row[3]].filter(Boolean).join(' / '), match = w.api.matchStoreFromText(text);
+      if (!match) continue;
+      assert.doesNotMatch(text, /カラオケ|bookstore|カーマックス|COSMOS|Shake Shack|シネマ|テング酒場|マツヤデンキ/i, text + ' → ' + match.store.store);
+    }
+  }
 });

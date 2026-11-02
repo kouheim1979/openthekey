@@ -1,0 +1,60 @@
+name: Refresh nearby store locations
+
+# Weekly OpenStreetMap snapshot of registered-brand stores in Yokohama/Kawasaki (nearby-stores.json),
+# built from the Geofabrik Kanto extract (the public Overpass servers time out on city-wide queries).
+# On main the file is committed to main; on a feature branch it is committed to that branch only.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/build_nearby_stores.mjs'
+      - '.github/workflows/nearby-stores.yml'
+  schedule:
+    - cron: '23 18 * * 1'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nearby-stores-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install osmium
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq osmium-tool
+      - name: Download the OpenStreetMap Kanto extract (Geofabrik, updated daily)
+        run: |
+          curl -fsSL --retry 4 --retry-delay 20 -o kanto.osm.pbf https://download.geofabrik.de/asia/japan/kanto-latest.osm.pbf
+          ls -lh kanto.osm.pbf
+      - name: Extract shop, amenity and brand objects in Yokohama/Kawasaki
+        run: |
+          osmium extract -b 139.47,35.31,139.79,35.66 kanto.osm.pbf -o region.osm.pbf --overwrite
+          osmium tags-filter region.osm.pbf nwr/shop 'nwr/amenity=restaurant,cafe,fast_food,bar,pub,fuel,pharmacy,vending_machine' nwr/brand -o poi.osm.pbf --overwrite
+          osmium export poi.osm.pbf -f geojsonseq -a type,id -o poi.geojsonseq --overwrite
+          wc -l poi.geojsonseq
+      - name: Build nearby-stores.json
+        run: |
+          TS=$(osmium fileinfo -g header.option.osmosis_replication_timestamp kanto.osm.pbf || true)
+          node scripts/build_nearby_stores.mjs poi.geojsonseq "$TS"
+      - name: Validate
+        run: |
+          node -e "const d=require('./nearby-stores.json');if(d.version!==1||!Array.isArray(d.rows)||d.rows.length<500||d.bbox.length!==4)process.exit(1);console.log(d.rows.length,'stores, OSM base',d.osmBase)"
+      - name: Commit refreshed store locations to the same branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add nearby-stores.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: refresh nearby store locations from OpenStreetMap [skip ci]"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          else
+            echo "store locations unchanged"
+          fi
