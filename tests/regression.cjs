@@ -625,3 +625,42 @@ test('UFJ 50,000-yen cap: marking the period as used re-ranks every UFJ store an
   assert.match(blocked.store('オーケー').first, /^OKクラブ＋現金/);
   assert.equal(blocked.errors.length, 0);
 });
+
+test('imprecise but usable location widens the search and labels results as approximate', async () => {
+  const w = world({fetcher: async () => response(shops)}); const running = w.start();
+  w.geoCalls[0].ok(w.pos(580)); await flush();
+  assert.equal(w.geoCalls[1].options.enableHighAccuracy, true, 'tries to refine first');
+  await w.time.tick(4500); await running;
+  assert.equal(w.requests.length, 1); assert.match(w.requests[0].options.body, /around:685,/, '600 m error circle + padding');
+  assert.equal(w.nodes.get('bubbles').children.length, 1);
+  assert.match(w.nodes.get('candidateHeading').textContent, /近くのお店（目安） · 1件/);
+  assert.match(w.nodes.get('status').innerHTML, /誤差が約580mと大きいため、半径600mの候補/);
+  assert.ok(w.nodes.get('resultPanel').classList.contains('hidden'), 'never auto-selects a store');
+  assert.equal(w.time.pending(), 0);
+  const refined = world({fetcher: async () => response(shops)}); const again = refined.start();
+  refined.geoCalls[0].ok(refined.pos(580)); await flush(); refined.geoCalls[1].ok(refined.pos(30)); await again;
+  assert.match(refined.requests[0].options.body, /around:335,/, 'a refined fix keeps the chosen radius');
+  assert.doesNotMatch(refined.nodes.get('candidateHeading').textContent, /目安/);
+});
+
+test('very coarse location (approximate-location mode) explains the iPhone setting and sends nothing', async () => {
+  const w = world({fetcher: async () => response(shops)}); const running = w.start();
+  w.geoCalls[0].ok(w.pos(3000)); await flush(); await w.time.tick(4500); await running;
+  assert.equal(w.requests.length, 0);
+  assert.match(w.nodes.get('status').innerHTML, /誤差が約3000m/); assert.match(w.nodes.get('status').innerHTML, /正確な位置情報/);
+  assert.ok(!w.nodes.get('quickPanel').classList.contains('hidden'));
+  w.manual('ベルク'); assert.match(w.nodes.get('result').innerHTML, /store-name">ベルク/);
+});
+
+test('coupon data arriving during a location search from the result view does not cancel it', async () => {
+  let release;
+  const w = couponWorld(() => new Promise(resolve => { release = resolve; }), {overpass: async () => response(shops)});
+  w.manual('ローソン'); assert.ok(!w.nodes.get('resultPanel').classList.contains('hidden'));
+  const running = w.nodes.get('resultGeoBtn').onclick();
+  release(response({updatedAt: iso(NOW), errors: [], offers: []})); await flush();
+  assert.match(w.nodes.get('status').innerHTML, /位置情報を確認しています/, 'status of the running search is kept');
+  assert.equal(w.nodes.get('resultGeoBtn').attrs['aria-busy'], 'true');
+  w.geoCalls[0].ok(w.pos()); await running;
+  assert.equal(w.nodes.get('bubbles').children.length, 1, 'location search completed');
+  assert.equal(w.errors.length, 0);
+});

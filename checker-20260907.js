@@ -233,7 +233,7 @@ function buildCandidatesFromOsm(osmJson,currentLat,currentLng,radius=Infinity){
 }
 function renderCandidates(candidates,titlePrefix="候補"){
  const panel=$("candidatePanel"),bubbles=$("bubbles");bubbles.innerHTML="";if(!candidates.length){hide(panel);return;}
- $("candidateHeading").textContent=(titlePrefix.includes("現在地")?"近くのお店":"候補店舗")+" · "+candidates.length+"件";
+ $("candidateHeading").textContent=(titlePrefix.includes("現在地")?"近くのお店":"候補店舗")+(titlePrefix.includes("目安")?"（目安）":"")+" · "+candidates.length+"件";
  hide($("quickPanel"));hide($("allPanel"));hide($("resultPanel"));document.body.classList.remove("has-result");
  for(const c of candidates){const btn=document.createElement("button");btn.className="bubble";btn.type="button";const extra=c.source==="geo"?'<span class="dist">'+escapeHtml(c.distance)+'m</span>':'<span aria-hidden="true">→</span>';const osm=c.source==="geo"&&c.osmName&&c.osmName!==c.store.store?'<small>'+escapeHtml(c.osmName)+'</small>':'';btn.innerHTML='<span>'+escapeHtml(c.store.store)+osm+'</span>'+extra;btn.addEventListener("click",()=>renderPayment(c.store,c));bubbles.appendChild(btn);}show(panel);
 }
@@ -242,8 +242,8 @@ function paymentOrder(a,b){const difference=comparisonRate(b)-comparisonRate(a);
 function paymentLabel(payment){return payment.n+'（'+comparisonLabel(payment)+(payment.ownerRate?'・決済'+payment.r+'＋株主優待'+payment.ownerRate.toFixed(1)+'%':'')+(payment.x?'・'+payment.x:'')+'）';}
 function renderPayment(store,context=null){
  refreshStoreSummary(store);
- cancelGeo();lastSelectedStore=store;$("manualSearch").value=store.store;document.activeElement?.blur();document.body.classList.add("has-result");
- hide($("candidatePanel"));hide($("quickPanel"));hide($("allPanel"));setStatus("");
+ if(!keepGeoOnRender)cancelGeo();lastSelectedStore=store;$("manualSearch").value=store.store;document.activeElement?.blur();document.body.classList.add("has-result");
+ hide($("candidatePanel"));hide($("quickPanel"));hide($("allPanel"));if(!keepGeoOnRender)setStatus("");
  const allPayments=store.payments.slice().sort(paymentOrder),payments=allPayments.filter(p=>p.rankable);
  const meta=context&&context.source==="geo"?'現在地から約'+context.distance+'m'+(context.accuracy?'（位置の誤差 約'+Math.ceil(context.accuracy)+'m）':'')+(context.osmName&&context.osmName!==store.store?' · '+context.osmName:''):'お会計のおすすめ'+(store.local.notice?' · '+store.local.notice:'');
  const ranks=payments.slice(0,3).map((p,i)=>{
@@ -283,6 +283,11 @@ function renderPayment(store,context=null){
 }
 function searchManual(keyword){const q=normalizeText(keyword);if(!q)return[];const results=[];for(const store of STORE_DATA){if(((store.local||{}).excludeTerms||[]).some(s=>q.includes(normalizeText(s))))continue;const haystack=normalizeText([store.store,...store.aliases].join(" "));if(haystack.includes(q))results.push({source:"manual",store});}return results;}
 let geoRequest=0,geoController=null,locationClient=null;
+// Beyond 1 km the true position may lie outside any list we could show, so we explain instead of guessing.
+const GEO_MAX_ACCURACY_M=1000;
+function coarseLocationMessage(accuracy){return '位置の誤差が約'+accuracy+'mと大きく、近くのお店を絞り込めません。iPhoneは「設定」→「プライバシーとセキュリティ」→「位置情報サービス」→「Safari Webサイト」で「正確な位置情報」をオンにすると改善します。屋内では窓の近くで再試行するか、店名で検索してください。';}
+// Internal re-renders (e.g. coupon data arriving) must not cancel a location search the user started.
+let keepGeoOnRender=false;
 function resetGeoButtons(){for(const id of ['geoBtn','resultGeoBtn']){const button=$(id);if(button){button.disabled=false;button.removeAttribute('aria-busy');button.textContent=id==='geoBtn'?'🧭 現在地から探す':'🧭';}}}
 function cancelGeo(){geoRequest++;if(geoController){geoController.abort();geoController=null;}resetGeoButtons();}
 async function handleGeoSearch(){
@@ -299,15 +304,18 @@ async function handleGeoSearch(){
   if(!locationClient)locationClient=window.PaymentLocation.createClient();
   const position=await locationClient.locate(controller.signal,radius,()=>{if(request===geoRequest)setStatus('位置の精度を上げています。店名検索も使えます。');});
   if(request!==geoRequest)return;
-  if(position.accuracy>Math.max(radius,100)){setStatus('位置の誤差が約'+Math.ceil(position.accuracy)+'mあります。店名で検索するか、もう一度現在地を確認してください。','error');return;}
-  $('geoBtn').textContent='📡 近くのお店を検索中 · 中止';setStatus('半径'+radius+'mのお店を探しています…');
-  const result=await locationClient.search(position,radius,controller.signal);
+  const accuracy=Math.ceil(position.accuracy);
+  if(accuracy>GEO_MAX_ACCURACY_M){setStatus(coarseLocationMessage(accuracy),'error');return;}
+  // Larger error than the chosen radius: search the whole error circle and label the list as approximate.
+  const approximate=accuracy>Math.max(radius,100),searchRadius=approximate?Math.min(GEO_MAX_ACCURACY_M,Math.max(radius,Math.ceil(accuracy/50)*50)):radius;
+  $('geoBtn').textContent='📡 近くのお店を検索中 · 中止';setStatus('半径'+searchRadius+'mのお店を探しています…'+(approximate?'（位置の誤差が大きいため範囲を広げています）':''));
+  const result=await locationClient.search(position,searchRadius,controller.signal);
   if(request!==geoRequest)return;
-  const candidates=buildCandidatesFromOsm(result.data,position.lat,position.lng,radius);
+  const candidates=buildCandidatesFromOsm(result.data,position.lat,position.lng,searchRadius);
   if(!candidates.length){setStatus('候補が見つかりませんでした。検索半径を広げるか、店名を入力してください。','error');return;}
-  for(const candidate of candidates)candidate.accuracy=position.accuracy;
-  setStatus((result.cached?'直近の周辺データを使用 · ':'')+'位置の誤差 約'+Math.ceil(position.accuracy)+'m・距離は目安です。');
-  renderCandidates(candidates,'現在地候補');
+  for(const candidate of candidates){candidate.accuracy=position.accuracy;candidate.approximate=approximate;}
+  setStatus((result.cached?'直近の周辺データを使用 · ':'')+(approximate?'位置の誤差が約'+accuracy+'mと大きいため、半径'+searchRadius+'mの候補を表示しています。距離は目安です。いるお店を選んでください。':'位置の誤差 約'+accuracy+'m・距離は目安です。'));
+  renderCandidates(candidates,approximate?'現在地候補（目安）':'現在地候補');
  }catch(error){
   if(request!==geoRequest||error.name==='AbortError')return;
   const messages={1:'位置情報が許可されていません。ブラウザのサイト設定を確認するか、店名で検索してください。',2:'現在地を特定できませんでした。店名検索はそのまま使えます。',3:'位置情報の確認に時間がかかっています。再試行するか、店名で検索してください。'};

@@ -62,5 +62,32 @@ with sync_playwright() as p:
             assert page.evaluate('document.documentElement.scrollWidth')<=391
             page.screenshot(path='test-results/public-'+name+'.png',full_page=True)
         ctx.close()
-        print('Mobile/browser checks passed at 320x568, 375x667, 390x844, 430x932, 667x375, 844x390 and 820x1180; SRI, V coupon opt-in, official-rate labels, PayPay 100pt cap verified')
+        # Location search in a real browser with emulated GPS accuracy (Overpass is mocked; no network).
+        osm={'elements':[{'type':'node','id':1,'lat':35.5601,'lon':139.5801,'tags':{'name':'マルエツ 中川駅前店','shop':'supermarket'}}]}
+        for accuracy,expect in ((20,'normal'),(600,'approximate'),(3000,'coarse')):
+            ctx=browser.new_context(locale='ja-JP',viewport={'width':390,'height':844},is_mobile=True,has_touch=True,
+                                    geolocation={'latitude':35.5600,'longitude':139.5800,'accuracy':accuracy},permissions=['geolocation'])
+            sent=[]
+            def make_overpass(sent):
+                def handle(route):
+                    sent.append(route.request.post_data or '');route.fulfill(json=osm,headers={'Access-Control-Allow-Origin':'*'})
+                return handle
+            for host in ('https://overpass-api.de/**','https://overpass.kumi.systems/**'):ctx.route(host,make_overpass(sent))
+            page=ctx.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+            page.goto(url,wait_until='networkidle');page.wait_for_function('window.PAYMENT_CHECKER_READY===true')
+            page.locator('#geoBtn').click()
+            if expect=='coarse':
+                page.wait_for_function("document.getElementById('status').textContent.includes('正確な位置情報')")
+                assert not sent,'very coarse positions are not sent'
+            else:
+                page.wait_for_selector('#candidatePanel:not(.hidden)')
+                heading=page.locator('#candidateHeading').inner_text()
+                assert ('（目安）' in heading)==(expect=='approximate'),heading
+                assert 'マルエツ' in page.locator('#bubbles').inner_text()
+                assert sent and '35.56,139.58' in sent[0],sent
+                if expect=='approximate':assert '半径600m' in page.locator('#status').inner_text()
+            assert page.evaluate('document.documentElement.scrollWidth')<=391
+            assert not errors,errors
+            ctx.close()
+        print('Mobile/browser checks passed at 320x568, 375x667, 390x844, 430x932, 667x375, 844x390 and 820x1180; SRI, V coupon opt-in, official-rate labels, PayPay 100pt cap, location accuracy 20/600/3000 m verified')
     finally:browser.close();server.shutdown()
