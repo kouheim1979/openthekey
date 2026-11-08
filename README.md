@@ -27,6 +27,7 @@
 | フォルダ | 公開先 | 内容 |
 |---|---|---|
 | [psycho-check](psycho-check/) | https://kouheim1979.github.io/openthekey/psycho-check/ | サイコパス度チェッカー（日常の場面12問のネタ診断。科学的根拠はありません） |
+| [real-psycho-check](real-psycho-check/) | https://kouheim1979.github.io/openthekey/real-psycho-check/ | リアルサイコパス診断（サイコパシー研究の三因子モデル＝大胆さ・冷淡さ・脱抑制をもとにしたオリジナル24問、逆転項目あり。標準化された検査ではなく、医学的な診断でもありません。回答は端末内で集計し、送信しません） |
 | [hattatsu-check](hattatsu-check/) | https://kouheim1979.github.io/openthekey/hattatsu-check/ | 発達特性セルフチェック（ASD・ADHDの傾向をみる成人向けの簡易チェック。医師の診断ではありません。設問はDSM-5の領域をもとにしたオリジナルで、標準化された検査ではありません。回答は端末内で集計し、送信・保存しません） |
 
 ## 構成

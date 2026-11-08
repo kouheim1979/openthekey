@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="三因子モデル（大胆さ・冷淡さ・脱抑制）をもとにした24問のサイコパス特性セルフチェック">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}*,*::before,*::after{box-sizing:border-box}</style>
+<title>リアルサイコパス診断</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPMincho:wght@400;700&family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one evaluation record sheet (被験者記録票), single column, one question per view */
+:root{
+  --paper:#eef1f4; --sheet:#fbfcfd; --ink:#1b2735; --ink-2:#55657a; --rule:#c9d2dc;
+  --accent:#2c4a6e; --stamp:#b3242f; --hi:#e7ecf3;
+  --f-display:"BIZ UDPMincho","Hiragino Mincho ProN","Yu Mincho",serif;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#11161d; --sheet:#18202a; --ink:#e3e9f0; --ink-2:#97a6b8; --rule:#2e3a48;
+  --accent:#8fb2dc; --stamp:#ff6b72; --hi:#222d3a; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#11161d; --sheet:#18202a; --ink:#e3e9f0; --ink-2:#97a6b8; --rule:#2e3a48;
+  --accent:#8fb2dc; --stamp:#ff6b72; --hi:#222d3a; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 40px}
+.sheet{max-width:640px;margin:0 auto;background:var(--sheet);border:1px solid var(--rule);border-radius:4px;
+  box-shadow:0 1px 0 var(--rule),0 12px 32px -20px rgba(20,30,45,.35)}
+.head{display:grid;grid-template-columns:1fr auto;gap:4px 16px;padding:16px 20px;border-bottom:2px solid var(--ink)}
+.head .org{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;color:var(--ink-2);text-transform:uppercase}
+.head .case{font-family:var(--f-mono);font-size:11px;color:var(--ink-2);text-align:right;font-variant-numeric:tabular-nums}
+.head h1{grid-column:1/-1;margin:2px 0 0;font-family:var(--f-display);font-size:26px;font-weight:700;letter-spacing:.04em;text-wrap:balance}
+.body{padding:20px}
+.meta{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--rule);margin-bottom:20px}
+.meta div{padding:8px 10px;border-right:1px solid var(--rule);min-width:0}
+.meta div:last-child{border-right:0}
+.meta dt{font-size:10px;color:var(--ink-2);letter-spacing:.1em}
+.meta dd{margin:0;font-family:var(--f-mono);font-size:13px;font-variant-numeric:tabular-nums}
+p{margin:0 0 12px;max-width:62ch}
+.lead{font-size:16px}
+.axes{display:grid;gap:8px;margin:16px 0 20px;padding:0;list-style:none}
+.axes li{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:baseline;padding:10px 12px;background:var(--hi);border-radius:3px}
+.axes b{font-family:var(--f-display);font-size:15px;white-space:nowrap}
+.axes span{font-size:13px;color:var(--ink-2);min-width:0}
+.btn{appearance:none;border:1.5px solid var(--ink);background:var(--ink);color:var(--sheet);font:700 15px var(--f-body);
+  padding:12px 22px;border-radius:3px;cursor:pointer;letter-spacing:.06em}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn:focus-visible,.opt:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn:disabled{opacity:.35;cursor:default}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.note{font-size:12px;color:var(--ink-2);margin-top:16px}
+
+/* question */
+.prog{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.bar{height:4px;background:var(--rule);margin:6px 0 24px;border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.qno{font-family:var(--f-mono);font-size:13px;color:var(--accent);letter-spacing:.08em}
+.qtext{font-family:var(--f-display);font-size:22px;line-height:1.55;margin:6px 0 22px;min-height:3.1em;text-wrap:balance}
+.opts{display:grid;gap:8px}
+.opt{display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:center;text-align:left;width:100%;
+  border:1px solid var(--rule);background:var(--sheet);color:var(--ink);font:15px var(--f-body);padding:12px 14px;border-radius:3px;cursor:pointer}
+.opt:hover{border-color:var(--accent)}
+.opt .k{font-family:var(--f-mono);font-size:12px;width:24px;height:24px;display:grid;place-items:center;border:1px solid var(--rule);border-radius:50%;color:var(--ink-2)}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--hi)}
+.opt[aria-pressed="true"] .k{background:var(--accent);border-color:var(--accent);color:var(--sheet)}
+.qnav{display:flex;justify-content:space-between;margin-top:20px}
+
+/* result */
+.verdict{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;padding-bottom:20px;border-bottom:1px dashed var(--rule);margin-bottom:20px}
+.stamp{width:132px;height:132px;border:4px double var(--stamp);border-radius:50%;color:var(--stamp);display:grid;place-content:center;text-align:center;
+  transform:rotate(-8deg);animation:stamp .45s cubic-bezier(.2,1.6,.4,1) both}
+.stamp small{font-size:10px;letter-spacing:.12em;font-weight:700}
+.stamp strong{font-family:var(--f-mono);font-size:40px;line-height:1;font-weight:600;font-variant-numeric:tabular-nums}
+.stamp em{font-style:normal;font-size:11px;font-weight:700}
+@keyframes stamp{from{transform:rotate(-8deg) scale(1.8);opacity:0}to{transform:rotate(-8deg) scale(1);opacity:1}}
+.level{font-family:var(--f-mono);font-size:12px;color:var(--stamp);letter-spacing:.08em}
+.type{font-family:var(--f-display);font-size:24px;font-weight:700;margin:2px 0 6px;line-height:1.4;text-wrap:balance}
+.verdict p{font-size:14px;margin:0}
+h2{font-family:var(--f-display);font-size:16px;margin:0 0 12px;letter-spacing:.06em}
+.scale{display:grid;gap:16px;margin-bottom:24px}
+.ax-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ax-h b{font-family:var(--f-display)}
+.ax-h span{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:14px}
+.track{position:relative;height:12px;background:var(--hi);border:1px solid var(--rule);margin:4px 0}
+.track i{position:absolute;inset:0 auto 0 0;background:var(--accent)}
+.track.hot i{background:var(--stamp)}
+.ticks{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:10px;color:var(--ink-2)}
+.ax-d{font-size:13px;color:var(--ink-2);margin:4px 0 0}
+.flags{list-style:none;padding:0;margin:0 0 24px;display:grid;gap:6px}
+.flags li{font-size:14px;padding:8px 12px;border-left:3px solid var(--stamp);background:var(--hi)}
+.copied{font-size:13px;color:var(--accent)}
+textarea.fallback{width:100%;min-height:120px;font:13px var(--f-mono);margin-top:10px}
+footer{max-width:640px;margin:14px auto 0;font-size:11px;color:var(--ink-2);text-align:center}
+
+@media (max-width:480px){
+  .head h1{font-size:22px}.qtext{font-size:19px}
+  .verdict{grid-template-columns:1fr;justify-items:start}
+  .stamp{width:112px;height:112px}.stamp strong{font-size:34px}
+  .meta{grid-template-columns:1fr 1fr}.meta div:nth-child(2){border-right:0}
+  .meta div:last-child{grid-column:1/-1;border-top:1px solid var(--rule)}
+}
+@media (prefers-reduced-motion:reduce){.stamp{animation:none}.bar i{transition:none}}
+</style>
+
+</head>
+<body>
+<main class="sheet" aria-live="polite">
+  <header class="head">
+    <span class="org">Personality Trait Screening</span>
+    <span class="case" id="caseNo">CASE No. PX-0000</span>
+    <h1>リアルサイコパス診断</h1>
+  </header>
+  <div class="body" id="view"></div>
+</main>
+<footer>エンタメ・自己理解向けの簡易チェックです。医学的な診断ではありません。</footer>
+
+<script>
+const AX = {
+  B:{name:"大胆さ", en:"Boldness", desc:"恐怖や不安を感じにくく、ストレス下でも動じない度合い。"},
+  M:{name:"冷淡さ", en:"Meanness", desc:"共感や罪悪感が薄く、他人を手段として扱いやすい度合い。"},
+  D:{name:"脱抑制", en:"Disinhibition", desc:"衝動を抑えにくく、ルールや計画より目先を優先する度合い。"}
+};
+// [axis, text, reversed]
+const Q = [
+ ["B","人前で話すときも、ほとんど緊張しない",0],
+ ["M","他人が困っていても、自分に関係なければ心は動かない",0],
+ ["D","思い立ったら、深く考えずに行動してしまう",0],
+ ["B","危険な状況でも、頭が冷静に働く",0],
+ ["M","誰かを傷つけたと気づくと、しばらく後悔が残る",1],
+ ["D","退屈な状態には、すぐ耐えられなくなる",0],
+ ["B","失敗したらどうしようと、長く悩むことが多い",1],
+ ["M","目的のためなら、多少人を利用しても構わない",0],
+ ["D","約束や締め切りを守れないことがよくある",0],
+ ["B","初対面の相手でも、すぐ主導権を握れる",0],
+ ["M","映画や人の話で泣くことは、めったにない",0],
+ ["D","長期的な計画を立てて、それを守るのが得意だ",1],
+ ["B","批判されても、あまり気にならない",0],
+ ["M","相手の弱みは、いざという時のために覚えておく",0],
+ ["D","怒りを感じると、すぐ表に出てしまう",0],
+ ["B","知らない人ばかりの場所は居心地が悪い",1],
+ ["M","動物や子どもが痛がっている姿を見るのはつらい",1],
+ ["D","欲しいものは、後先考えずに手に入れたくなる",0],
+ ["B","スリルのある体験にわくわくする",0],
+ ["M","嘘をつくとき、罪悪感はほとんどない",0],
+ ["D","ルールは、場合によっては破るためにあると思う",0],
+ ["B","プレッシャーがかかる場面ほど実力が出る",0],
+ ["M","人の気持ちより、結果のほうがずっと大事だ",0],
+ ["D","お金を衝動的に使って、あとで後悔することがある",0]
+];
+const OPTS = ["まったく当てはまらない","あまり当てはまらない","どちらともいえない","やや当てはまる","とても当てはまる"];
+const KEY = "realpsychocheck.v1";
+const view = document.getElementById("view");
+let ans = new Array(Q.length).fill(null), idx = 0;
+const caseNo = "PX-" + String(Math.floor(1000+Math.random()*9000));
+document.getElementById("caseNo").textContent = "CASE No. " + caseNo;
+const today = new Date().toLocaleDateString("ja-JP",{year:"numeric",month:"2-digit",day:"2-digit"});
+const esc = s => s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
+function save(r){try{localStorage.setItem(KEY,JSON.stringify(r))}catch(e){}}
+
+function start(){
+  const last = load();
+  view.innerHTML = `
+    <dl class="meta"><div><dt>検査日</dt><dd>${today}</dd></div><div><dt>設問数</dt><dd>24問 / 約3分</dd></div><div><dt>形式</dt><dd>5段階自己評定</dd></div></dl>
+    <p class="lead">サイコパス研究で使われる「三因子モデル」の考え方をもとに、3つの特性をそれぞれ測ります。</p>
+    <ul class="axes">${Object.values(AX).map(a=>`<li><b>${a.name}</b><span>${a.desc}</span></li>`).join("")}</ul>
+    <p>直感で答えてください。「こうありたい自分」ではなく、ふだんの自分に近いものを選ぶほど結果はリアルになります。</p>
+    <div class="row" style="margin-top:20px">
+      <button class="btn" id="go">検査をはじめる</button>
+      ${last?`<button class="btn ghost" id="prev">前回の結果（${last.total}%）</button>`:""}
+    </div>
+    <p class="note">回答はこの端末の中だけで処理され、どこにも送信されません。</p>`;
+  document.getElementById("go").onclick=()=>{ans.fill(null);idx=0;question()};
+  const p=document.getElementById("prev"); if(p) p.onclick=()=>result(last.ans);
+}
+
+function question(){
+  const [ax,text]=Q[idx], done=ans.filter(v=>v!==null).length;
+  view.innerHTML = `
+    <div class="prog"><span>Q ${String(idx+1).padStart(2,"0")} / ${Q.length}</span><span>回答済 ${done}</span></div>
+    <div class="bar"><i style="width:${done/Q.length*100}%"></i></div>
+    <div class="qno">ITEM ${String(idx+1).padStart(2,"0")}</div>
+    <div class="qtext">${esc(text)}</div>
+    <div class="opts" role="group" aria-label="回答">
+      ${OPTS.map((o,i)=>`<button class="opt" id="opt${i}" data-v="${i}" aria-pressed="${ans[idx]===i}"><span class="k">${i+1}</span><span>${o}</span></button>`).join("")}
+    </div>
+    <div class="qnav">
+      <button class="btn ghost" id="back" ${idx===0?"disabled":""}>← 前の質問</button>
+      ${ans[idx]!==null && idx<Q.length-1?`<button class="btn ghost" id="fwd">次へ →</button>`:""}
+    </div>`;
+  view.querySelectorAll(".opt").forEach(b=>b.onclick=()=>pick(+b.dataset.v));
+  document.getElementById("back").onclick=()=>{if(idx>0){idx--;question()}};
+  const f=document.getElementById("fwd"); if(f) f.onclick=()=>{idx++;question()};
+}
+let busy=false;
+function pick(v){
+  if(busy) return; busy=true;
+  ans[idx]=v;
+  view.querySelectorAll(".opt").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.v===v));
+  setTimeout(()=>{busy=false;
+    if(idx<Q.length-1){idx++;question()} else result(ans.slice());
+  },180);
+}
+document.addEventListener("keydown",e=>{
+  if(!view.querySelector(".opts")) return;
+  if(e.key>="1"&&e.key<="5") pick(+e.key-1);
+  if(e.key==="ArrowLeft"&&idx>0){idx--;question()}
+});
+
+function score(a){
+  const s={B:0,M:0,D:0};
+  Q.forEach(([ax,,r],i)=>{ s[ax]+= r?4-a[i]:a[i]; });
+  const p={}; for(const k in s) p[k]=Math.round(s[k]/32*100);
+  // 冷淡さと脱抑制を重めに（臨床的なサイコパシーの中核）
+  const total=Math.round(p.B*0.25+p.M*0.45+p.D*0.30);
+  return {p,total};
+}
+function level(t){
+  if(t<20) return ["LEVEL 1","ほぼ聖人"];
+  if(t<40) return ["LEVEL 2","一般的な範囲"];
+  if(t<55) return ["LEVEL 3","やや傾向あり"];
+  if(t<70) return ["LEVEL 4","かなり傾向あり"];
+  return ["LEVEL 5","要注意レベル"];
+}
+function typeOf({p,total}){
+  const {B,M,D}=p;
+  if(M>=60&&D>=60) return ["典型サイコパス型","共感の薄さと衝動性がそろったパターン。研究で「サイコパシー」と呼ばれる像にもっとも近い組み合わせです。"];
+  if(M>=60&&B>=60) return ["冷徹な戦略家型","動じない度胸と割り切りを、計画的に使えるタイプ。交渉や競争の場では強い反面、周囲からは冷たく見えがちです。"];
+  if(M>=60) return ["ドライな合理主義者","感情より結果を優先するタイプ。衝動的ではないので大きなトラブルは起こしにくいものの、人間関係で誤解を招きやすい面があります。"];
+  if(B>=60&&D>=60) return ["スリル追求型","怖いもの知らずで刺激を求めるタイプ。行動力は抜群ですが、勢いで決めた後のフォローが課題になりやすいでしょう。"];
+  if(B>=60) return ["クール・ヒーロー型","度胸はあるのに他人への思いやりも残っているタイプ。救急隊員やパイロットなど、緊急時に強い職業で見られやすい傾向です。"];
+  if(D>=60) return ["衝動型ハプニング体質","悪気はないのに、勢いや気分で動いてしまうタイプ。冷淡さは低いので、サイコパスというより「せっかち」に近い傾向です。"];
+  if(total<25) return ["共感型ヒューマン","他人の痛みに敏感で、慎重さもあるタイプ。サイコパス的な特性はほとんど見られません。気疲れしやすい点には注意を。"];
+  return ["バランス型","どの特性も極端ではなく、状況に応じて大胆にも慎重にもなれるタイプ。多くの人がこのあたりに入ります。"];
+}
+function axisNote(k,v){
+  const t={
+    B:["慎重で不安を感じやすい","平均的な度胸","かなり物怖じしない"],
+    M:["共感性が高い","平均的な共感性","共感や罪悪感が薄め"],
+    D:["自制心が強い","平均的な自制心","衝動に流されやすい"]
+  }[k];
+  return v<35?t[0]:v<60?t[1]:t[2];
+}
+
+function result(a){
+  const sc=score(a), [lv,lvName]=level(sc.total), [tn,td]=typeOf(sc);
+  save({ans:a,total:sc.total,date:today});
+  const flags=Q.map((q,i)=>({q,v:q[2]?4-a[i]:a[i]})).filter(x=>x.v===4&&x.q[0]!=="B").slice(0,3);
+  view.innerHTML = `
+    <div class="verdict">
+      <div class="stamp" aria-label="サイコパス度 ${sc.total}パーセント"><small>サイコパス度</small><strong>${sc.total}</strong><em>%</em></div>
+      <div><div class="level">${lv} ／ ${lvName}</div><div class="type">${tn}</div><p>${td}</p></div>
+    </div>
+    <h2>因子別スコア</h2>
+    <div class="scale">${["B","M","D"].map(k=>`
+      <div>
+        <div class="ax-h"><b>${AX[k].name} <small style="font-family:var(--f-mono);font-size:11px;color:var(--ink-2)">${AX[k].en}</small></b><span>${sc.p[k]}%</span></div>
+        <div class="track ${sc.p[k]>=60&&k!=="B"?"hot":""}"><i style="width:${sc.p[k]}%"></i></div>
+        <div class="ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+        <p class="ax-d">${axisNote(k,sc.p[k])}。${AX[k].desc}</p>
+      </div>`).join("")}
+    </div>
+    ${flags.length?`<h2>強く当てはまった項目</h2><ul class="flags">${flags.map(f=>`<li>${esc(f.q[1])}</li>`).join("")}</ul>`:""}
+    <div class="row">
+      <button class="btn" id="retry">もう一度やる</button>
+      <button class="btn ghost" id="copy">結果をコピー</button>
+      <span class="copied" id="copied"></span>
+    </div>
+    <div id="fb"></div>
+    <p class="note">総合スコアは「冷淡さ」45%・「脱抑制」30%・「大胆さ」25%の重みで算出しています。大胆さだけが高い人はサイコパスというより「肝が据わった人」です。</p>`;
+  document.getElementById("retry").onclick=()=>{ans.fill(null);idx=0;question()};
+  document.getElementById("copy").onclick=()=>{
+    const txt=`【リアルサイコパス診断】\nサイコパス度 ${sc.total}%（${lv} ${lvName}）\nタイプ：${tn}\n大胆さ ${sc.p.B}% ／ 冷淡さ ${sc.p.M}% ／ 脱抑制 ${sc.p.D}%`;
+    const ok=()=>document.getElementById("copied").textContent="コピーしました";
+    const fail=()=>{const fb=document.getElementById("fb");fb.innerHTML=`<textarea class="fallback" id="fbt" readonly></textarea>`;const t=document.getElementById("fbt");t.value=txt;t.select()};
+    try{navigator.clipboard.writeText(txt).then(ok,fail)}catch(e){fail()}
+  };
+  view.scrollIntoView({block:"start"});
+}
+start();
+</script>
+
+</body>
+</html>
