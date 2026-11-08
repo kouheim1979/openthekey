@@ -1,0 +1,1117 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>星と命式ノート</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+html,body{margin:0}img{max-width:100%}
+/* Layout: one notebook column — profile on top, sticky tabs, each tab a stack of ruled sections. Accent shifts per tab: ultramarine (星), vermilion (命式), plum (相性) */
+:root{
+  --bg:#EDF0F3; --paper:#F9FAFB; --ink:#1B2130; --muted:#5D6578; --line:#CCD2DC;
+  --star:#2C44A3; --seal:#B5381F; --plum:#8A3A78; --brass:#9C7426;
+  --fire:#C2412A; --earth:#9A7420; --air:#2F7EA6; --water:#3348A0; --wood:#3F7E4A; --metal:#7A8088;
+  --accent:var(--star);
+  --display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --mono:"DM Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10141E; --paper:#171C29; --ink:#E3E6EF; --muted:#9AA1B6; --line:#2B3246;
+  --star:#93A6FF; --seal:#F07558; --plum:#D88AC6; --brass:#D9B66C;
+  --fire:#F08068; --earth:#D9B35C; --air:#7CC3E8; --water:#9DAAF5; --wood:#7FC08A; --metal:#B9C0C6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10141E; --paper:#171C29; --ink:#E3E6EF; --muted:#9AA1B6; --line:#2B3246;
+  --star:#93A6FF; --seal:#F07558; --plum:#D88AC6; --brass:#D9B66C;
+  --fire:#F08068; --earth:#D9B35C; --air:#7CC3E8; --water:#9DAAF5; --wood:#7FC08A; --metal:#B9C0C6; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.7}
+body[data-tab="meishiki"]{--accent:var(--seal)}
+body[data-tab="aisho"]{--accent:var(--plum)}
+.wrap{max-width:680px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+header h1{font-family:var(--display);font-weight:800;font-size:27px;letter-spacing:.06em;margin:0}
+header p{margin:0;color:var(--muted);font-size:13px}
+.people{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:6px 14px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.chip.add{border-style:dashed;color:var(--muted)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+details.edit{background:var(--paper);border:1px solid var(--line);border-radius:10px}
+details.edit summary{cursor:pointer;padding:12px 16px;font-size:14px;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:8px}
+details.edit summary::-webkit-details-marker{display:none}
+details.edit summary::after{content:"開く";font-weight:400;font-size:12px;color:var(--muted)}
+details.edit[open] summary::after{content:"閉じる"}
+details.edit summary b{flex:none}
+details.edit summary::after{flex:none}
+details.edit summary span{flex:1;font-weight:400;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.pform{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;padding:0 16px 16px}
+.pform .full{grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);letter-spacing:.03em;min-width:0}
+label.inline{flex-direction:row;align-items:center;gap:8px;font-size:13px;color:var(--ink)}
+input,select{font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;min-width:0;width:100%;box-sizing:border-box}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent);flex:none}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{font:inherit;font-size:14px;font-weight:700;border:0;background:var(--accent);color:var(--paper);padding:9px 18px;border-radius:6px;cursor:pointer}
+.btn.line{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:500}
+.btn.danger{background:transparent;color:var(--seal);border:1px solid var(--line);font-weight:500}
+.note{font-size:12px;color:var(--muted)}
+.sample{display:inline-block;font-family:var(--body);font-size:11px;letter-spacing:.08em;color:var(--brass);border:1px solid var(--brass);border-radius:4px;padding:0 6px;margin-left:6px;vertical-align:middle;font-weight:500}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--line);margin-inline:-4px}
+.tab{font:inherit;background:none;border:0;color:var(--muted);padding:12px 4px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0;border-bottom:3px solid transparent;margin-bottom:-1px}
+.tab b{font-family:var(--display);font-size:17px;font-weight:700;color:inherit}
+.tab small{font-size:10.5px;letter-spacing:.06em}
+.tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.panel{display:flex;flex-direction:column;gap:24px}
+h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 10px;letter-spacing:.05em;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+h2 small{font-family:var(--body);font-size:12px;color:var(--muted);font-weight:400}
+.empty{background:var(--paper);border:1px dashed var(--line);border-radius:10px;padding:20px;text-align:center;color:var(--muted)}
+.e-火,.e1{color:var(--fire)} .e-地,.e2{color:var(--earth)} .e-風{color:var(--air)} .e-水,.e4{color:var(--water)} .e0{color:var(--wood)} .e3{color:var(--metal)}
+/* horoscope */
+.chartbox{display:flex;flex-direction:column;align-items:center;gap:6px}
+.chartbox svg{width:100%;max-width:520px;height:auto}
+.caption{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center}
+.big3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
+.card .k{font-size:11px;color:var(--muted);letter-spacing:.06em}
+.card .v{font-family:var(--display);font-size:21px;font-weight:700;line-height:1.35;margin:2px 0}
+.card .g{font-size:20px;color:var(--brass)}
+.card p{margin:4px 0 0;font-size:13px;line-height:1.6}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:11px;color:var(--muted);font-weight:500;letter-spacing:.06em;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.gl{font-size:17px;color:var(--brass);width:1.4em;display:inline-block;text-align:center}
+.retro{font-family:var(--mono);font-size:11px;color:var(--fire);margin-left:4px}
+.bal{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.bar{display:grid;grid-template-columns:3.2em 1fr 1.6em;align-items:center;gap:8px;font-size:13px;margin:5px 0}
+.bar .track{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar .fill{height:100%;border-radius:4px}
+.bar .n{font-family:var(--mono);font-size:12px;text-align:right;color:var(--muted)}
+.asp{display:flex;flex-wrap:wrap;gap:6px}
+.asp span{font-size:13px;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:3px 9px;white-space:nowrap}
+.asp .h{color:var(--fire)} .asp .s{color:var(--air)} .asp .c{color:var(--brass)}
+.entry{display:grid;grid-template-columns:2em 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.entry .gl{font-size:22px;width:auto}
+.entry h3{margin:0;font-size:15px;font-weight:700}
+.entry h3 span{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
+.entry p{margin:3px 0 0;font-size:14px;max-width:62ch}
+/* meishiki */
+.meishiki{background:var(--paper);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+.grid{display:grid;grid-template-columns:4.6em repeat(4,minmax(64px,1fr));min-width:340px}
+.grid > div{padding:8px 4px;text-align:center;border-bottom:1px solid var(--line);display:flex;flex-direction:column;justify-content:center;align-items:center}
+.grid > div.last{border-bottom:0}
+.grid .rh{font-size:11px;color:var(--muted);text-align:left;align-items:flex-start;padding-left:12px}
+.grid .ch{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.1em}
+.grid .day{background:color-mix(in srgb,var(--seal) 8%,transparent)}
+.kan{font-family:var(--display);font-weight:800;font-size:33px;line-height:1.1}
+.kan small{display:block;font-family:var(--body);font-size:10px;font-weight:500;letter-spacing:.1em;margin-top:2px}
+.god{font-size:13px;font-weight:700}
+.god.self{color:var(--seal)}
+.hid{font-family:var(--display);font-size:16px;letter-spacing:.1em}
+.daybox{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px}
+.daybox .big{width:72px;height:72px;border:2px solid var(--seal);border-radius:8px;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:44px;color:var(--seal)}
+.daybox h3{margin:0;font-family:var(--display);font-size:18px}
+.daybox p{margin:4px 0 0;font-size:14px}
+.five{display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:center}
+.five svg{width:100%;max-width:220px;height:auto}
+.five p{margin:0 0 6px;font-size:14px}
+.lrow{display:grid;grid-template-columns:4.6em 1fr;gap:12px;padding:10px 0;border-top:1px solid var(--line);align-items:baseline}
+.lrow b{font-family:var(--display);font-size:16px}
+.lrow p{margin:0;font-size:14px}
+.lrow .cnt{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:4px;font-weight:400}
+.cards{display:flex;flex-wrap:wrap;gap:8px}
+.cards .card{flex:1 1 200px}
+.luckwrap{overflow-x:auto}
+.luck{display:grid;grid-template-columns:repeat(8,minmax(64px,1fr));gap:6px;min-width:540px}
+.lk{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px 4px;text-align:center}
+.lk.now{border-color:var(--seal);box-shadow:inset 0 0 0 1px var(--seal)}
+.lk .age{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.lk .k{font-family:var(--display);font-weight:800;font-size:22px;line-height:1.2}
+.lk .g{font-size:12px}
+.lk .now-tag{font-size:10px;color:var(--seal);font-weight:700}
+/* aisho */
+.pair{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch}
+.who{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.who .k{font-size:11px;color:var(--muted);letter-spacing:.08em}
+.who .nm{font-family:var(--display);font-size:20px;font-weight:700;overflow-wrap:anywhere}
+.who .sub{font-size:12px;color:var(--muted)}
+.amp{align-self:center;font-family:var(--display);font-size:24px;color:var(--plum)}
+.qform{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px}
+.qform .full{grid-column:1/-1}
+.verdict{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px}
+.ring{width:96px;height:96px}
+.verdict h3{margin:0;font-family:var(--display);font-size:20px}
+.verdict p{margin:4px 0 0;font-size:14px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.match{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.match .top{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.match .nm{font-size:15px;font-weight:700}
+.match .score{font-family:var(--mono);font-size:20px;font-weight:500;margin-left:auto}
+.match .lv{font-size:11.5px;font-weight:700;padding:0 8px;border-radius:999px;border:1px solid currentColor}
+.meter{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.meter div{height:100%;border-radius:3px}
+.match ul{margin:0;padding-left:1.2em;font-size:13.5px}
+.match li{margin:2px 0}
+.match li.minus{color:var(--muted)}
+.rank{display:flex;flex-direction:column}
+.rrow{display:grid;grid-template-columns:1fr 3.4em 3.4em 3.4em;gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+.rrow.head{font-size:11px;color:var(--muted);border-top:0;padding-bottom:2px}
+.rrow .n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.rrow .tot{font-weight:700;color:var(--plum)}
+.rrow button{font:inherit;background:none;border:0;color:var(--ink);text-align:left;padding:0;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+[hidden]{display:none!important}
+@media (max-width:520px){
+  .pform,.qform{grid-template-columns:1fr}
+  .big3,.bal,.split{grid-template-columns:1fr}
+  .five{grid-template-columns:1fr;justify-items:center}.five > div{justify-self:stretch}
+  .kan{font-size:27px}
+  .pair{grid-template-columns:1fr}.amp{justify-self:center;line-height:1}
+  .verdict{grid-template-columns:1fr;justify-items:center;text-align:center}
+}
+@media (prefers-reduced-motion:no-preference){.tab,.chip{transition:color .15s,border-color .15s,background .15s}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>星と命式ノート</h1>
+    <p>西洋占星術と四柱推命を、生まれた日時と場所から</p>
+  </header>
+
+  <div class="people" id="people"></div>
+
+  <details class="edit" id="editbox">
+    <summary><b>プロフィール</b><span id="sumline"></span></summary>
+    <form class="pform" id="f" autocomplete="off">
+      <label>名前<input id="name" maxlength="20" placeholder="例：りん"></label>
+      <label>性別（四柱推命の大運に使います）<select id="gender"><option value="f">女性</option><option value="m">男性</option><option value="">指定しない</option></select></label>
+      <label>生年月日<input id="date" type="date" min="1800-01-01" max="2050-12-31" required></label>
+      <label>生まれた時刻<input id="time" type="time"></label>
+      <label class="inline full"><input id="unk" type="checkbox">生まれた時刻がわからない</label>
+      <label class="full">出生地<select id="place"></select></label>
+      <div class="row3 full" id="custom" hidden>
+        <label>緯度（北+）<input id="lat" type="number" step="0.01" inputmode="decimal"></label>
+        <label>経度（東+）<input id="lon" type="number" step="0.01" inputmode="decimal"></label>
+        <label>UTCとの時差<input id="tz" type="number" step="0.5" inputmode="decimal"></label>
+      </div>
+      <label class="inline full"><input id="fix" type="checkbox">四柱推命で出生地の経度による時刻補正（地方時）を使う</label>
+      <div class="actions full">
+        <button class="btn" type="submit">保存して表示</button>
+        <button class="btn danger" type="button" id="del">この人を削除</button>
+        <span class="note" id="msg" role="status"></span>
+      </div>
+    </form>
+  </details>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" id="t-horoscope" data-tab="horoscope"><b>星読み</b><small>ホロスコープ</small></button>
+    <button class="tab" role="tab" id="t-meishiki" data-tab="meishiki"><b>命式</b><small>四柱推命</small></button>
+    <button class="tab" role="tab" id="t-aisho" data-tab="aisho"><b>相性</b><small>ふたりの組み合わせ</small></button>
+  </nav>
+
+  <!-- ===== HOROSCOPE ===== -->
+  <div class="panel" id="p-horoscope" role="tabpanel">
+    <section class="chartbox">
+      <h2 style="align-self:flex-start" id="h-who">出生図</h2>
+      <svg id="wheel" viewBox="0 0 400 400" role="img" aria-label="出生ホロスコープ"></svg>
+      <div class="caption" id="h-cap"></div>
+    </section>
+    <section><h2>ビッグスリー<small>太陽・月・アセンダント</small></h2><div class="big3" id="big3"></div></section>
+    <section><h2>天体の位置</h2><div class="tablewrap"><table id="tbl"></table></div></section>
+    <section class="bal" id="bal"></section>
+    <section><h2>主なアスペクト<small>天体どうしの角度</small></h2><div class="asp" id="asp"></div></section>
+    <section><h2>天体ごとの読み</h2><div id="read"></div></section>
+  </div>
+
+  <!-- ===== MEISHIKI ===== -->
+  <div class="panel" id="p-meishiki" role="tabpanel" hidden>
+    <section>
+      <h2 id="m-who">命式</h2>
+      <div class="meishiki"><div class="grid" id="grid"></div></div>
+      <p class="note" id="m-cap"></p>
+    </section>
+    <section class="daybox" id="daybox"></section>
+    <section>
+      <h2>五行のバランス<small>天干と地支の8文字</small></h2>
+      <div class="five"><svg id="penta" viewBox="0 0 220 210" role="img" aria-label="五行の分布"></svg><div id="fivetxt"></div></div>
+    </section>
+    <section><h2>持っている通変星</h2><div id="gods"></div></section>
+    <section><h2>空亡と今年の運</h2><div class="cards" id="misc"></div></section>
+    <section id="lucksec"><h2 id="luckh">大運</h2><div class="luckwrap"><div class="luck" id="luck"></div></div></section>
+  </div>
+
+  <!-- ===== AISHO ===== -->
+  <div class="panel" id="p-aisho" role="tabpanel" hidden>
+    <section>
+      <h2>ふたりを選ぶ</h2>
+      <div class="pair">
+        <div class="who"><span class="k">あなた</span><span class="nm" id="a-me"></span><span class="sub" id="a-mesub"></span></div>
+        <span class="amp" aria-hidden="true">×</span>
+        <div class="who"><span class="k">相手</span>
+          <select id="partnerSel" aria-label="相手を選ぶ"></select>
+          <span class="sub" id="a-ptsub"></span>
+        </div>
+      </div>
+    </section>
+
+    <form class="qform" id="qf" autocomplete="off">
+      <label>相手の名前<input id="qname" maxlength="20" placeholder="例：たろう"></label>
+      <label>性別<select id="qgender"><option value="f">女性</option><option value="m">男性</option><option value="">指定しない</option></select></label>
+      <label>生年月日<input id="qdate" type="date" min="1800-01-01" max="2050-12-31"></label>
+      <label>生まれた時刻<input id="qtime" type="time"></label>
+      <label class="inline full"><input id="qunk" type="checkbox">時刻がわからない</label>
+      <label class="full">出生地<select id="qplace"></select></label>
+      <div class="row3 full" id="qcustom" hidden>
+        <label>緯度（北+）<input id="qlat" type="number" step="0.01" inputmode="decimal"></label>
+        <label>経度（東+）<input id="qlon" type="number" step="0.01" inputmode="decimal"></label>
+        <label>UTCとの時差<input id="qtz" type="number" step="0.5" inputmode="decimal"></label>
+      </div>
+      <div class="actions full">
+        <button class="btn" type="submit">相性を見る</button>
+        <button class="btn line" type="button" id="qsave">この人を登録する</button>
+        <span class="note" id="qmsg" role="status"></span>
+      </div>
+    </form>
+
+    <section id="a-result"></section>
+    <section><h2>相性のいいタイプ<small id="a-goodfor"></small></h2><div class="cards" id="a-good"></div></section>
+    <section><h2>登録した人との相性</h2><div class="rank" id="a-rank"></div></section>
+  </div>
+
+  <footer>
+    天体位置は簡易天文計算（誤差は数分角程度、1800〜2050年）。ハウスはプラシーダス方式（高緯度ではポルフィリー）。四柱推命は年を立春、月を節入り（太陽の黄経）で切り替え、日は0時、23時台の時柱は翌日の日干で出しています。節入り前後の数時間に生まれた人は流派によって月柱・年柱が変わることがあります。相性の点数は楽しむための目安です。1948〜1951年の夏時間で生まれた場合は、時刻を1時間早めて入力してください。データはこのブラウザの中だけに保存されます。
+  </footer>
+</div>
+
+<script>
+// ===== Astro core: low-precision ephemeris (JPL approx elements 1800-2050, Meeus Sun/Moon) =====
+const AC = (() => {
+  const D2R = Math.PI / 180, R2D = 180 / Math.PI;
+  const norm = x => ((x % 360) + 360) % 360;
+  const sind = x => Math.sin(x * D2R), cosd = x => Math.cos(x * D2R);
+
+  // JD from UTC Date
+  const jd = date => date.getTime() / 86400000 + 2440587.5;
+  const TT_OFFSET = 69 / 86400; // approx ΔT (days)
+
+  // JPL Keplerian elements [a, e, I, L, varpi, Omega] and rates per century
+  const EL = {
+    mercury: [[0.38709927, 0.20563593, 7.00497902, 252.25032350, 77.45779628, 48.33076593], [0.00000037, 0.00001906, -0.00594749, 149472.67411175, 0.16047689, -0.12534081]],
+    venus:   [[0.72333566, 0.00677672, 3.39467605, 181.97909950, 131.60246718, 76.67984255], [0.00000390, -0.00004107, -0.00078890, 58517.81538729, 0.00268329, -0.27769418]],
+    earth:   [[1.00000261, 0.01671123, -0.00001531, 100.46457166, 102.93768193, 0.0], [0.00000562, -0.00004392, -0.01294668, 35999.37244981, 0.32327364, 0.0]],
+    mars:    [[1.52371034, 0.09339410, 1.84969142, -4.55343205, -23.94362959, 49.55953891], [0.00001847, 0.00007882, -0.00813131, 19140.30268499, 0.44441088, -0.29257343]],
+    jupiter: [[5.20288700, 0.04838624, 1.30439695, 34.39644051, 14.72847983, 100.47390909], [-0.00011607, -0.00013253, -0.00183714, 3034.74612775, 0.21252668, 0.20469106]],
+    saturn:  [[9.53667594, 0.05386179, 2.48599187, 49.95424423, 92.59887831, 113.66242448], [-0.00125060, -0.00050991, 0.00193609, 1222.49362201, -0.41897216, -0.28867794]],
+    uranus:  [[19.18916464, 0.04725744, 0.77263783, 313.23810451, 170.95427630, 74.01692503], [-0.00196176, -0.00004397, -0.00242939, 428.48202785, 0.40805281, 0.04240589]],
+    neptune: [[30.06992276, 0.00859048, 1.77004347, -55.12002969, 44.96476227, 131.78422574], [0.00026291, 0.00005105, 0.00035372, 218.45945325, -0.32241464, -0.00508664]],
+    pluto:   [[39.48211675, 0.24882730, 17.14001206, 238.92903833, 224.06891629, 110.30393684], [-0.00031596, 0.00005170, 0.00004818, 145.20780515, -0.04062942, -0.01183482]]
+  };
+
+  function helio(name, T) {
+    const [e0, r] = EL[name];
+    const a = e0[0] + r[0] * T, e = e0[1] + r[1] * T, I = e0[2] + r[2] * T;
+    const L = e0[3] + r[3] * T, wb = e0[4] + r[4] * T, Om = e0[5] + r[5] * T;
+    const w = wb - Om; let M = norm(L - wb); if (M > 180) M -= 360;
+    let E = M + R2D * e * sind(M);
+    for (let i = 0; i < 30; i++) {
+      const dM = M - (E - R2D * e * sind(E));
+      const dE = dM / (1 - e * cosd(E)); E += dE; if (Math.abs(dE) < 1e-8) break;
+    }
+    const xp = a * (cosd(E) - e), yp = a * Math.sqrt(1 - e * e) * sind(E);
+    const cw = cosd(w), sw = sind(w), cO = cosd(Om), sO = sind(Om), cI = cosd(I), sI = sind(I);
+    return [
+      (cw * cO - sw * sO * cI) * xp + (-sw * cO - cw * sO * cI) * yp,
+      (cw * sO + sw * cO * cI) * xp + (-sw * sO + cw * cO * cI) * yp,
+      (sw * sI) * xp + (cw * sI) * yp
+    ];
+  }
+
+  function sunLon(T) { // apparent, ecliptic of date
+    const L0 = 280.46646 + 36000.76983 * T + 0.0003032 * T * T;
+    const M = 357.52911 + 35999.05029 * T - 0.0001537 * T * T;
+    const C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * sind(M) + (0.019993 - 0.000101 * T) * sind(2 * M) + 0.000289 * sind(3 * M);
+    const Om = 125.04 - 1934.136 * T;
+    return norm(L0 + C - 0.00569 - 0.00478 * sind(Om));
+  }
+
+  function moonLon(T) {
+    const L0 = 218.3164477 + 481267.88123421 * T;
+    const D = 297.8501921 + 445267.1114034 * T;
+    const M = 357.5291092 + 35999.0502909 * T;
+    const Mp = 134.9633964 + 477198.8675055 * T;
+    const F = 93.2720950 + 483202.0175233 * T;
+    const lon = L0
+      + 6.288774 * sind(Mp) + 1.274027 * sind(2 * D - Mp) + 0.658314 * sind(2 * D)
+      + 0.213618 * sind(2 * Mp) - 0.185116 * sind(M) - 0.114332 * sind(2 * F)
+      + 0.058793 * sind(2 * D - 2 * Mp) + 0.057066 * sind(2 * D - M - Mp)
+      + 0.053322 * sind(2 * D + Mp) + 0.045758 * sind(2 * D - M)
+      - 0.040923 * sind(M - Mp) - 0.034720 * sind(D) - 0.030383 * sind(M + Mp)
+      + 0.015327 * sind(2 * D - 2 * F) - 0.012528 * sind(Mp + 2 * F)
+      + 0.010980 * sind(Mp - 2 * F) + 0.010675 * sind(4 * D - Mp)
+      + 0.010034 * sind(3 * Mp) + 0.008548 * sind(4 * D - 2 * Mp)
+      - 0.007888 * sind(2 * D + M - Mp) - 0.006766 * sind(2 * D + M)
+      - 0.005163 * sind(D - Mp) + 0.004987 * sind(D + M)
+      + 0.004036 * sind(2 * D - M + Mp) + 0.003994 * sind(2 * D + 2 * Mp)
+      + 0.003861 * sind(4 * D) + 0.003665 * sind(2 * D - 3 * Mp);
+    return norm(lon);
+  }
+
+  function nodeLon(T) { return norm(125.0445479 - 1934.1362891 * T + 0.0020754 * T * T); }
+
+  function planetLon(name, T) {
+    const p = helio(name, T), e = helio('earth', T);
+    const x = p[0] - e[0], y = p[1] - e[1];
+    return norm(Math.atan2(y, x) * R2D + 1.396971 * T); // J2000 -> of date
+  }
+
+  const BODIES = ['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'node'];
+  function lonAt(body, T) {
+    if (body === 'sun') return sunLon(T);
+    if (body === 'moon') return moonLon(T);
+    if (body === 'node') return nodeLon(T);
+    return planetLon(body, T);
+  }
+  function T_of(date) { return (jd(date) + TT_OFFSET - 2451545) / 36525; }
+
+  function positions(date) {
+    const T = T_of(date), dT = 1 / 36525;
+    return BODIES.map(b => {
+      const l = lonAt(b, T), l2 = lonAt(b, T + dT);
+      let sp = l2 - l; if (sp > 180) sp -= 360; if (sp < -180) sp += 360;
+      return { body: b, lon: l, speed: sp, retro: b !== 'node' && sp < 0 };
+    });
+  }
+
+  function obliquity(T) { return 23.4392911 - 0.0130042 * T; }
+  function gmst(date) {
+    const d = jd(date) - 2451545, T = d / 36525;
+    return norm(280.46061837 + 360.98564736629 * d + 0.000387933 * T * T);
+  }
+
+  // Ascendant / MC / Placidus houses
+  function houses(date, lat, lon) {
+    const T = T_of(date), eps = obliquity(T);
+    const ramc = norm(gmst(date) + lon);
+    const mc = norm(Math.atan2(sind(ramc), cosd(ramc) * cosd(eps)) * R2D);
+    const asc = norm(Math.atan2(cosd(ramc), -(sind(ramc) * cosd(eps) + Math.tan(lat * D2R) * sind(eps))) * R2D);
+    const raToLon = ra => norm(Math.atan2(sind(ra), cosd(ra) * cosd(eps)) * R2D);
+    let system = 'placidus';
+    function cusp(kind) { // kind: 11,12,2,3
+      let R = ramc + ({ 11: 30, 12: 60, 2: 120, 3: 150 })[kind];
+      for (let i = 0; i < 60; i++) {
+        const lam = raToLon(R);
+        const dec = Math.asin(sind(eps) * sind(lam)) * R2D;
+        const x = Math.tan(lat * D2R) * Math.tan(dec * D2R);
+        if (Math.abs(x) >= 1) return null;
+        const ad = Math.asin(x) * R2D;
+        const dsa = 90 + ad, nsa = 90 - ad;
+        let Rn;
+        if (kind === 11) Rn = ramc + dsa / 3;
+        else if (kind === 12) Rn = ramc + 2 * dsa / 3;
+        else if (kind === 3) Rn = ramc + 180 - nsa / 3;
+        else Rn = ramc + 180 - 2 * nsa / 3;
+        if (Math.abs(Rn - R) < 1e-7) { R = Rn; break; }
+        R = Rn;
+      }
+      return raToLon(R);
+    }
+    let c11 = cusp(11), c12 = cusp(12), c2 = cusp(2), c3 = cusp(3);
+    if ([c11, c12, c2, c3].some(v => v === null)) { // Porphyry fallback at high latitude
+      system = 'porphyry';
+      const q1 = norm(asc - mc), q2 = norm(mc + 180 - asc);
+      c11 = norm(mc + q1 / 3); c12 = norm(mc + 2 * q1 / 3);
+      c2 = norm(asc + q2 / 3); c3 = norm(asc + 2 * q2 / 3);
+    }
+    const c = [asc, c2, c3, norm(mc + 180), norm(c11 + 180), norm(c12 + 180), norm(asc + 180), norm(c2 + 180), norm(c3 + 180), mc, c11, c12];
+    return { asc, mc, cusps: c, system };
+  }
+
+  function houseOf(lon, cusps) {
+    for (let i = 0; i < 12; i++) {
+      const a = cusps[i], b = cusps[(i + 1) % 12];
+      const span = norm(b - a), off = norm(lon - a);
+      if (off < span) return i + 1;
+    }
+    return 1;
+  }
+
+  // ===== Four Pillars helpers =====
+  function sunLonAtDate(date) { return sunLon(T_of(date)); }
+  // find time when sun longitude crosses target near date (direction +1 next, -1 previous)
+  function findSolarTerm(date, target, dir) {
+    let t = date.getTime();
+    const step = dir * 86400000;
+    let prev = norm(sunLonAtDate(new Date(t)) - target);
+    for (let i = 0; i < 400; i++) {
+      const t2 = t + step;
+      const cur = norm(sunLonAtDate(new Date(t2)) - target);
+      const crossed = dir > 0 ? (cur < prev && prev > 300 && cur < 60) : (cur > prev && cur > 300 && prev < 60);
+      if (crossed) {
+        let lo = Math.min(t, t2), hi = Math.max(t, t2);
+        for (let k = 0; k < 40; k++) {
+          const mid = (lo + hi) / 2;
+          const v = norm(sunLonAtDate(new Date(mid)) - target);
+          if (v > 180) lo = mid; else hi = mid;
+        }
+        return new Date((lo + hi) / 2);
+      }
+      t = t2; prev = cur;
+    }
+    return null;
+  }
+  function jdnFromYMD(y, m, d) {
+    const a = Math.floor((14 - m) / 12), yy = y + 4800 - a, mm = m + 12 * a - 3;
+    return d + Math.floor((153 * mm + 2) / 5) + 365 * yy + Math.floor(yy / 4) - Math.floor(yy / 100) + Math.floor(yy / 400) - 32045;
+  }
+
+  return { norm, positions, houses, houseOf, sunLonAtDate, findSolarTerm, jdnFromYMD, jd };
+})();
+
+
+// ===== Shared: places, storage, time =====
+const PLACES = [
+  ['北海道', 43.06, 141.35], ['青森県', 40.82, 140.74], ['岩手県', 39.70, 141.15], ['宮城県', 38.27, 140.87], ['秋田県', 39.72, 140.10],
+  ['山形県', 38.24, 140.36], ['福島県', 37.75, 140.47], ['茨城県', 36.34, 140.45], ['栃木県', 36.57, 139.88], ['群馬県', 36.39, 139.06],
+  ['埼玉県', 35.86, 139.65], ['千葉県', 35.61, 140.12], ['東京都', 35.69, 139.69], ['神奈川県', 35.45, 139.64], ['新潟県', 37.90, 139.02],
+  ['富山県', 36.70, 137.21], ['石川県', 36.59, 136.63], ['福井県', 36.07, 136.22], ['山梨県', 35.66, 138.57], ['長野県', 36.65, 138.18],
+  ['岐阜県', 35.39, 136.72], ['静岡県', 34.98, 138.38], ['愛知県', 35.18, 136.91], ['三重県', 34.73, 136.51], ['滋賀県', 35.00, 135.87],
+  ['京都府', 35.02, 135.76], ['大阪府', 34.69, 135.52], ['兵庫県', 34.69, 135.18], ['奈良県', 34.69, 135.83], ['和歌山県', 34.23, 135.17],
+  ['鳥取県', 35.50, 134.24], ['島根県', 35.47, 133.05], ['岡山県', 34.66, 133.93], ['広島県', 34.40, 132.46], ['山口県', 34.19, 131.47],
+  ['徳島県', 34.07, 134.56], ['香川県', 34.34, 134.04], ['愛媛県', 33.84, 132.77], ['高知県', 33.56, 133.53], ['福岡県', 33.61, 130.42],
+  ['佐賀県', 33.25, 130.30], ['長崎県', 32.74, 129.87], ['熊本県', 32.79, 130.74], ['大分県', 33.24, 131.61], ['宮崎県', 31.91, 131.42],
+  ['鹿児島県', 31.56, 130.56], ['沖縄県', 26.21, 127.68]
+];
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+};
+function placeInfo(p) {
+  if (p.place === 'custom') return { lat: +p.lat || 0, lon: +p.lon || 0, tz: +p.tz || 0, label: `緯度${(+p.lat || 0).toFixed(2)} 経度${(+p.lon || 0).toFixed(2)}` };
+  const f = PLACES.find(x => x[0] === p.place) || PLACES[12];
+  return { lat: f[1], lon: f[2], tz: 9, label: f[0] };
+}
+function toUTC(dateStr, timeStr, tz) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const [hh, mm] = (timeStr || '12:00').split(':').map(Number);
+  return new Date(Date.UTC(y, m - 1, d, hh, mm) - tz * 3600000);
+}
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+// ===== Four Pillars computation =====
+const BZ = (() => {
+  const STEMS = '甲乙丙丁戊己庚辛壬癸'.split('');
+  const BRANCHES = '子丑寅卯辰巳午未申酉戌亥'.split('');
+  const STEM_EL = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4];
+  const BR_EL = [4, 2, 0, 0, 2, 1, 1, 2, 3, 3, 2, 4];
+  const EL = ['木', '火', '土', '金', '水'];
+  const HIDDEN = ['癸', '癸辛己', '戊丙甲', '乙', '乙癸戊', '戊庚丙', '丙己丁', '丁乙己', '戊壬庚', '辛', '辛丁戊', '甲壬'];
+  const MAIN = [9, 5, 0, 1, 4, 2, 3, 5, 6, 7, 4, 8];
+  const STAGES = ['長生', '沐浴', '冠帯', '建禄', '帝旺', '衰', '病', '死', '墓', '絶', '胎', '養'];
+  const CS_START = [11, 6, 2, 9, 2, 9, 5, 0, 8, 3];
+  const idx60 = (s, b) => ((6 * s - 5 * b) % 60 + 60) % 60;
+
+  function tenGod(day, other) {
+    const de = STEM_EL[day], oe = STEM_EL[other], same = (day % 2) === (other % 2);
+    if (oe === de) return same ? '比肩' : '劫財';
+    if (oe === (de + 1) % 5) return same ? '食神' : '傷官';
+    if (oe === (de + 2) % 5) return same ? '偏財' : '正財';
+    if (de === (oe + 2) % 5) return same ? '偏官' : '正官';
+    return same ? '偏印' : '印綬';
+  }
+  function stage(stem, br) {
+    const st = CS_START[stem];
+    return STAGES[stem % 2 === 0 ? (br - st + 12) % 12 : (st - br + 12) % 12];
+  }
+
+  // p: {date:'YYYY-MM-DD', time:'HH:MM', unk, tz, lon, gender:'m'|'f', solarFix}
+  function chart(p) {
+    let [y, mo, d] = p.date.split('-').map(Number);
+    let [hh, mi] = (p.unk ? '12:00' : (p.time || '12:00')).split(':').map(Number);
+    const utc = new Date(Date.UTC(y, mo - 1, d, hh, mi) - p.tz * 3600000);
+    // local (possibly solar-corrected) clock for day/hour
+    let localMs = Date.UTC(y, mo - 1, d, hh, mi);
+    let fixMin = 0;
+    if (p.solarFix && !p.unk) { fixMin = Math.round((p.lon - p.tz * 15) * 4); localMs += fixMin * 60000; }
+    const L = new Date(localMs);
+    const ly = L.getUTCFullYear(), lm = L.getUTCMonth() + 1, ld = L.getUTCDate(), lh = L.getUTCHours();
+
+    // year by Lichun
+    const lambda = AC.sunLonAtDate(utc);
+    let sy = y;
+    const lichun = AC.findSolarTerm(new Date(Date.UTC(y, 0, 20)), 315, 1);
+    if (utc < lichun) sy = y - 1;
+    const yi = ((sy - 4) % 60 + 60) % 60;
+    const ys = yi % 10, yb = yi % 12;
+    // month
+    const m = Math.floor(AC.norm(lambda - 315) / 30);
+    const ms = (ys * 2 + 2 + m) % 10, mb = (m + 2) % 12;
+    // day
+    const jdn = AC.jdnFromYMD(ly, lm, ld);
+    const di = (jdn + 49) % 60, ds = di % 10, db = di % 12;
+    // hour
+    let hour = null;
+    if (!p.unk) {
+      const hb = Math.floor((lh + 1) / 2) % 12;
+      const baseStem = lh === 23 ? (ds + 1) % 10 : ds;
+      hour = { s: (baseStem * 2 + hb) % 10, b: hb };
+    }
+    const pillars = [
+      { key: '時柱', s: hour ? hour.s : null, b: hour ? hour.b : null },
+      { key: '日柱', s: ds, b: db },
+      { key: '月柱', s: ms, b: mb },
+      { key: '年柱', s: ys, b: yb }
+    ];
+    pillars.forEach(pl => {
+      if (pl.s === null) return;
+      pl.stemGod = pl.key === '日柱' ? '日主' : tenGod(ds, pl.s);
+      pl.hidden = HIDDEN[pl.b];
+      pl.branchGod = tenGod(ds, MAIN[pl.b]);
+      pl.stage = stage(ds, pl.b);
+    });
+    // five elements
+    const count = [0, 0, 0, 0, 0];
+    pillars.forEach(pl => { if (pl.s === null) return; count[STEM_EL[pl.s]]++; count[BR_EL[pl.b]]++; });
+    // void (kuubou)
+    const start = di - (di % 10);
+    const voids = [(start + 10) % 12, (start + 11) % 12];
+    // luck pillars
+    let luck = null;
+    if (p.gender === 'm' || p.gender === 'f') {
+      const yang = ys % 2 === 0;
+      const fwd = (yang && p.gender === 'm') || (!yang && p.gender === 'f');
+      const target = AC.norm(315 + 30 * (fwd ? m + 1 : m));
+      const term = AC.findSolarTerm(utc, target, fwd ? 1 : -1);
+      const days = Math.abs(term - utc) / 86400000;
+      let startAge = Math.round(days / 3);
+      if (startAge < 1) startAge = 1;
+      const base = idx60(ms, mb);
+      luck = { fwd, startAge, list: [] };
+      for (let k = 1; k <= 8; k++) {
+        const i = ((base + (fwd ? k : -k)) % 60 + 60) % 60;
+        luck.list.push({ age: startAge + (k - 1) * 10, s: i % 10, b: i % 12, god: tenGod(ds, i % 10), stage: stage(ds, i % 12) });
+      }
+    }
+    return { pillars, dayStem: ds, count, voids, luck, fixMin, sy };
+  }
+
+  // annual pillar for a given year (from Lichun)
+  function yearPillar(y) { const i = ((y - 4) % 60 + 60) % 60; return { s: i % 10, b: i % 12 }; }
+
+  // ===== compatibility =====
+  const KANGO = { 0: 5, 5: 0, 1: 6, 6: 1, 2: 7, 7: 2, 3: 8, 8: 3, 4: 9, 9: 4 };
+  const KANGO_EL = ['土', '金', '水', '木', '火'];
+  const SHIGO = { 0: 1, 1: 0, 2: 11, 11: 2, 3: 10, 10: 3, 4: 9, 9: 4, 5: 8, 8: 5, 6: 7, 7: 6 };
+  const sango = (a, b) => a !== b && (a % 4) === (b % 4);
+  const elRel = (a, b) => a === b ? 'same' : (a + 1) % 5 === b ? 'gen' : (b + 1) % 5 === a ? 'genBy' : 'ctl';
+
+  function compat(A, B) {
+    const da = A.dayStem, db = B.dayStem, ba = A.pillars[1].b, bb = B.pillars[1].b;
+    let score = 52; const notes = [];
+    if (KANGO[da] === db) { score += 26; notes.push([26, `日干が${STEMS[da]}と${STEMS[db]}で「干合」。引き寄せ合い、自然と結びつく最良の組み合わせ`]); }
+    else {
+      const r = elRel(STEM_EL[da], STEM_EL[db]);
+      if (r === 'gen') { score += 10; notes.push([10, `あなたの${EL[STEM_EL[da]]}が相手の${EL[STEM_EL[db]]}を生み出す関係（相生）。あなたが相手を支え、伸ばせる`]); }
+      else if (r === 'genBy') { score += 10; notes.push([10, `相手の${EL[STEM_EL[db]]}があなたの${EL[STEM_EL[da]]}を生み出す関係（相生）。相手がそばにいると力が湧く`]); }
+      else if (r === 'same') { score += 6; notes.push([6, `日干が同じ${EL[STEM_EL[da]]}の五行。似た者どうしで分かり合える`]); }
+      else { score -= 6; notes.push([-6, `日干の五行が抑え合う関係（相剋）。意見がぶつかったら役割を分けるとうまくいく`]); }
+    }
+    if (SHIGO[ba] === bb) { score += 14; notes.push([14, `日支が${BRANCHES[ba]}と${BRANCHES[bb]}で「支合」。一緒にいて落ち着く、家庭的な相性`]); }
+    else if (sango(ba, bb)) { score += 10; notes.push([10, `日支が${BRANCHES[ba]}と${BRANCHES[bb]}で「三合」の仲間。目標に向かって協力しやすい`]); }
+    else if ((ba + 6) % 12 === bb) { score -= 12; notes.push([-12, `日支が${BRANCHES[ba]}と${BRANCHES[bb]}で「冲」。生活リズムが逆になりやすいので、違いを認め合うのがコツ`]); }
+    else if (ba === bb) { score += 4; notes.push([4, `日支が同じ${BRANCHES[ba]}。感覚が近い`]); }
+    const weakA = A.count.indexOf(Math.min(...A.count)), weakB = B.count.indexOf(Math.min(...B.count));
+    const fill = (B.count[weakA] >= 2) + (A.count[weakB] >= 2);
+    if (fill === 2) { score += 10; notes.push([10, `足りない五行をお互いに持っている（あなたに少ない${EL[weakA]}、相手に少ない${EL[weakB]}）。補い合える関係`]); }
+    else if (fill === 1) { score += 5; notes.push([5, B.count[weakA] >= 2 ? `あなたに少ない${EL[weakA]}を相手がたっぷり持っている` : `相手に少ない${EL[weakB]}をあなたが補える`]); }
+    if (A.voids.includes(B.pillars[3].b) || B.voids.includes(A.pillars[3].b)) { score -= 3; notes.push([-3, '片方の空亡にもう片方の年支が入る組み合わせ。甘えすぎず、ほどよい距離を']); }
+    score = Math.round(Math.max(20, Math.min(98, score)));
+    notes.sort((x, y) => Math.abs(y[0]) - Math.abs(x[0]));
+    return { score, notes };
+  }
+  function goodTypes(C) {
+    const ds = C.dayStem, b = C.pillars[1].b;
+    const genBy = STEMS.filter((s, i) => (STEM_EL[i] + 1) % 5 === STEM_EL[ds]);
+    const tri = BRANCHES.filter((s, i) => sango(b, i));
+    return { kango: STEMS[KANGO[ds]], kangoEl: KANGO_EL[Math.min(ds, KANGO[ds])], genBy, shigo: BRANCHES[SHIGO[b]], tri, chu: BRANCHES[(b + 6) % 12], dayBranch: BRANCHES[b] };
+  }
+
+  return { compat, goodTypes, STEMS, BRANCHES, STEM_EL, BR_EL, EL, chart, tenGod, stage, yearPillar };
+})();
+
+
+
+const $ = id => document.getElementById(id);
+const VS = '︎';
+
+// ================= DATA =================
+const SIGNS = [
+  ['牡羊座','♈','火','活動','ためらわず飛び込む行動派。思い立ったらすぐ動き、先頭を切ることで力が湧きます。'],
+  ['牡牛座','♉','地','不動','五感と安定を大切にするマイペース型。時間をかけて確かなものを育てます。'],
+  ['双子座','♊','風','柔軟','好奇心が旺盛で頭の回転が速いタイプ。言葉と情報を軽やかに扱います。'],
+  ['蟹座','♋','水','活動','身内を守る情の深さが持ち味。安心できる居場所づくりが上手です。'],
+  ['獅子座','♌','火','不動','自分らしさを堂々と表現する人。周りを明るくし、創造することで輝きます。'],
+  ['乙女座','♍','地','柔軟','細部に気づき、役に立つことを喜ぶ実務派。整えることで心も落ち着きます。'],
+  ['天秤座','♎','風','活動','バランス感覚と美意識の人。人との関わりの中で自分を磨きます。'],
+  ['蠍座','♏','水','不動','一度決めたら深く掘り下げる集中力の持ち主。信頼した相手には一途です。'],
+  ['射手座','♐','火','柔軟','自由と冒険を愛する探求者。遠くの世界や学びに心が向かいます。'],
+  ['山羊座','♑','地','活動','目標に向けてこつこつ積み上げる努力家。責任を引き受けて信頼を得ます。'],
+  ['水瓶座','♒','風','不動','独自の視点を持つ自由人。仲間や社会の未来に目を向けます。'],
+  ['魚座','♓','水','柔軟','共感力と想像力が豊か。人の気持ちや目に見えないものを感じ取ります。']
+];
+const PL = {
+  sun:['太陽','☉','自分らしさ・人生の目的'], moon:['月','☽','心の安らぎ・素の感情'], mercury:['水星','☿','考え方・話し方'],
+  venus:['金星','♀','好きなもの・愛し方'], mars:['火星','♂','やる気・闘い方'], jupiter:['木星','♃','伸びしろ・幸運'],
+  saturn:['土星','♄','課題・鍛えられるところ'], uranus:['天王星','♅','個性・変化'], neptune:['海王星','♆','夢・インスピレーション'],
+  pluto:['冥王星','♇','根本からの変容'], node:['ドラゴンヘッド','☊','人生で向かう方向']
+};
+const HOUSES = ['自分自身・第一印象','お金・才能','学び・兄弟・身近な交流','家庭・ルーツ','恋愛・創作・子ども','仕事の進め方・健康',
+  'パートナー・対人関係','深い絆・受け継ぐもの','旅・学問・理想','社会的立場・天職','仲間・将来の夢','ひとりの時間・内面'];
+const ASPECTS = [[0,'合','☌',8,'c'],[60,'セクスタイル','⚹',4,'s'],[90,'スクエア','□',6,'h'],[120,'トライン','△',6,'s'],[180,'オポジション','☍',8,'h']];
+const ELC = {火:'var(--fire)',地:'var(--earth)',風:'var(--air)',水:'var(--water)'};
+const COMPLEMENT = {火:'風',風:'火',地:'水',水:'地'};
+
+const DAY_TXT = [
+  ['大樹','まっすぐ上へ伸びる向上心とリーダー気質の人。頼られると力を発揮しますが、自分を曲げるのは苦手です。'],
+  ['草花','しなやかで協調性が高く、どんな環境にも根を張る粘り強さがあります。人と人をつなぐのが上手です。'],
+  ['太陽','明るく裏表がなく、周りを照らす存在。情熱的で、隠しごとが苦手な正直者です。'],
+  ['灯火','内に秘めた情熱と繊細な感性の人。身近な人の心を温める思いやりがあります。'],
+  ['山','どっしり構えた包容力と安定感の人。人から頼られ、少々のことでは動じません。'],
+  ['田畑','人や物事を育てる面倒見のよさと、現実的な器用さを持っています。'],
+  ['鉄・刀','決断力と正義感が強く、白黒はっきりさせたい行動派。鍛えられるほど強くなります。'],
+  ['宝石','美意識が高く繊細。磨かれるほど輝きを増し、本物を見抜く目を持っています。'],
+  ['大河','スケールの大きな発想と自由さの人。流れを止められると窮屈に感じます。'],
+  ['雨露','静かな知性と優しさの人。人の気持ちにしみ込むように寄り添えます。']
+];
+const GOD_TXT = {
+  比肩:'自立心とマイペースさ。自分の力で道を切り開きます。', 劫財:'負けず嫌いと仲間意識。人と競い合いながら伸びます。',
+  食神:'楽しむ力とおおらかさ。食や趣味を味わう余裕があります。', 傷官:'鋭い感性と表現力。こだわりと批評眼があります。',
+  偏財:'社交性と機転。人やお金を広く動かすのが得意です。', 正財:'堅実で誠実。こつこつ蓄えて信用を積みます。',
+  偏官:'行動力と度胸。困難にも立ち向かっていけます。', 正官:'責任感と品格。ルールを守り、信頼されます。',
+  偏印:'ひらめきと独創性。型にはまらず探求します。', 印綬:'知性と学ぶ力。知識を吸収し、受け継いでいきます。'
+};
+const STAGE_TXT = {
+  長生:'素直で伸びやか。成長し続ける力があります。', 沐浴:'自由で変化を好み、感覚がおしゃれです。', 冠帯:'華やかで自信にあふれ、前に出る力があります。',
+  建禄:'堅実で自立した実力派です。', 帝旺:'エネルギーが最も強い状態。親分肌で頼られます。', 衰:'落ち着いた円熟味。経験を活かして動きます。',
+  病:'感受性と想像力が豊かで、人に優しくできます。', 死:'一点集中の探究心。研究や職人肌の道に向きます。', 墓:'物や縁を大切にし、蓄えて受け継ぐ力があります。',
+  絶:'発想が飛躍し、人懐っこさがあります。', 胎:'好奇心旺盛で新しいもの好き。可能性に満ちています。', 養:'周りに可愛がられ、人に安心感を与えます。'
+};
+const EL_TXT = [['成長・やさしさ','新しいことを始める意欲'],['情熱・表現','明るさと行動のスピード'],['安定・信頼','どっしりした落ち着き'],['決断・けじめ','筋を通す強さ'],['知恵・柔軟さ','状況に合わせる賢さ']];
+const S = BZ.STEMS, B = BZ.BRANCHES;
+
+// ================= STATE =================
+const KEY = 'uranai.people.v1';
+const SAMPLE = {id:'sample', name:'サンプル', gender:'f', date:'1990-04-15', time:'08:30', unk:false, place:'東京都', lat:'', lon:'', tz:'', fix:false, sample:true};
+function loadPeople(){
+  let ps = store.get(KEY, null);
+  if (ps && ps.length) return ps;
+  // carry over from the two earlier separate apps (same site)
+  const merged = [];
+  for (const k of ['hoshiyomi.people.v1','meishiki.people.v1']){
+    (store.get(k, []) || []).forEach(p=>{
+      if (p.sample || !p.date) return;
+      const dup = merged.find(m=>m.name===p.name && m.date===p.date);
+      if (dup) Object.assign(dup, {gender: dup.gender ?? p.gender, fix: dup.fix || p.fix});
+      else merged.push(Object.assign({gender:'f', fix:false}, p));
+    });
+  }
+  if (merged.length){ store.set(KEY, merged); return merged; }
+  return [SAMPLE];
+}
+let people = loadPeople();
+let cur = people[0].id;
+let partnerSel = store.get('uranai.partnerSel', 'new');
+let draft = store.get('uranai.partnerDraft', {name:'', gender:'m', date:'', time:'', unk:false, place:'東京都', lat:'', lon:'', tz:''});
+
+const placeOpts = PLACES.map(p => `<option>${p[0]}</option>`).join('') + '<option value="custom">海外・その他（緯度経度を入力）</option>';
+$('place').innerHTML = placeOpts; $('qplace').innerHTML = placeOpts;
+
+const signOf = l => Math.floor(((l % 360) + 360) % 360 / 30);
+const fmtDeg = l => { const d = l % 30; const dd = Math.floor(d); const mm = Math.floor((d - dd) * 60); return `${dd}°${String(mm).padStart(2,'0')}′`; };
+const nameOf = p => esc(p.name || '名前なし');
+
+// ================= COMPUTE =================
+function computeH(p){
+  const pi = placeInfo(p);
+  const utc = toUTC(p.date, p.unk ? '12:00' : (p.time || '12:00'), pi.tz);
+  const pos = AC.positions(utc);
+  const hs = p.unk ? null : AC.houses(utc, pi.lat, pi.lon);
+  pos.forEach(x => x.house = hs ? AC.houseOf(x.lon, hs.cusps) : null);
+  return {p, pi, utc, pos, hs};
+}
+function computeM(p){
+  const pi = placeInfo(p);
+  return BZ.chart({date:p.date, time:p.time, unk:p.unk, tz:pi.tz, lon:pi.lon, gender:p.gender, solarFix:p.fix});
+}
+function aspects(pos){
+  const out=[], list=pos.filter(p=>p.body!=='node');
+  for (let i=0;i<list.length;i++) for (let j=i+1;j<list.length;j++){
+    let d=Math.abs(list[i].lon-list[j].lon); if (d>180) d=360-d;
+    for (const t of ASPECTS){ const orb=Math.abs(d-t[0]); if (orb<=t[3]) { out.push({a:list[i], b:list[j], t, orb}); break; } }
+  }
+  return out.sort((x,y)=>x.orb-y.orb);
+}
+
+// ================= PEOPLE / FORM =================
+function renderPeople(){
+  $('people').innerHTML = people.map(p => `<button class="chip" type="button" data-id="${p.id}" aria-pressed="${p.id===cur}">${nameOf(p)}${p.sample?'<span class="sample">例</span>':''}</button>`).join('')
+    + '<button class="chip add" type="button" id="addp">＋ 追加</button>';
+}
+function fillForm(p){
+  $('name').value=p.name||''; $('gender').value=p.gender??'f'; $('date').value=p.date||''; $('time').value=p.time||''; $('unk').checked=!!p.unk;
+  $('place').value=p.place||'東京都'; $('lat').value=p.lat??''; $('lon').value=p.lon??''; $('tz').value=p.tz??''; $('fix').checked=!!p.fix;
+  $('custom').hidden=$('place').value!=='custom'; $('time').disabled=$('unk').checked;
+  $('editbox').open = !p.date;
+  $('sumline').textContent = p.date ? `${p.name||'名前なし'}・${p.date.replace(/-/g,'/')} ${p.unk?'時刻不明':(p.time||'')}・${placeInfo(p).label}` : '生年月日を入れてください';
+}
+function readForm(){
+  return {name:$('name').value.trim(), gender:$('gender').value, date:$('date').value, time:$('time').value, unk:$('unk').checked, place:$('place').value, lat:$('lat').value, lon:$('lon').value, tz:$('tz').value, fix:$('fix').checked};
+}
+function persist(){ return store.set(KEY, people.filter(x=>!x.sample)); }
+
+// ================= HOROSCOPE VIEW =================
+function drawWheel(r){
+  const cx=200, cy=200, R1=192, R2=160, RP=120, RA=92;
+  const base = r.hs ? r.hs.asc : 0;
+  const ang = l => (180 + (l - base)) * Math.PI / 180;
+  const pt = (l, rad) => [cx + rad*Math.cos(ang(l)), cy - rad*Math.sin(ang(l))];
+  let s = `<circle cx="${cx}" cy="${cy}" r="${R1}" fill="var(--paper)" stroke="var(--line)"/><circle cx="${cx}" cy="${cy}" r="${R2}" fill="var(--bg)" stroke="var(--line)"/><circle cx="${cx}" cy="${cy}" r="${RA}" fill="var(--paper)" stroke="var(--line)"/>`;
+  for (let i=0;i<12;i++){
+    const l=i*30, [x1,y1]=pt(l,R1), [x2,y2]=pt(l,R2);
+    s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--line)"/>`;
+    const [gx,gy]=pt(l+15,(R1+R2)/2);
+    s += `<text x="${gx}" y="${gy}" font-size="17" text-anchor="middle" dominant-baseline="central" fill="${ELC[SIGNS[i][2]]}">${SIGNS[i][1]}${VS}</text>`;
+    for (let k=1;k<6;k++){ const [a,b]=pt(l+k*5,R2), [c,d]=pt(l+k*5,R2+4); s+=`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="var(--line)"/>`; }
+  }
+  if (r.hs){
+    r.hs.cusps.forEach((c,i)=>{
+      const axis = i%3===0, [x1,y1]=pt(c,R2), [x2,y2]=pt(c,RA);
+      s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${axis?'var(--star)':'var(--line)'}" stroke-width="${axis?1.6:1}"/>`;
+      const next = r.hs.cusps[(i+1)%12], mid = c + (((next - c)%360)+360)%360/2;
+      const [nx,ny]=pt(mid,RA+9);
+      s += `<text x="${nx}" y="${ny}" font-size="8.5" font-family="DM Mono,monospace" text-anchor="middle" dominant-baseline="central" fill="var(--muted)">${i+1}</text>`;
+    });
+    [[r.hs.asc,'ASC'],[r.hs.mc,'MC']].forEach(([l,t])=>{const [x,y]=pt(l,R2-10); s+=`<text x="${x}" y="${y}" font-size="8" font-weight="700" font-family="DM Mono,monospace" text-anchor="middle" dominant-baseline="central" fill="var(--star)">${t}</text>`;});
+  }
+  aspects(r.pos).forEach(a=>{
+    if (a.t[0]===0) return;
+    const [x1,y1]=pt(a.a.lon,RA), [x2,y2]=pt(a.b.lon,RA);
+    s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${a.t[4]==='h'?'var(--fire)':'var(--air)'}" stroke-width="1" opacity="${a.orb<2?0.9:0.55}"/>`;
+  });
+  const items = r.pos.map(p=>({p, d:p.lon})).sort((a,b)=>a.p.lon-b.p.lon);
+  for (let it=0; it<40; it++){
+    let moved=false;
+    for (let i=0;i<items.length;i++){
+      const a=items[i], b=items[(i+1)%items.length];
+      const gap=((b.d-a.d)%360+360)%360;
+      if (gap<8){ a.d-=(8-gap)/2; b.d+=(8-gap)/2; moved=true; }
+    }
+    if(!moved) break;
+  }
+  items.forEach(({p,d})=>{
+    const [tx,ty]=pt(p.lon,R2), [ux,uy]=pt(p.lon,R2-6);
+    s += `<line x1="${tx}" y1="${ty}" x2="${ux}" y2="${uy}" stroke="var(--brass)" stroke-width="1.4"/>`;
+    const [gx,gy]=pt(d,RP);
+    s += `<text x="${gx}" y="${gy}" font-size="16" text-anchor="middle" dominant-baseline="central" fill="var(--ink)">${PL[p.body][1]}${VS}</text>`;
+    const [dx,dy]=pt(d,RP-16);
+    s += `<text x="${dx}" y="${dy}" font-size="7.5" font-family="DM Mono,monospace" text-anchor="middle" dominant-baseline="central" fill="var(--muted)">${Math.floor(p.lon%30)}${p.retro?'R':''}</text>`;
+  });
+  $('wheel').innerHTML = s;
+}
+
+function renderH(p){
+  const r = computeH(p);
+  drawWheel(r);
+  $('h-who').innerHTML = `${nameOf(p)}さんの出生図${p.sample?'<span class="sample">例</span>':''}`;
+  $('h-cap').textContent = `${p.date.replace(/-/g,'/')} ${p.unk?'時刻不明':p.time} ・ ${r.pi.label}${r.hs?` ・ ASC ${SIGNS[signOf(r.hs.asc)][0]} ${fmtDeg(r.hs.asc)}`:''}`;
+  const b3 = [['太陽',r.pos[0].lon,'外から見えるあなたの軸'],['月',r.pos[1].lon,'安心したいときの素顔'],['アセンダント',r.hs?r.hs.asc:null,'第一印象と雰囲気']];
+  $('big3').innerHTML = b3.map(([k,l,sub])=>{
+    if (l===null) return `<div class="card"><div class="k">${k}</div><div class="v">—</div><p class="note">出生時刻を入れると分かります。</p></div>`;
+    const sg=SIGNS[signOf(l)];
+    return `<div class="card"><div class="k">${k} ・ ${sub}</div><div class="v"><span class="g">${sg[1]}${VS}</span> ${sg[0]}</div><p>${sg[4]}</p></div>`;
+  }).join('');
+  const sgCell = l => { const sg=SIGNS[signOf(l)]; return `<td><span class="gl">${sg[1]}${VS}</span>${sg[0]}</td>`; };
+  $('tbl').innerHTML = `<tr><th>天体</th><th>サイン</th><th>度数</th>${r.hs?'<th>ハウス</th>':''}</tr>` + r.pos.map(x=>
+    `<tr><td><span class="gl">${PL[x.body][1]}${VS}</span>${PL[x.body][0]}${x.retro?'<span class="retro">逆行</span>':''}</td>${sgCell(x.lon)}<td class="num">${fmtDeg(x.lon)}</td>${r.hs?`<td class="num">${x.house}</td>`:''}</tr>`).join('')
+    + (r.hs?`<tr><td><span class="gl">↑</span>アセンダント</td>${sgCell(r.hs.asc)}<td class="num">${fmtDeg(r.hs.asc)}</td><td class="num">1</td></tr><tr><td><span class="gl">⊤</span>MC（天頂）</td>${sgCell(r.hs.mc)}<td class="num">${fmtDeg(r.hs.mc)}</td><td class="num">10</td></tr>`:'');
+  const el={火:0,地:0,風:0,水:0}, md={活動:0,不動:0,柔軟:0};
+  r.pos.filter(x=>x.body!=='node').forEach(x=>{const sg=SIGNS[signOf(x.lon)]; el[sg[2]]++; md[sg[3]]++;});
+  const bars=(o,colors)=>Object.entries(o).map(([k,v])=>`<div class="bar"><span>${k}</span><div class="track"><div class="fill" style="width:${v*10}%;background:${colors(k)}"></div></div><span class="n">${v}</span></div>`).join('');
+  const topEl=Object.entries(el).sort((a,b)=>b[1]-a[1])[0][0];
+  const elText={火:'情熱と行動力が前に出やすい配置です。',地:'現実的で堅実な判断が得意な配置です。',風:'考えることと人とのつながりが得意な配置です。',水:'感受性と思いやりが豊かな配置です。'};
+  $('bal').innerHTML = `<div><h2>四元素<small>10天体の分布</small></h2>${bars(el,k=>ELC[k])}<p class="note">${topEl}が多め。${elText[topEl]}</p></div><div><h2>三区分</h2>${bars(md,()=>'var(--star)')}<p class="note">活動＝始める力、不動＝続ける力、柔軟＝合わせる力。</p></div>`;
+  const as=aspects(r.pos).filter(a=>a.orb<=6).slice(0,14);
+  $('asp').innerHTML = as.length ? as.map(a=>`<span class="${a.t[4]}">${PL[a.a.body][1]}${VS} ${a.t[2]} ${PL[a.b.body][1]}${VS} ${a.t[1]} <small>${a.orb.toFixed(1)}°</small></span>`).join('') : '<span class="note">目立つアスペクトはありません</span>';
+  $('read').innerHTML = r.pos.map(x=>{
+    const sg=SIGNS[signOf(x.lon)], pl=PL[x.body];
+    const hTxt = x.house ? `第${x.house}ハウス（${HOUSES[x.house-1]}）で発揮されやすいテーマです。` : '';
+    const rTxt = x.retro ? 'この天体は逆行中で、そのテーマを内側でじっくり育てる傾向があります。' : '';
+    return `<div class="entry"><span class="gl">${pl[1]}${VS}</span><div><h3>${pl[0]} × ${sg[0]}<span>${pl[2]}</span></h3><p>${sg[4].replace(/。$/,'')}。そんな${sg[0]}の性質が、${pl[2]}に表れます。${hTxt}${rTxt}</p></div></div>`;
+  }).join('');
+}
+
+// ================= MEISHIKI VIEW =================
+function penta(count){
+  const cx=110, cy=108, R=72, names=['木','火','土','金','水'];
+  const P = i => { const a=(-90+72*i)*Math.PI/180; return [cx+R*Math.cos(a), cy+R*Math.sin(a)]; };
+  const col = ['var(--wood)','var(--fire)','var(--earth)','var(--metal)','var(--water)'];
+  let s = '';
+  for (let i=0;i<5;i++){ const [x1,y1]=P(i), [x2,y2]=P((i+2)%5); s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--line)" stroke-dasharray="3 3"/>`; }
+  for (let i=0;i<5;i++){ const [x1,y1]=P(i), [x2,y2]=P((i+1)%5); s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--muted)" stroke-width="1.2"/>`; }
+  for (let i=0;i<5;i++){
+    const [x,y]=P(i), n=count[i], r=13+n*4.5;
+    s+=`<circle cx="${x}" cy="${y}" r="${r}" fill="var(--paper)" stroke="${col[i]}" stroke-width="${n?2.2:1}" ${n?'':'stroke-dasharray="2 3"'}/>`;
+    s+=`<text x="${x}" y="${y-3}" text-anchor="middle" dominant-baseline="central" font-family="Shippori Mincho B1,serif" font-weight="800" font-size="17" fill="${col[i]}">${names[i]}</text>`;
+    s+=`<text x="${x}" y="${y+12}" text-anchor="middle" dominant-baseline="central" font-family="DM Mono,monospace" font-size="10" fill="var(--muted)">${n}</text>`;
+  }
+  $('penta').innerHTML = s;
+}
+
+function renderM(p){
+  const pi = placeInfo(p), c = computeM(p);
+  $('m-who').innerHTML = `${nameOf(p)}さんの命式${p.sample?'<span class="sample">例</span>':''}`;
+  $('m-cap').textContent = `${p.date.replace(/-/g,'/')} ${p.unk?'時刻不明（時柱なし）':p.time} ・ ${pi.label}${p.fix&&!p.unk?` ・ 地方時補正 ${c.fixMin>=0?'+':''}${c.fixMin}分`:''}`;
+  const cols = c.pillars, eS = i=>'e'+BZ.STEM_EL[i], eB = i=>'e'+BZ.BR_EL[i];
+  const cell = (cls, html, pl) => `<div class="${cls}${pl&&pl.key==='日柱'?' day':''}">${html}</div>`;
+  let g = '<div class="rh ch"></div>' + cols.map(pl=>cell('ch', pl.key, pl)).join('');
+  const row = (label, fn, last) => `<div class="rh${last?' last':''}">${label}</div>` + cols.map(pl=>cell(last?'last':'', pl.s===null?'<span class="note">—</span>':fn(pl), pl)).join('');
+  g += row('通変星', pl=>`<span class="god${pl.stemGod==='日主'?' self':''}">${pl.stemGod}</span>`);
+  g += row('天干', pl=>`<span class="kan ${eS(pl.s)}">${S[pl.s]}<small>${BZ.EL[BZ.STEM_EL[pl.s]]}${pl.s%2?'・陰':'・陽'}</small></span>`);
+  g += row('地支', pl=>`<span class="kan ${eB(pl.b)}">${B[pl.b]}<small>${BZ.EL[BZ.BR_EL[pl.b]]}</small></span>`);
+  g += row('蔵干', pl=>`<span class="hid">${pl.hidden}</span>`);
+  g += row('蔵干通変', pl=>`<span class="god">${pl.branchGod}</span>`);
+  g += row('十二運', pl=>`<span>${pl.stage}</span>`, true);
+  $('grid').innerHTML = g;
+
+  const ds = c.dayStem, dt = DAY_TXT[ds];
+  $('daybox').innerHTML = `<div class="big">${S[ds]}</div><div><h3>日干「${S[ds]}」・${dt[0]}のあなた</h3><p>${dt[1]}</p><p class="note">日柱の十二運は「${cols[1].stage}」：${STAGE_TXT[cols[1].stage]}</p></div>`;
+
+  penta(c.count);
+  const total = c.count.reduce((a,b)=>a+b,0), mx = Math.max(...c.count), mn = Math.min(...c.count);
+  const many = c.count.map((v,i)=>v===mx?i:-1).filter(i=>i>=0), few = c.count.map((v,i)=>v===mn?i:-1).filter(i=>i>=0);
+  const dayEl = BZ.STEM_EL[ds];
+  $('fivetxt').innerHTML = `<p><b>多い：${many.map(i=>BZ.EL[i]).join('・')}</b>　${many.map(i=>EL_TXT[i][0]).join('、')}の気質が強く出ます。</p>`
+    + `<p><b>${mn===0?'ない':'少ない'}：${few.map(i=>BZ.EL[i]).join('・')}</b>　${few.map(i=>EL_TXT[i][1]).join('、')}を意識して取り入れるとバランスが整います。</p>`
+    + `<p class="note">あなた自身の五行は「${BZ.EL[dayEl]}」。全${total}文字中、同じ五行は${c.count[dayEl]}文字です。実線は生み出す関係（相生）、点線は抑える関係（相剋）。</p>`;
+
+  const godCount = {};
+  cols.forEach(pl=>{ if (pl.s===null) return; if (pl.stemGod!=='日主') godCount[pl.stemGod]=(godCount[pl.stemGod]||0)+1; godCount[pl.branchGod]=(godCount[pl.branchGod]||0)+1; });
+  $('gods').innerHTML = Object.entries(godCount).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="lrow"><b>${k}<span class="cnt">×${v}</span></b><p>${GOD_TXT[k]}</p></div>`).join('');
+
+  const now = new Date(), tyear = (now.getMonth()>1 || (now.getMonth()===1 && now.getDate()>=4)) ? now.getFullYear() : now.getFullYear()-1;
+  const yp = BZ.yearPillar(tyear), ygod = BZ.tenGod(ds, yp.s);
+  $('misc').innerHTML = `<div class="card"><div class="k">空亡（天中殺）</div><div class="v">${B[c.voids[0]]}${B[c.voids[1]]}</div><p>${B[c.voids[0]]}・${B[c.voids[1]]}の年と月は、新しく始めるより足元を固める時期とされます。</p></div>`
+    + `<div class="card"><div class="k">${tyear}年の運（流年）</div><div class="v">${S[yp.s]}${B[yp.b]} ・ ${ygod}</div><p>${GOD_TXT[ygod]}そんなテーマが出やすい一年です。十二運は「${BZ.stage(ds, yp.b)}」。</p></div>`;
+
+  if (c.luck){
+    $('lucksec').hidden = false;
+    const [y,m,d] = p.date.split('-').map(Number);
+    let age = now.getFullYear()-y; if (now.getMonth()+1<m || (now.getMonth()+1===m && now.getDate()<d)) age--;
+    const first = c.luck.list[0].age;
+    $('luckh').innerHTML = `大運<small>${c.luck.startAge}歳から${c.luck.fwd?'順行':'逆行'}・10年ごと${age<first?`（${first}歳までは月柱の運気）`:''}</small>`;
+    $('luck').innerHTML = c.luck.list.map(l=>{
+      const isNow = age>=l.age && age<l.age+10;
+      return `<div class="lk${isNow?' now':''}"><div class="age">${l.age}〜${l.age+9}歳</div><div class="k"><span class="${eS(l.s)}">${S[l.s]}</span><span class="${eB(l.b)}">${B[l.b]}</span></div><div class="g">${l.god}</div><div class="note">${l.stage}</div>${isNow?'<div class="now-tag">いま</div>':''}</div>`;
+    }).join('');
+  } else $('lucksec').hidden = true;
+}
+
+// ================= COMPATIBILITY =================
+const PAIR_RULES = [
+  ['sun','moon',9,'太陽','月','相手の存在に安心感を覚えやすい'],
+  ['moon','sun',9,'月','太陽','相手の存在に安心感を覚えやすい'],
+  ['moon','moon',8,'月','月','気持ちのリズムや居心地のよさ'],
+  ['sun','sun',6,'太陽','太陽','目指す方向や生き方の軸'],
+  ['venus','mars',6,'金星','火星','惹かれ合う力'],
+  ['mars','venus',6,'火星','金星','惹かれ合う力'],
+  ['venus','venus',5,'金星','金星','好きなものや楽しみ方'],
+  ['mercury','mercury',4,'水星','水星','会話のテンポや考え方']
+];
+const ASP_EFFECT = {0:[0.9,'重なって（合）','強く響き合う'],60:[0.8,'セクスタイルで','自然に助け合える'],120:[1,'トラインで','とても調和する'],90:[-0.6,'スクエアで','ぶつかりやすいが刺激になる'],180:[-0.25,'オポジションで','正反対だからこそ惹かれ合う']};
+function synastry(a, b, nA, nB){
+  const lonOf = (r,body)=>r.pos.find(x=>x.body===body).lon;
+  let score = 58; const notes = [];
+  PAIR_RULES.forEach(([pa,pb,w,na,nb,theme])=>{
+    let d = Math.abs(lonOf(a,pa)-lonOf(b,pb)); if (d>180) d=360-d;
+    for (const t of ASPECTS){
+      const orb = Math.abs(d-t[0]); if (orb>t[3]) continue;
+      const [k,how,feel] = ASP_EFFECT[t[0]], strength = 1 - orb/(t[3]+1);
+      score += k*w*strength*1.4;
+      notes.push([k*w*strength, `${nA}の${na}と${nB}の${nb}が${how}${feel}（${theme}）`]);
+      break;
+    }
+  });
+  const ea = SIGNS[signOf(lonOf(a,'sun'))][2], eb = SIGNS[signOf(lonOf(b,'sun'))][2];
+  if (ea===eb){ score+=6; notes.push([5.9, `太陽がどちらも${ea}のエレメント。価値観が近く、話が通じやすい`]); }
+  else if (COMPLEMENT[ea]===eb){ score+=4; notes.push([3.9, `太陽が${ea}と${eb}で補い合う関係。お互いを活気づける`]); }
+  score = Math.round(Math.max(25, Math.min(98, score)));
+  notes.sort((x,y)=>Math.abs(y[0])-Math.abs(x[0]));
+  if (!notes.length) notes.push([-0.1,'目立つ重なりは少なめ。ほどよい距離感の関係です']);
+  return {score, notes:notes.slice(0,4)};
+}
+const levelOf = s => s>=85?['とても良い','var(--plum)']:s>=72?['良い','var(--star)']:s>=58?['ふつう','var(--muted)']:['刺激し合う','var(--earth)'];
+function pairScores(p, q){
+  const sh = synastry(computeH(p), computeH(q), 'あなた', '相手');
+  const cm = BZ.compat(computeM(p), computeM(q));
+  return {sh, cm, total: Math.round((sh.score + cm.score)/2)};
+}
+
+function partnerProfile(){
+  if (partnerSel !== 'new'){ const q = people.find(x=>x.id===partnerSel && x.id!==cur); if (q && q.date) return q; }
+  return draft.date ? Object.assign({}, draft, {name: draft.name || '相手'}) : null;
+}
+function readQ(){
+  return {name:$('qname').value.trim(), gender:$('qgender').value, date:$('qdate').value, time:$('qtime').value, unk:$('qunk').checked, place:$('qplace').value, lat:$('qlat').value, lon:$('qlon').value, tz:$('qtz').value};
+}
+function fillQ(){
+  $('qname').value=draft.name||''; $('qgender').value=draft.gender??'m'; $('qdate').value=draft.date||''; $('qtime').value=draft.time||'';
+  $('qunk').checked=!!draft.unk; $('qplace').value=draft.place||'東京都'; $('qlat').value=draft.lat??''; $('qlon').value=draft.lon??''; $('qtz').value=draft.tz??'';
+  $('qcustom').hidden=$('qplace').value!=='custom'; $('qtime').disabled=$('qunk').checked;
+}
+
+function ringSVG(score){
+  const r=40, c=2*Math.PI*r, off=c*(1-score/100);
+  return `<svg class="ring" viewBox="0 0 96 96" aria-hidden="true"><circle cx="48" cy="48" r="${r}" fill="none" stroke="var(--line)" stroke-width="8"/><circle cx="48" cy="48" r="${r}" fill="none" stroke="var(--plum)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 48 48)"/><text x="48" y="46" text-anchor="middle" dominant-baseline="central" font-family="DM Mono,monospace" font-size="24" font-weight="500" fill="var(--ink)">${score}</text><text x="48" y="66" text-anchor="middle" font-size="9" fill="var(--muted)">/ 100</text></svg>`;
+}
+function matchCard(title, sub, score, notes, color){
+  const [lv,col] = levelOf(score);
+  return `<div class="match"><div class="top"><span class="nm">${title}</span><span class="note">${sub}</span><span class="lv" style="color:${col}">${lv}</span><span class="score" style="color:${color}">${score}</span></div>
+    <div class="meter"><div style="width:${score}%;background:${color}"></div></div>
+    <ul>${notes.map(n=>`<li class="${n[0]<0?'minus':''}">${n[1]}</li>`).join('')}</ul></div>`;
+}
+
+function renderA(p){
+  $('a-me').innerHTML = nameOf(p) + (p.sample?'<span class="sample">例</span>':'');
+  $('a-mesub').textContent = `${p.date.replace(/-/g,'/')}・上の名前ボタンで切り替え`;
+  const others = people.filter(x=>x.id!==cur && x.date);
+  if (partnerSel!=='new' && !others.find(x=>x.id===partnerSel)) partnerSel='new';
+  $('partnerSel').innerHTML = others.map(o=>`<option value="${o.id}">${nameOf(o)}</option>`).join('') + '<option value="new">新しく入力する</option>';
+  $('partnerSel').value = partnerSel;
+  $('qf').hidden = partnerSel !== 'new';
+  const q = partnerProfile();
+  $('a-ptsub').textContent = q ? `${q.date.replace(/-/g,'/')}${q.unk?'・時刻不明':(q.time?'・'+q.time:'')}` : '生年月日を入れてください';
+
+  if (!q){
+    $('a-result').innerHTML = '<div class="empty">相手の生年月日を入れて「相性を見る」を押すと、ここに結果が出ます。</div>';
+  } else {
+    const {sh, cm, total} = pairScores(p, q);
+    const [lv] = levelOf(total);
+    const qn = esc(q.name||'相手');
+    const msg = total>=85 ? '自然体で一緒にいられる、恵まれた組み合わせです。' : total>=72 ? '支え合いやすく、関係を育てやすい組み合わせです。' : total>=58 ? '良いところも違いもほどよくある、バランスのいい組み合わせです。' : '違いが大きいぶん、お互いの世界を広げ合える組み合わせです。';
+    $('a-result').innerHTML = `<h2>${nameOf(p)} × ${qn}</h2>
+      <div class="verdict">${ringSVG(total)}<div><h3>総合「${lv}」</h3><p>${msg}</p><p class="note">西洋占星術と四柱推命の点数の平均です。</p></div></div>
+      <div class="split" style="margin-top:10px">${matchCard('星読み','太陽・月・金星・火星', sh.score, sh.notes, 'var(--star)')}${matchCard('命式','日干・日支・五行', cm.score, cm.notes, 'var(--seal)')}</div>`;
+  }
+
+  // good types for current person
+  const r = computeH(p), c = computeM(p), gt = BZ.goodTypes(c);
+  const sunS = signOf(r.pos[0].lon), sg = SIGNS[sunS];
+  const same = SIGNS.filter((s,i)=>s[2]===sg[2] && i!==sunS), comp = SIGNS.filter(s=>s[2]===COMPLEMENT[sg[2]]);
+  const lst = arr => arr.map(s=>`${s[1]}${VS}${s[0]}`).join('・');
+  $('a-goodfor').textContent = `${p.name||'名前なし'}さんから見て`;
+  $('a-good').innerHTML = `<div class="card"><div class="k">星読み・相性のいい太陽星座</div><div class="v" style="font-size:17px">${lst(same)}</div><p>同じ${sg[2]}のエレメント。補い合うのは${lst(comp)}（${COMPLEMENT[sg[2]]}）。</p></div>`
+    + `<div class="card"><div class="k">命式・いちばん相性のいい日干</div><div class="v">${gt.kango}</div><p>日干${S[c.dayStem]}と「干合」して${gt.kangoEl}を生む相手。支えてくれる日干は${gt.genBy.join('・')}。</p></div>`
+    + `<div class="card"><div class="k">命式・落ち着く日支</div><div class="v" style="font-size:17px">${gt.shigo}（支合）・${gt.tri.join('')}（三合）</div><p>日支${gt.dayBranch}と結びつく相手。${gt.chu}は「冲」で刺激し合う相手です。</p></div>`;
+
+  if (!others.length){ $('a-rank').innerHTML = '<p class="note">「＋追加」や「この人を登録する」で人を増やすと、全員との相性を一覧で比べられます。</p>'; return; }
+  const rows = others.map(o=>({o, ...pairScores(p, o)})).sort((x,y)=>y.total-x.total);
+  $('a-rank').innerHTML = `<div class="rrow head"><span>名前</span><span class="n">星読み</span><span class="n">命式</span><span class="n">総合</span></div>`
+    + rows.map(({o,sh,cm,total})=>`<div class="rrow"><button type="button" data-pick="${o.id}">${nameOf(o)}</button><span class="n">${sh.score}</span><span class="n">${cm.score}</span><span class="n tot">${total}</span></div>`).join('');
+}
+
+// ================= RENDER / TABS =================
+function render(){
+  const p = people.find(x=>x.id===cur);
+  const ok = p && p.date;
+  document.querySelectorAll('.panel').forEach(el=>{ el.querySelectorAll('section').forEach(s=>s.hidden = !ok); });
+  if (!ok) return;
+  renderH(p); renderM(p); renderA(p);
+}
+const TABS = ['horoscope','meishiki','aisho'];
+function showTab(t){
+  if (!TABS.includes(t)) t = 'horoscope';
+  document.body.dataset.tab = t;
+  TABS.forEach(x=>{ $('t-'+x).setAttribute('aria-selected', x===t); $('p-'+x).hidden = x!==t; });
+}
+document.querySelector('.tabs').addEventListener('click', e=>{
+  const b = e.target.closest('.tab'); if (!b) return;
+  const t = b.dataset.tab;
+  if (location.hash !== '#'+t) location.hash = t; else showTab(t);
+});
+window.addEventListener('hashchange', ()=>showTab(location.hash.slice(1)));
+
+// ================= EVENTS =================
+$('f').addEventListener('submit', e=>{
+  e.preventDefault();
+  const v = readForm();
+  if (!v.date){ $('msg').textContent='生年月日を入れてください'; return; }
+  const i = people.findIndex(x=>x.id===cur);
+  const rec = Object.assign({id: cur==='sample' ? 'p'+Date.now() : cur}, v);
+  if (i>=0) people[i]=rec; else people.push(rec);
+  cur = rec.id;
+  people = people.filter(x=>!x.sample || x.id===cur);
+  $('msg').textContent = persist() ? '保存しました' : 'このブラウザでは保存できませんでした（表示はできます）';
+  renderPeople(); fillForm(rec); $('editbox').open = true; render();
+});
+$('place').addEventListener('change', ()=>{ $('custom').hidden = $('place').value!=='custom'; });
+$('unk').addEventListener('change', ()=>{ $('time').disabled = $('unk').checked; });
+$('del').addEventListener('click', ()=>{
+  if ($('del').dataset.arm!=='1'){ $('del').dataset.arm='1'; $('del').textContent='もう一度押すと削除'; return; }
+  $('del').dataset.arm=''; $('del').textContent='この人を削除';
+  people = people.filter(x=>x.id!==cur);
+  if (!people.length) people=[SAMPLE];
+  persist();
+  cur = people[0].id; fillForm(people[0]); renderPeople(); render(); $('msg').textContent='削除しました';
+});
+function selectPerson(id){
+  cur=id; $('msg').textContent=''; $('del').dataset.arm=''; $('del').textContent='この人を削除';
+  if (partnerSel===id) partnerSel='new';
+  fillForm(people.find(x=>x.id===cur)); renderPeople(); render();
+}
+$('people').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.id==='addp'){
+    const np={id:'p'+Date.now(), name:'', gender:'f', date:'', time:'', unk:false, place:'東京都', lat:'', lon:'', tz:'', fix:false};
+    people.push(np); cur=np.id; fillForm(np); renderPeople(); render(); $('name').focus(); return;
+  }
+  selectPerson(b.dataset.id);
+});
+$('partnerSel').addEventListener('change', ()=>{ partnerSel=$('partnerSel').value; store.set('uranai.partnerSel', partnerSel); render(); });
+$('qplace').addEventListener('change', ()=>{ $('qcustom').hidden = $('qplace').value!=='custom'; });
+$('qunk').addEventListener('change', ()=>{ $('qtime').disabled = $('qunk').checked; });
+$('qf').addEventListener('submit', e=>{
+  e.preventDefault();
+  draft = readQ();
+  if (!draft.date){ $('qmsg').textContent='相手の生年月日を入れてください'; return; }
+  store.set('uranai.partnerDraft', draft); $('qmsg').textContent='';
+  render(); $('a-result').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start'});
+});
+$('qsave').addEventListener('click', ()=>{
+  const v = readQ();
+  if (!v.date){ $('qmsg').textContent='相手の生年月日を入れてください'; return; }
+  const rec = Object.assign({id:'p'+Date.now(), fix:false}, v, {name: v.name || '相手'});
+  people = people.filter(x=>!x.sample || x.id===cur);
+  people.push(rec);
+  draft = {name:'', gender:'m', date:'', time:'', unk:false, place:'東京都', lat:'', lon:'', tz:''};
+  store.set('uranai.partnerDraft', draft);
+  partnerSel = rec.id; store.set('uranai.partnerSel', partnerSel);
+  persist(); fillQ(); renderPeople(); render();
+  $('qmsg').textContent='';
+});
+$('a-rank').addEventListener('click', e=>{
+  const b = e.target.closest('[data-pick]'); if (!b) return;
+  partnerSel = b.dataset.pick; store.set('uranai.partnerSel', partnerSel); render();
+  $('a-result').scrollIntoView({block:'start'});
+});
+
+renderPeople(); fillForm(people[0]); fillQ(); showTab(location.hash.slice(1)); render();
+</script>
+
+</body>
+</html>

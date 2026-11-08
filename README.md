@@ -29,8 +29,7 @@
 | [psycho-check](psycho-check/) | https://kouheim1979.github.io/openthekey/psycho-check/ | サイコパス度チェッカー（日常の場面12問のネタ診断。科学的根拠はありません） |
 | [real-psycho-check](real-psycho-check/) | https://kouheim1979.github.io/openthekey/real-psycho-check/ | リアルサイコパス診断（サイコパシー研究の三因子モデル＝大胆さ・冷淡さ・脱抑制をもとにしたオリジナル24問、逆転項目あり。標準化された検査ではなく、医学的な診断でもありません。回答は端末内で集計し、送信しません） |
 | [hattatsu-check](hattatsu-check/) | https://kouheim1979.github.io/openthekey/hattatsu-check/ | 発達特性セルフチェック（ASD・ADHDの傾向をみる成人向けの簡易チェック。医師の診断ではありません。設問はDSM-5の領域をもとにしたオリジナルで、標準化された検査ではありません。回答は端末内で集計し、送信・保存しません） |
-| [horoscope](horoscope/) | https://kouheim1979.github.io/openthekey/horoscope/ | 星読みノート（西洋占星術の出生ホロスコープ。生年月日・出生時刻・出生地から天体位置、プラシーダスハウス、アスペクト、読みを表示。天体計算は端末内の簡易計算で1800〜2050年対応。家族のプロフィールはブラウザ内に保存） |
-| [meishiki](meishiki/) | https://kouheim1979.github.io/openthekey/meishiki/ | 命式ノート（四柱推命。立春・節入りは太陽黄経で判定し、命式・蔵干・通変星・十二運・五行バランス・空亡・流年・大運を表示。地方時補正は任意。家族のプロフィールはブラウザ内に保存） |
+| [uranai](uranai/) | https://kouheim1979.github.io/openthekey/uranai/ | 星と命式ノート（西洋占星術の出生ホロスコープと四柱推命の命式をタブで切り替え。相性タブでは相手の生年月日を入力するか登録済みの人を選び、両方の占いで相性を表示。天体計算・干支計算は端末内、1800〜2050年対応。家族のプロフィールはブラウザ内に保存。旧`horoscope/`・`meishiki/`はここへ転送し、保存データも引き継ぎます） |
 
 ## 構成
 
