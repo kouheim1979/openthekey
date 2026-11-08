@@ -77,6 +77,21 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .asp{display:flex;flex-wrap:wrap;gap:6px}
 .asp span{font-size:13px;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:3px 9px;white-space:nowrap}
 .asp .h{color:var(--fire)} .asp .s{color:var(--air)} .asp .c{color:var(--brass)}
+.goodsigns{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.gs{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;font-size:14px}
+.gs .k{font-size:12px;color:var(--muted);min-width:7.5em}
+.gs b{font-weight:700}
+.matches{display:flex;flex-direction:column;gap:10px}
+.match{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.match .top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.match .nm{font-size:16px;font-weight:700}
+.match .score{font-family:var(--mono);font-size:20px;font-weight:500;color:var(--accent);margin-left:auto}
+.match .lv{font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px;border:1px solid currentColor}
+.match .meter{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.match .meter div{height:100%;background:var(--accent);border-radius:3px}
+.match ul{margin:0;padding-left:1.2em;font-size:13.5px}
+.match li{margin:2px 0}
+.match li.minus{color:var(--muted)}
 footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
 [hidden]{display:none!important}
 @media (max-width:520px){form{grid-template-columns:1fr}.big3{grid-template-columns:1fr}.bal{grid-template-columns:1fr}}
@@ -131,6 +146,12 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
   <section>
     <h2>主なアスペクト<small>天体どうしの角度</small></h2>
     <div class="asp" id="asp"></div>
+  </section>
+
+  <section>
+    <h2>相性<small>太陽・月・金星・火星の重なりから</small></h2>
+    <div class="goodsigns" id="goodsigns"></div>
+    <div class="matches" id="matches"></div>
   </section>
 
   <section>
@@ -442,6 +463,7 @@ function drawWheel(r){
       const [nx,ny]=pt(mid,RA+9);
       s += `<text x="${nx}" y="${ny}" font-size="8.5" font-family="DM Mono,monospace" text-anchor="middle" dominant-baseline="central" fill="var(--muted)">${i+1}</text>`;
     });
+    const lab=(l,t)=>{const [x,y]=pt(l,R1+0); const [tx,ty]=pt(l,R1-8); return '';};
     [[r.hs.asc,'ASC'],[r.hs.mc,'MC']].forEach(([l,t])=>{const [x,y]=pt(l,R2-10); s+=`<text x="${x}" y="${y}" font-size="8" font-weight="700" font-family="DM Mono,monospace" text-anchor="middle" dominant-baseline="central" fill="var(--accent)">${t}</text>`;});
   }
   // aspects
@@ -516,11 +538,68 @@ function render(){
   const as=aspects(r.pos).filter(a=>a.orb<=6).slice(0,14);
   $('asp').innerHTML = as.length ? as.map(a=>`<span class="${a.t[4]}">${PL[a.a.body][1]}${VS} ${a.t[2]} ${PL[a.b.body][1]}${VS} ${a.t[1]} <small>${a.orb.toFixed(1)}°</small></span>`).join('') : '<span class="note">目立つアスペクトはありません</span>';
 
+  renderMatch(r);
+
   $('read').innerHTML = r.pos.map(x=>{
     const sg=SIGNS[signOf(x.lon)], pl=PL[x.body];
     const hTxt = x.house ? `第${x.house}ハウス（${HOUSES[x.house-1]}）で発揮されやすいテーマです。` : '';
     const rTxt = x.retro ? 'この天体は逆行中で、そのテーマを内側でじっくり育てる傾向があります。' : '';
     return `<div class="entry"><span class="gl">${pl[1]}${VS}</span><div><h3>${pl[0]} × ${sg[0]}<span>${pl[2]}</span></h3><p>${sg[4].replace(/。$/,'')}。そんな${sg[0]}の性質が、${pl[2]}に表れます。${hTxt}${rTxt}</p></div></div>`;
+  }).join('');
+}
+
+// ===== Compatibility =====
+const PAIR_RULES = [
+  ['sun','moon',9,'太陽','月','相手の存在に安心感を覚えやすい組み合わせ'],
+  ['moon','sun',9,'月','太陽','相手の存在に安心感を覚えやすい組み合わせ'],
+  ['moon','moon',8,'月','月','気持ちのリズムや居心地のよさが近い'],
+  ['sun','sun',6,'太陽','太陽','目指す方向や生き方の軸'],
+  ['venus','mars',6,'金星','火星','惹かれ合う力'],
+  ['mars','venus',6,'火星','金星','惹かれ合う力'],
+  ['venus','venus',5,'金星','金星','好きなものや楽しみ方'],
+  ['mercury','mercury',4,'水星','水星','会話のテンポや考え方']
+];
+const ASP_EFFECT = {0:[0.9,'重なって（合）','強く響き合う'],60:[0.8,'セクスタイルで','自然に助け合える'],120:[1,'トラインで','とても調和する'],90:[-0.6,'スクエアで','ぶつかりやすいが刺激になる'],180:[-0.25,'オポジションで','正反対だからこそ惹かれ合う']};
+const COMPLEMENT = {火:'風',風:'火',地:'水',水:'地'};
+
+function synastry(a, b){
+  const lonOf = (r,body)=>r.pos.find(x=>x.body===body).lon;
+  let score = 58; const notes = [];
+  PAIR_RULES.forEach(([pa,pb,w,na,nb,theme])=>{
+    let d = Math.abs(lonOf(a,pa)-lonOf(b,pb)); if (d>180) d=360-d;
+    for (const t of ASPECTS){
+      const orb = Math.abs(d-t[0]); if (orb>t[3]) continue;
+      const [k,how,feel] = ASP_EFFECT[t[0]];
+      const strength = 1 - orb/(t[3]+1);
+      score += k*w*strength*1.4;
+      notes.push({v:k*w*strength, txt:`あなたの${na}と相手の${nb}が${how}${feel}（${theme}）`});
+      break;
+    }
+  });
+  const ea = SIGNS[signOf(lonOf(a,'sun'))][2], eb = SIGNS[signOf(lonOf(b,'sun'))][2];
+  if (ea===eb){ score+=6; notes.push({v:5.9, txt:`太陽が同じ${ea}のエレメント。価値観が近く、話が通じやすい`}); }
+  else if (COMPLEMENT[ea]===eb){ score+=4; notes.push({v:3.9, txt:`太陽が${ea}と${eb}で補い合う関係。お互いを活気づける`}); }
+  score = Math.round(Math.max(25, Math.min(98, score)));
+  notes.sort((x,y)=>Math.abs(y.v)-Math.abs(x.v));
+  return {score, notes:notes.slice(0,4)};
+}
+const levelOf = s => s>=85?['とても良い','var(--fire)']:s>=72?['良い','var(--accent)']:s>=58?['ふつう','var(--muted)']:['刺激し合う','var(--brass)'];
+
+function renderMatch(r){
+  const sunS = signOf(r.pos[0].lon), sg = SIGNS[sunS];
+  const same = SIGNS.filter((s,i)=>s[2]===sg[2] && i!==sunS);
+  const comp = SIGNS.filter(s=>s[2]===COMPLEMENT[sg[2]]);
+  const lst = arr => arr.map(s=>`<b>${s[1]}${VS} ${s[0]}</b>`).join('・');
+  $('goodsigns').innerHTML = `<div class="gs"><span class="k">相性のいい太陽星座</span>${lst(same)}<span class="note">同じ${sg[2]}のエレメント</span></div>`
+    + `<div class="gs"><span class="k">補い合う太陽星座</span>${lst(comp)}<span class="note">${sg[2]}を活かす${COMPLEMENT[sg[2]]}のエレメント</span></div>`;
+  const others = people.filter(x=>x.id!==cur && x.date);
+  if (!others.length){ $('matches').innerHTML = '<p class="note">「＋追加」で家族や友だちを登録すると、ここにひとりずつ相性が出ます。</p>'; return; }
+  const res = others.map(o=>({o, ...synastry(r, compute(o))})).sort((x,y)=>y.score-x.score);
+  $('matches').innerHTML = res.map(({o,score,notes})=>{
+    const [lv,col] = levelOf(score);
+    return `<div class="match"><div class="top"><span class="nm">${esc(o.name||'名前なし')}</span><span class="lv" style="color:${col}">${lv}</span><span class="score">${score}</span></div>
+      <div class="meter"><div style="width:${score}%"></div></div>
+      <ul>${notes.map(n=>`<li class="${n.v<0?'minus':''}">${n.txt}</li>`).join('') || '<li class="minus">目立つ重なりは少なめ。ほどよい距離感の関係です</li>'}</ul></div>`;
   }).join('');
 }
 

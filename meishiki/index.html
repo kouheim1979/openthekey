@@ -87,6 +87,19 @@ h2 small{font-family:var(--body);font-size:12px;color:var(--muted);font-weight:4
 .tag .k{font-size:11px;color:var(--muted);letter-spacing:.06em}
 .tag .v{font-family:var(--display);font-weight:700;font-size:20px}
 .tag p{margin:2px 0 0;font-size:13px}
+#goodtypes{margin-bottom:12px}
+.matches{display:flex;flex-direction:column;gap:10px}
+.match{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.match .top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.match .nm{font-size:16px;font-weight:700}
+.match .pil{font-family:var(--display);font-weight:700;font-size:15px;color:var(--muted)}
+.match .score{font-family:var(--mono);font-size:20px;font-weight:500;color:var(--seal);margin-left:auto}
+.match .lv{font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px;border:1px solid currentColor}
+.match .meter{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.match .meter div{height:100%;background:var(--seal);border-radius:3px}
+.match ul{margin:0;padding-left:1.2em;font-size:13.5px}
+.match li{margin:2px 0}
+.match li.minus{color:var(--muted)}
 footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
 [hidden]{display:none!important}
 @media (max-width:520px){form{grid-template-columns:1fr}.five{grid-template-columns:1fr;justify-items:center}.five div{justify-self:stretch}.kan{font-size:28px}}
@@ -143,6 +156,12 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
   <section>
     <h2>そのほか</h2>
     <div class="tags" id="misc"></div>
+  </section>
+
+  <section>
+    <h2>相性<small>日柱（日干・日支）と五行から</small></h2>
+    <div class="tags" id="goodtypes"></div>
+    <div class="matches" id="matches"></div>
   </section>
 
   <section id="lucksec">
@@ -469,7 +488,45 @@ const BZ = (() => {
   // annual pillar for a given year (from Lichun)
   function yearPillar(y) { const i = ((y - 4) % 60 + 60) % 60; return { s: i % 10, b: i % 12 }; }
 
-  return { STEMS, BRANCHES, STEM_EL, BR_EL, EL, chart, tenGod, stage, yearPillar };
+  // ===== compatibility =====
+  const KANGO = { 0: 5, 5: 0, 1: 6, 6: 1, 2: 7, 7: 2, 3: 8, 8: 3, 4: 9, 9: 4 };
+  const KANGO_EL = ['土', '金', '水', '木', '火'];
+  const SHIGO = { 0: 1, 1: 0, 2: 11, 11: 2, 3: 10, 10: 3, 4: 9, 9: 4, 5: 8, 8: 5, 6: 7, 7: 6 };
+  const sango = (a, b) => a !== b && (a % 4) === (b % 4);
+  const elRel = (a, b) => a === b ? 'same' : (a + 1) % 5 === b ? 'gen' : (b + 1) % 5 === a ? 'genBy' : 'ctl';
+
+  function compat(A, B) {
+    const da = A.dayStem, db = B.dayStem, ba = A.pillars[1].b, bb = B.pillars[1].b;
+    let score = 52; const notes = [];
+    if (KANGO[da] === db) { score += 26; notes.push([26, `日干が${STEMS[da]}と${STEMS[db]}で「干合」。引き寄せ合い、自然と結びつく最良の組み合わせ`]); }
+    else {
+      const r = elRel(STEM_EL[da], STEM_EL[db]);
+      if (r === 'gen') { score += 10; notes.push([10, `あなたの${EL[STEM_EL[da]]}が相手の${EL[STEM_EL[db]]}を生み出す関係（相生）。あなたが相手を支え、伸ばせる`]); }
+      else if (r === 'genBy') { score += 10; notes.push([10, `相手の${EL[STEM_EL[db]]}があなたの${EL[STEM_EL[da]]}を生み出す関係（相生）。相手がそばにいると力が湧く`]); }
+      else if (r === 'same') { score += 6; notes.push([6, `日干が同じ${EL[STEM_EL[da]]}の五行。似た者どうしで分かり合える`]); }
+      else { score -= 6; notes.push([-6, `日干の五行が抑え合う関係（相剋）。意見がぶつかったら役割を分けるとうまくいく`]); }
+    }
+    if (SHIGO[ba] === bb) { score += 14; notes.push([14, `日支が${BRANCHES[ba]}と${BRANCHES[bb]}で「支合」。一緒にいて落ち着く、家庭的な相性`]); }
+    else if (sango(ba, bb)) { score += 10; notes.push([10, `日支が${BRANCHES[ba]}と${BRANCHES[bb]}で「三合」の仲間。目標に向かって協力しやすい`]); }
+    else if ((ba + 6) % 12 === bb) { score -= 12; notes.push([-12, `日支が${BRANCHES[ba]}と${BRANCHES[bb]}で「冲」。生活リズムが逆になりやすいので、違いを認め合うのがコツ`]); }
+    else if (ba === bb) { score += 4; notes.push([4, `日支が同じ${BRANCHES[ba]}。感覚が近い`]); }
+    const weakA = A.count.indexOf(Math.min(...A.count)), weakB = B.count.indexOf(Math.min(...B.count));
+    const fill = (B.count[weakA] >= 2) + (A.count[weakB] >= 2);
+    if (fill === 2) { score += 10; notes.push([10, `足りない五行をお互いに持っている（あなたに少ない${EL[weakA]}、相手に少ない${EL[weakB]}）。補い合える関係`]); }
+    else if (fill === 1) { score += 5; notes.push([5, B.count[weakA] >= 2 ? `あなたに少ない${EL[weakA]}を相手がたっぷり持っている` : `相手に少ない${EL[weakB]}をあなたが補える`]); }
+    if (A.voids.includes(B.pillars[3].b) || B.voids.includes(A.pillars[3].b)) { score -= 3; notes.push([-3, '片方の空亡にもう片方の年支が入る組み合わせ。甘えすぎず、ほどよい距離を']); }
+    score = Math.round(Math.max(20, Math.min(98, score)));
+    notes.sort((x, y) => Math.abs(y[0]) - Math.abs(x[0]));
+    return { score, notes };
+  }
+  function goodTypes(C) {
+    const ds = C.dayStem, b = C.pillars[1].b;
+    const genBy = STEMS.filter((s, i) => (STEM_EL[i] + 1) % 5 === STEM_EL[ds]);
+    const tri = BRANCHES.filter((s, i) => sango(b, i));
+    return { kango: STEMS[KANGO[ds]], kangoEl: KANGO_EL[Math.min(ds, KANGO[ds])], genBy, shigo: BRANCHES[SHIGO[b]], tri, chu: BRANCHES[(b + 6) % 12], dayBranch: BRANCHES[b] };
+  }
+
+  return { compat, goodTypes, STEMS, BRANCHES, STEM_EL, BR_EL, EL, chart, tenGod, stage, yearPillar };
 })();
 
 
@@ -583,6 +640,8 @@ function render(){
   $('misc').innerHTML = `<div class="tag"><div class="k">空亡（天中殺）</div><div class="v">${B[c.voids[0]]}${B[c.voids[1]]}</div><p>${B[c.voids[0]]}・${B[c.voids[1]]}の年と月は、新しく始めるより足元を固める時期とされます。</p></div>`
     + `<div class="tag"><div class="k">${tyear}年の運（流年）</div><div class="v">${S[yp.s]}${B[yp.b]} ・ ${ygod}</div><p>${GOD_TXT[ygod]}そんなテーマが出やすい一年です。十二運は「${BZ.stage(ds, yp.b)}」。</p></div>`;
 
+  renderMatch(c);
+
   if (c.luck){
     $('lucksec').hidden = false;
     const [y,m,d] = p.date.split('-').map(Number);
@@ -596,6 +655,27 @@ function render(){
     }).join('');
     if (pre) $('luckh').innerHTML += `<small>（${first}歳までは月柱の運気）</small>`;
   } else $('lucksec').hidden = true;
+}
+
+function chartOf(p){
+  const pi = placeInfo(p);
+  return BZ.chart({date:p.date, time:p.time, unk:p.unk, tz:pi.tz, lon:pi.lon, gender:p.gender, solarFix:p.fix});
+}
+const levelOf = s => s>=85?['とても良い','var(--seal)']:s>=70?['良い','var(--wood)']:s>=55?['ふつう','var(--muted)']:['刺激し合う','var(--earth)'];
+function renderMatch(c){
+  const g = BZ.goodTypes(c);
+  $('goodtypes').innerHTML = `<div class="tag"><div class="k">いちばん相性のいい日干</div><div class="v">${g.kango}</div><p>あなたの${S[c.dayStem]}と「干合」して${g.kangoEl}を生む相手。自然と惹かれ合います。</p></div>`
+    + `<div class="tag"><div class="k">支えてくれる日干</div><div class="v">${g.genBy.join('・')}</div><p>あなたの五行を生み出す相手。そばにいると力が湧きます。</p></div>`
+    + `<div class="tag"><div class="k">落ち着く日支</div><div class="v">${g.shigo}（支合）・${g.tri.join('')}（三合）</div><p>日支${g.dayBranch}と結びつく相手。${g.chu}は「冲」で刺激し合う相手です。</p></div>`;
+  const others = people.filter(x=>x.id!==cur && x.date);
+  if (!others.length){ $('matches').innerHTML = '<p class="note">「＋追加」で家族や友だちを登録すると、ここにひとりずつ相性が出ます。</p>'; return; }
+  const res = others.map(o=>{ const oc = chartOf(o); return {o, oc, ...BZ.compat(c, oc)}; }).sort((x,y)=>y.score-x.score);
+  $('matches').innerHTML = res.map(({o,oc,score,notes})=>{
+    const [lv,col] = levelOf(score);
+    return `<div class="match"><div class="top"><span class="nm">${esc(o.name||'名前なし')}</span><span class="pil">日柱 ${S[oc.dayStem]}${B[oc.pillars[1].b]}</span><span class="lv" style="color:${col}">${lv}</span><span class="score">${score}</span></div>
+      <div class="meter"><div style="width:${score}%"></div></div>
+      <ul>${notes.map(n=>`<li class="${n[0]<0?'minus':''}">${n[1]}</li>`).join('')}</ul></div>`;
+  }).join('');
 }
 
 function save(e){
