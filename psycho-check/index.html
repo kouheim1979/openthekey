@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="日常の場面12問でサイコパス度を測るネタ診断">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}*,*::before,*::after{box-sizing:border-box}</style>
+<title>サイコパス度チェッカー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: an over-serious "極秘 検査票" from a fake lab — the deadpan paperwork is the joke. One column, one question at a time. */
+:root{
+  --paper:#e9edf1; --card:#f8fafb; --ink:#18212b; --muted:#5d6b78; --rule:#c9d1d9;
+  --accent:#c42f3a; --accent-soft:#f3dadc; --track:#dde3e9; --tape:#f1d36b; --tape-ink:#3b2f05;
+  --display:"Dela Gothic One","Hiragino Sans","Yu Gothic",sans-serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#11161c; --card:#1a2129; --ink:#e6ebf0; --muted:#93a1ae; --rule:#2d3742;
+  --accent:#ef5b65; --accent-soft:#3a1f23; --track:#28313b; --tape:#c9a93a; --tape-ink:#1c1603; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#11161c; --card:#1a2129; --ink:#e6ebf0; --muted:#93a1ae; --rule:#2d3742;
+  --accent:#ef5b65; --accent-soft:#3a1f23; --track:#28313b; --tape:#c9a93a; --tape-ink:#1c1603; color-scheme:dark}
+
+html,body{min-height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 40px}
+.wrap{max-width:560px;margin:0 auto}
+.sheet{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:26px 22px;position:relative;overflow:hidden}
+.tape{position:absolute;top:14px;right:-38px;transform:rotate(35deg);background:var(--tape);color:var(--tape-ink);font-family:var(--display);font-size:12px;letter-spacing:.2em;padding:3px 44px}
+.meta{display:flex;justify-content:space-between;gap:8px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;padding-right:40px}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(28px,7.5vw,40px);line-height:1.25;margin:16px 0 8px;text-wrap:balance}
+h1 em{font-style:normal;color:var(--accent)}
+.lead{color:var(--muted);margin:0 0 18px}
+.rules{margin:0 0 22px;padding:12px 14px;border:1px dashed var(--rule);border-radius:4px;font-size:14px;list-style:none;display:flex;flex-direction:column;gap:4px}
+.rules li::before{content:"□ ";font-family:var(--mono);color:var(--accent)}
+.note{font-size:12px;color:var(--muted);border-top:1px dashed var(--rule);padding-top:12px;margin:20px 0 0}
+button{font-family:inherit;cursor:pointer}
+.btn{display:flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:var(--ink);color:var(--card);font-weight:700;font-size:16px;padding:14px 22px;width:100%}
+.btn:hover{background:var(--accent)}
+.btn:focus-visible,.opt:focus-visible,.ghost:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.ghost{background:none;border:0;color:var(--muted);font-size:14px;padding:8px 0;text-decoration:underline;text-underline-offset:3px;width:100%}
+
+/* question */
+.progress{height:4px;background:var(--track);border-radius:2px;overflow:hidden;margin-top:12px}
+.progress i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.qno{font-family:var(--mono);font-size:13px;color:var(--accent);margin-top:22px;font-variant-numeric:tabular-nums}
+.qtext{font-size:clamp(19px,5vw,22px);font-weight:700;line-height:1.55;margin:6px 0 20px;text-wrap:pretty}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;align-items:center;gap:12px;text-align:left;background:transparent;border:1px solid var(--rule);border-radius:4px;color:var(--ink);font-size:15px;padding:13px 14px;line-height:1.5;transition:border-color .15s,background .15s}
+.opt:hover{border-color:var(--ink)}
+.opt.on{border-color:var(--accent);background:var(--accent-soft)}
+.opt kbd{font-family:var(--mono);font-size:12px;width:22px;height:22px;flex:none;display:grid;place-items:center;border:1px solid var(--rule);border-radius:3px;color:var(--muted)}
+.opt.on kbd{border-color:var(--accent);color:var(--accent)}
+.react{min-height:1.7em;margin-top:14px;font-family:var(--display);font-size:16px;color:var(--accent);text-align:center;opacity:0;transform:translateY(4px);transition:opacity .15s,transform .15s}
+.react.show{opacity:1;transform:none}
+
+/* analyzing */
+.scan{font-family:var(--mono);font-size:13px;line-height:1.9;margin:22px 0 16px;min-height:11em}
+.scan div::before{content:"> ";color:var(--accent)}
+.scan .ok::after{content:" OK";color:var(--muted)}
+
+/* result */
+.rank-l{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:18px}
+.title{font-family:var(--display);font-size:clamp(30px,9vw,44px);line-height:1.2;margin:2px 0 4px;text-wrap:balance}
+.score{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.big{font-family:var(--display);font-size:clamp(68px,20vw,100px);line-height:.95;color:var(--accent);font-variant-numeric:tabular-nums}
+.big small{font-size:.3em;color:var(--muted)}
+.stamp{font-family:var(--display);font-size:17px;color:var(--accent);border:3px double var(--accent);padding:4px 12px;border-radius:4px;transform:rotate(-6deg);margin-bottom:12px;white-space:nowrap}
+.verdict{font-size:15px;margin:14px 0 22px}
+.sub{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--rule);padding-bottom:6px;margin:0 0 14px}
+.bars{display:flex;flex-direction:column;gap:14px}
+.bar-h{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.bar-h b{font-weight:700}
+.bar-h span{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.bar{height:10px;background:var(--track);border-radius:2px;margin-top:5px;position:relative;overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--ink);transition:width .7s}
+.bar.hot i{background:var(--accent)}
+.advice{margin:22px 0 0;padding:12px 14px;background:var(--accent-soft);border-radius:4px;font-size:14px}
+.advice b{color:var(--accent)}
+.actions{display:flex;flex-direction:column;gap:6px;margin-top:22px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <!-- start -->
+  <section class="sheet" id="start">
+    <div class="tape">極秘</div>
+    <div class="meta"><span>国立なんとか研究所</span><span>様式 P-12</span></div>
+    <h1>あなたの<em>サイコパス度</em>を<br>勝手に測定します。</h1>
+    <p class="lead">日常のちょっとした場面で、あなたならどうする？ 12問に答えると、当研究所の最新鋭AI（たぶん）があなたの中に眠るサイコパス成分を暴きます。</p>
+    <ul class="rules">
+      <li>直感で答えること</li>
+      <li>「いい人に見られたい」は捨てること</li>
+      <li>プリンは冷蔵庫に戻しておくこと</li>
+    </ul>
+    <button class="btn" id="go">検査を受ける</button>
+    <p class="note">完全にネタです。科学的根拠はゼロ。結果で人を判断しないでください。あと研究所も実在しません。</p>
+  </section>
+
+  <!-- quiz -->
+  <section class="sheet" id="quiz" hidden>
+    <div class="tape">極秘</div>
+    <div class="meta"><span id="qaxis">—</span><span id="qcount">01 / 12</span></div>
+    <div class="progress"><i id="bar"></i></div>
+    <div class="qno" id="qno">Q.01</div>
+    <p class="qtext" id="qtext"></p>
+    <div class="opts" id="opts"></div>
+    <div class="react" id="react" aria-live="polite"></div>
+  </section>
+
+  <!-- analyzing -->
+  <section class="sheet" id="scanning" hidden>
+    <div class="tape">解析中</div>
+    <div class="meta"><span>Analysis</span><span id="scanpct">0%</span></div>
+    <div class="progress"><i id="scanbar"></i></div>
+    <div class="scan" id="scan"></div>
+  </section>
+
+  <!-- result -->
+  <section class="sheet" id="result" hidden>
+    <div class="tape">極秘</div>
+    <div class="meta"><span>検査報告書</span><span id="rdate"></span></div>
+    <div class="rank-l" id="ranklabel">判定ランク</div>
+    <div class="title" id="rtitle">—</div>
+    <div class="score">
+      <div class="big" id="total">0<small>%</small></div>
+      <div class="stamp" id="stamp">—</div>
+    </div>
+    <p class="verdict" id="verdict"></p>
+    <p class="sub">サイコパス成分表</p>
+    <div class="bars" id="bars"></div>
+    <p class="advice" id="advice"></p>
+    <div class="actions">
+      <button class="btn" id="copy">結果をコピーして友達に見せる</button>
+      <button class="ghost" id="retry">再検査する（結果は変わらないかもしれない）</button>
+    </div>
+    <p class="note">この報告書はネタです。本当のあなたはもっと優しい……はずです。</p>
+  </section>
+</div>
+
+<script>
+const AX = {
+  C:"動じない度", R:"合理主義度", A:"謎の行動力", S:"目が笑ってない度"
+};
+// [axis, question, [option, option, option, option]]  score = index
+const Q = [
+  ["S","職場の冷蔵庫に「食べないで」と書かれたプリン。あなたは？",
+    ["見なかったことにする","名前を確認して、そっと戻す","「食べないで」の下に「了解」と書き足す","食べて、容器を洗って、元の場所に戻す"]],
+  ["C","友達の結婚式でスピーチ。最初のひと言は？",
+    ["「本日はおめでとうございます」","「緊張で手汗がすごいです」","「新郎とは元カノが同じでして」","「さて、ここに一枚の契約書があります」"]],
+  ["C","エレベーターで知らない人と2人きり。沈黙が10秒続いた。",
+    ["スマホを見る","階数表示をじっと見つめる","鼻歌を歌いはじめる","小声で「…気づいてますよね？」と言う"]],
+  ["A","夜中、部屋に蚊が1匹。",
+    ["刺されてもいいので寝る","電気をつけて探す","蚊取り線香を3つ焚く","あえて腕を出し、止まる瞬間を待つ。何時間でも"]],
+  ["R","LINEが既読のまま3日返ってこない。",
+    ["忙しいんだろうな","スタンプをひとつ送る","「生きてる？」と送る","相手の既読時刻を表にまとめはじめる"]],
+  ["R","鍋パーティー。最後の肉が1枚残った。",
+    ["人に譲る","じゃんけんを提案する","「誰も食べないなら」と5秒で取る","最初から自分の取り皿に避難させておいた"]],
+  ["S","上司の寒いギャグ。どうする？",
+    ["全力で愛想笑い","「ハハ…」と小さく笑う","真顔で「どういう意味ですか」と聞く","こっそり録音して、送別会で流す"]],
+  ["C","ゾンビが発生した。まず何をする？",
+    ["家族に電話する","水と食料を確保する","ホームセンターに走る","ゾンビの行動パターンをメモしはじめる"]],
+  ["S","サプライズの誕生日会を企画されていることに気づいた。",
+    ["当日、全力で驚く演技をする","ちょっとだけ驚く","「知ってた」と言う","当日、仕掛け人より先に会場で待っている"]],
+  ["A","道で100円を拾った。",
+    ["交番に届ける","近くの募金箱に入れる","そのまま自販機へ","落とし主が戻るまで、その場で100円を見張る"]],
+  ["R","金魚を飼うことになった。名前は？",
+    ["きんちゃん","ポチ","非常食","2号（1号のことは聞かないで）"]],
+  ["S","自分の笑顔の写真を見て思うことは？",
+    ["いい笑顔！","ちょっとぎこちない","目が笑ってない","練習の成果が出ている"]]
+];
+const REACT = [
+  ["平和ですね","やさしい世界","癒やされました"],
+  ["まあ普通です","無難ですね","ふむ"],
+  ["ん？","ちょっと待って","研究員が顔を上げました"],
+  ["…記録しました","研究員がざわついています","今の、本気ですか？","所長を呼んできます"]
+];
+const SCAN = [
+  "前頭葉をスキャン中…","冷蔵庫のプリン消費履歴を照合中…","目の笑ってなさを計測中…",
+  "愛想笑いの周波数を解析中…","金魚1号の行方を調査中…","所長の許可を待っています…","報告書を印刷中…"
+];
+const LEVELS = [
+  {max:15, title:"聖人", stamp:"天使認定", text:"サイコパス成分はほぼ検出されませんでした。あなたの周りには常にマイナスイオンが出ています。逆に心配になるレベルのいい人です。", advice:"たまには最後の肉を食べてもいいんですよ。"},
+  {max:35, title:"善良な一般市民", stamp:"異常なし", text:"ごく普通の、善良な一般市民です。研究所としては面白みに欠けますが、社会的には100点です。", advice:"このまま平和に生きてください。研究所はあなたに興味を失いました。"},
+  {max:55, title:"隠れサイコ予備軍", stamp:"要観察", text:"普段は普通ですが、ときどき「え？」と言われる行動をとっていませんか。本人に自覚がないのが特徴です。", advice:"エレベーターでの鼻歌は控えめに。"},
+  {max:75, title:"笑顔がこわい人", stamp:"要注意", text:"合理的で、動じず、なぜか笑顔に圧があります。会議で一番落ち着いているのはたいていあなたです。", advice:"写真を撮るときは、目も笑わせることを意識しましょう。"},
+  {max:90, title:"サイコパス（ガチ）", stamp:"危険", text:"かなりの数値です。プリンを食べて容器を洗って戻すタイプ。周囲はあなたが何を考えているか、まったく読めていません。", advice:"金魚2号を大切にしてください。"},
+  {max:100, title:"研究対象", stamp:"確保", text:"計測器の針が振り切れました。当研究所から職員がそちらに向かっています（嘘です）。歴代最高クラスのスコアです。", advice:"この結果をスクショして、ネタとして大事にしてください。"}
+];
+
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2,"0");
+const rnd = a => a[Math.floor(Math.random()*a.length)];
+let ans = [], cur = 0, lock = false;
+function show(id){ ["start","quiz","scanning","result"].forEach(s => $(s).hidden = s!==id); window.scrollTo(0,0); }
+
+function renderQ(){
+  const [ax, text, opts] = Q[cur];
+  $("qaxis").textContent = "測定項目：" + AX[ax];
+  $("qcount").textContent = pad(cur+1) + " / " + Q.length;
+  $("qno").textContent = "Q." + pad(cur+1);
+  $("qtext").textContent = text;
+  $("bar").style.width = (cur / Q.length * 100) + "%";
+  $("react").classList.remove("show");
+  const box = $("opts"); box.innerHTML = "";
+  // shuffle display order so the "craziest" answer isn't always last
+  const order = [0,1,2,3].sort(() => Math.random() - .5);
+  order.forEach((sc,i) => {
+    const b = document.createElement("button");
+    b.className = "opt"; b.id = "opt"+i; b.dataset.sc = sc;
+    b.innerHTML = `<kbd>${i+1}</kbd><span></span>`;
+    b.querySelector("span").textContent = opts[sc];
+    b.onclick = () => pick(b);
+    box.appendChild(b);
+  });
+}
+function pick(b){
+  if(lock) return; lock = true;
+  const sc = +b.dataset.sc;
+  ans[cur] = sc;
+  b.classList.add("on");
+  const r = $("react"); r.textContent = rnd(REACT[sc]); r.classList.add("show");
+  setTimeout(() => {
+    lock = false;
+    if(cur < Q.length-1){ cur++; renderQ(); } else analyze();
+  }, 850);
+}
+
+function analyze(){
+  show("scanning");
+  const box = $("scan"); box.innerHTML = "";
+  let i = 0;
+  const step = () => {
+    if(box.lastChild) box.lastChild.classList.add("ok");
+    if(i >= SCAN.length){ setTimeout(finish, 400); return; }
+    const d = document.createElement("div"); d.textContent = SCAN[i]; box.appendChild(d);
+    i++;
+    const p = Math.round(i / SCAN.length * 100);
+    $("scanbar").style.width = p + "%"; $("scanpct").textContent = p + "%";
+    setTimeout(step, 380 + Math.random()*260);
+  };
+  step();
+}
+
+function finish(){
+  const sum = {}, n = {};
+  Q.forEach(([ax],i) => { sum[ax] = (sum[ax]||0) + ans[i]; n[ax] = (n[ax]||0) + 1; });
+  const pct = {}; for(const k in sum) pct[k] = Math.round(sum[k] / (n[k]*3) * 100);
+  const total = Math.round(ans.reduce((a,b)=>a+b,0) / (Q.length*3) * 100);
+  const li = LEVELS.findIndex(l => total <= l.max), L = LEVELS[li];
+  $("ranklabel").textContent = `判定ランク ${li+1} / ${LEVELS.length}`;
+  $("rtitle").textContent = L.title;
+  $("total").innerHTML = total + "<small>%</small>";
+  $("stamp").textContent = L.stamp;
+  $("verdict").textContent = L.text;
+  $("advice").innerHTML = "<b>研究所からのアドバイス：</b>";
+  $("advice").append(L.advice);
+  const d = new Date(); $("rdate").textContent = d.getFullYear()+"."+pad(d.getMonth()+1)+"."+pad(d.getDate());
+  const keys = Object.keys(AX).sort((a,b)=>pct[b]-pct[a]);
+  $("bars").innerHTML = keys.map(k => `<div><div class="bar-h"><b>${AX[k]}</b><span>${pct[k]}%</span></div>
+    <div class="bar${pct[k]>=67?" hot":""}"><i style="width:0" data-w="${pct[k]}"></i></div></div>`).join("");
+  show("result");
+  requestAnimationFrame(()=>requestAnimationFrame(()=>document.querySelectorAll(".bar i").forEach(i=>i.style.width=i.dataset.w+"%")));
+  window._summary = `【サイコパス度チェッカー】\n私のサイコパス度は ${total}%、判定は「${L.title}」でした。\n` +
+    keys.map(k=>`${AX[k]} ${pct[k]}%`).join(" / ");
+}
+
+$("go").onclick = () => { ans = []; cur = 0; show("quiz"); renderQ(); };
+$("retry").onclick = () => show("start");
+$("copy").onclick = async () => {
+  const btn = $("copy");
+  try{ await navigator.clipboard.writeText(window._summary); btn.textContent = "コピーしました"; }
+  catch(e){ btn.textContent = window._summary.replace(/\n/g," "); }
+  setTimeout(()=>btn.textContent="結果をコピーして友達に見せる", 2500);
+};
+document.addEventListener("keydown", e => {
+  if($("quiz").hidden) return;
+  const n = parseInt(e.key,10);
+  if(n>=1 && n<=4) pick($("opt"+(n-1)));
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="ASD・ADHDの傾向をみる成人向けの簡易セルフチェック（診断ではありません）">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}*,*::before,*::after{box-sizing:border-box}</style>
+<title>発達特性セルフチェック</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: calm single-column screening form; a persistent "簡易チェック" band on every screen; result as a report you can bring to a clinic */
+:root{
+  --bg:#eef3f2; --card:#fbfdfc; --ink:#1b2a2a; --muted:#5a6b6a; --rule:#cfdbd9;
+  --accent:#2f7d78; --accent-soft:#dcecea; --track:#dfe7e6;
+  --warn:#b26a1e; --warn-soft:#f6e8d6; --note:#fff7df; --note-ink:#5b4a12; --note-rule:#e8d79c;
+  --display:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101716; --card:#172120; --ink:#e3ecea; --muted:#97a9a7; --rule:#2a3836;
+  --accent:#6cc2bb; --accent-soft:#1e3533; --track:#253331;
+  --warn:#e6a55c; --warn-soft:#3a2b18; --note:#2c2714; --note-ink:#eedd9e; --note-rule:#4d4320; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101716; --card:#172120; --ink:#e3ecea; --muted:#97a9a7; --rule:#2a3836;
+  --accent:#6cc2bb; --accent-soft:#1e3533; --track:#253331;
+  --warn:#e6a55c; --warn-soft:#3a2b18; --note:#2c2714; --note-ink:#eedd9e; --note-rule:#4d4320; color-scheme:dark}
+
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.75;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.band{background:var(--note);color:var(--note-ink);border:1px solid var(--note-rule);border-radius:6px;padding:10px 14px;font-size:13px;line-height:1.6;display:flex;gap:10px;align-items:flex-start}
+.band b{font-weight:700;white-space:nowrap}
+.sheet{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:26px 22px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;display:flex;justify-content:space-between;gap:8px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(26px,6.5vw,34px);line-height:1.35;margin:10px 0 10px;text-wrap:balance}
+h2{font-family:var(--display);font-weight:700;font-size:19px;margin:26px 0 8px}
+p{margin:0 0 12px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.terms{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
+.term{border:1px solid var(--rule);border-radius:6px;padding:12px;min-width:0}
+.term b{display:block;font-family:var(--display);font-size:15px}
+.term span{font-size:13px;color:var(--muted);line-height:1.6;display:block}
+.term.wide{grid-column:1 / -1;background:var(--accent-soft);border-color:transparent}
+@media (max-width:440px){.terms{grid-template-columns:1fr}}
+.list{margin:0 0 12px;padding-left:1.2em}
+.list li{margin-bottom:4px}
+.agree{display:flex;gap:10px;align-items:flex-start;margin:20px 0 16px;padding:12px;border:1px solid var(--rule);border-radius:6px;font-size:14px;cursor:pointer}
+.agree input{width:20px;height:20px;margin-top:3px;flex:none;accent-color:var(--accent)}
+button{font-family:inherit;cursor:pointer}
+.btn{display:flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:var(--accent);color:var(--card);font-weight:700;font-size:16px;padding:14px 22px;width:100%}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sec{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.btn:focus-visible,.opt:focus-visible,.link:focus-visible,.agree:focus-within{outline:3px solid var(--accent);outline-offset:2px}
+.link{background:none;border:0;color:var(--muted);font-size:14px;padding:8px 0;text-decoration:underline;text-underline-offset:3px}
+.link:disabled{visibility:hidden}
+
+/* question */
+.progress{height:6px;background:var(--track);border-radius:3px;overflow:hidden;margin-top:10px}
+.progress i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.sect{display:inline-block;margin-top:20px;font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:2px 10px;border-radius:999px}
+.qtext{font-size:clamp(18px,4.8vw,21px);font-weight:700;line-height:1.6;margin:10px 0 18px;text-wrap:pretty}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;align-items:center;gap:12px;text-align:left;background:transparent;border:1px solid var(--rule);border-radius:6px;color:var(--ink);font-size:15px;padding:12px 14px;transition:border-color .15s,background .15s}
+.opt:hover{border-color:var(--accent)}
+.opt.on{border-color:var(--accent);background:var(--accent-soft)}
+.opt .dot{width:18px;height:18px;flex:none;border-radius:50%;border:2px solid var(--rule)}
+.opt.on .dot{border-color:var(--accent);background:radial-gradient(circle,var(--accent) 45%,transparent 50%)}
+.qfoot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:8px}
+.count{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* result */
+.domain{border-top:1px solid var(--rule);padding-top:18px;margin-top:18px}
+.d-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.d-head h3{font-family:var(--display);font-size:18px;margin:0}
+.pill{font-size:13px;font-weight:700;padding:3px 12px;border-radius:999px;white-space:nowrap}
+.pill.lv0{background:var(--track);color:var(--muted)}
+.pill.lv1{background:var(--accent-soft);color:var(--accent)}
+.pill.lv2{background:var(--warn-soft);color:var(--warn)}
+.meter{display:flex;flex-direction:column;gap:10px;margin:14px 0 10px}
+.m-row{display:grid;grid-template-columns:8.5em 1fr 3em;gap:10px;align-items:center;font-size:13px}
+.m-row span:last-child{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.m-bar{height:10px;background:var(--track);border-radius:5px;position:relative;overflow:hidden}
+.m-bar i{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:5px;transition:width .6s}
+.m-bar.lv2 i{background:var(--warn)}
+.m-bar::before,.m-bar::after{content:"";position:absolute;top:0;bottom:0;width:1px;background:var(--card);z-index:1}
+.m-bar::before{left:37.5%}.m-bar::after{left:62.5%}
+.scale-key{font-size:11px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap;margin-top:6px}
+.callout{border-radius:6px;padding:14px 16px;margin-top:20px;font-size:14px}
+.callout.go{background:var(--warn-soft)}
+.callout.calm{background:var(--accent-soft)}
+.callout h4{font-family:var(--display);font-size:16px;margin:0 0 6px}
+.res{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:10px}
+.res li{border:1px solid var(--rule);border-radius:6px;padding:10px 12px;font-size:14px}
+.res b{display:block}
+.res span{color:var(--muted);font-size:13px}
+.res a{color:var(--accent)}
+.tel{font-family:var(--mono);user-select:all}
+.actions{display:flex;flex-direction:column;gap:10px;margin-top:22px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="band" role="note"><b>簡易チェック</b><span>これは医師による診断ではありません。結果は「傾向」の目安です。診断は、医療機関で問診や検査を受けて初めてつくものです。</span></div>
+
+  <!-- intro -->
+  <section class="sheet" id="intro">
+    <div class="eyebrow"><span>発達特性 セルフチェック</span><span>成人向け・約5分</span></div>
+    <h1>発達特性の傾向を、<br>自分で確かめてみる</h1>
+    <p>日常で感じる「やりにくさ」がどんな特性から来ているのか、考えるきっかけにするための簡易チェックです。全26問に、ここ半年くらいの自分に近いものを選んで答えてください。</p>
+
+    <h2>言葉の整理</h2>
+    <div class="terms">
+      <div class="term wide"><b>発達障害</b><span>生まれつきの脳の働き方の違いによる特性の総称です。ASD・ADHD・LD（学習障害）などが含まれます。</span></div>
+      <div class="term"><b>ASD（自閉スペクトラム症）</b><span>対人コミュニケーションの特性と、こだわり・感覚の特性があります。</span></div>
+      <div class="term"><b>アスペルガー症候群</b><span>以前使われていた診断名です。現在の診断基準（DSM-5）では、ASDに統合されています。</span></div>
+      <div class="term wide"><b>ADHD（注意欠如・多動症）</b><span>不注意の特性と、多動性・衝動性の特性があります。ASDと同時にみられることもよくあるため、このチェックでは両方をみます。</span></div>
+    </div>
+
+    <h2>このチェックでできないこと</h2>
+    <ul class="list small">
+      <li>診断をつけること。点数が高くても「発達障害がある」とは言えず、低くても「ない」とは言えません。</li>
+      <li>他の原因との区別。不安・うつ・睡眠不足・疲労・環境のストレスでも、似た回答になることがあります。</li>
+      <li>お子さんの評価。成人の自己記入を想定しています（お子さんについては結果画面の相談先を参照してください）。</li>
+    </ul>
+    <p class="small muted">設問は、DSM-5の診断基準の領域をもとにこのアプリ用に作ったオリジナルです。標準化された検査（AQ、ASRSなど）ではありません。回答はこの画面の中だけで集計され、どこにも送信・保存されません。</p>
+
+    <label class="agree" for="agree"><input type="checkbox" id="agree"><span>これが医療的な診断ではなく、簡易的なセルフチェックであることを理解しました。</span></label>
+    <button class="btn" id="start" disabled>チェックを始める</button>
+  </section>
+
+  <!-- quiz -->
+  <section class="sheet" id="quiz" hidden>
+    <div class="eyebrow"><span id="qsect-top">—</span><span class="count" id="qcount">1 / 26</span></div>
+    <div class="progress"><i id="bar"></i></div>
+    <span class="sect" id="qsect">—</span>
+    <p class="qtext" id="qtext"></p>
+    <div class="opts" id="opts" role="radiogroup"></div>
+    <div class="qfoot">
+      <button class="link" id="back">← 前の質問</button>
+      <span class="count">キー 1〜5 でも選べます</span>
+    </div>
+  </section>
+
+  <!-- result -->
+  <section class="sheet" id="result" hidden>
+    <div class="eyebrow"><span>セルフチェック結果</span><span id="rdate"></span></div>
+    <h1>結果のまとめ</h1>
+    <p class="muted small">各特性について、回答の平均から傾向を3段階で示しています。これは診断ではなく、医療機関で相談するときの材料のひとつです。</p>
+    <div id="domains"></div>
+    <div class="scale-key"><span>バーの区切り：左から「目立たない／いくつかみられる／強めにみられる」</span></div>
+    <div id="context"></div>
+    <div id="advice"></div>
+
+    <h2>相談できる場所</h2>
+    <ul class="res">
+      <li><b>発達障害者支援センター</b><span>各都道府県・政令指定都市にある公的な相談窓口です。無料で相談でき、地域の医療機関も教えてもらえます。「お住まいの地域名＋発達障害者支援センター」で検索してください。</span></li>
+      <li><b>精神科・心療内科（発達障害の診療あり）</b><span>診断ができるのは医師です。発達障害の診療をしているか、成人を診ているかを予約前に確認してください。初診まで数か月待つこともあります。</span></li>
+      <li><b>精神保健福祉センター・保健所</b><span>どこに相談すればよいか分からないときの最初の窓口として使えます。</span></li>
+      <li><b>お子さんのことが気になる場合</b><span>かかりつけの小児科、市区町村の保健センター、子育て支援窓口に相談してください。</span></li>
+      <li><b>発達障害についての情報</b><span>国立障害者リハビリテーションセンターの「発達障害情報・支援センター」に、特性や支援制度の解説があります。<br><a href="https://www.rehab.go.jp/ddis/" target="_blank" rel="noopener">www.rehab.go.jp/ddis/</a></span></li>
+      <li><b>気持ちがつらいとき</b><span>こころの健康相談統一ダイヤル：<span class="tel">0570-064-556</span>（つながる時間は地域によって異なります）</span></li>
+    </ul>
+
+    <div class="actions">
+      <button class="btn" id="copy">結果をテキストでコピー（受診時のメモに）</button>
+      <button class="btn sec" id="retry">最初からやり直す</button>
+    </div>
+    <p class="small muted" style="margin-top:18px">このチェックは簡易的なもので、医学的な診断や治療の代わりにはなりません。気になることがあれば、結果にかかわらず専門家に相談してください。</p>
+  </section>
+</div>
+
+<script>
+const FREQ = ["まったくない","まれにある","ときどきある","よくある","とてもよくある"];
+// [domain, sub, text, reversed]
+const ITEMS = [
+  ["ASD","social","会話の中で、相手が冗談や皮肉を言っているのか、本気なのか分からなくなることがある"],
+  ["ASD","social","雑談や世間話を、どう続ければいいのか分からず困る"],
+  ["ASD","social","相手の表情や声のトーンから、気持ちを読み取るのが難しいと感じる"],
+  ["ASD","social","話すときに相手の目を見るのが苦手、またはぎこちなくなる"],
+  ["ASD","social","「空気が読めない」「言い方がきつい」と言われたことがある"],
+  ["ASD","social","友人関係を作ったり続けたりするのに、人より多くのエネルギーが要ると感じる"],
+  ["ASD","rrb","予定や手順が急に変わると、強い不安や混乱を感じる"],
+  ["ASD","rrb","特定の分野に強い興味があり、ほかのことを忘れて何時間も没頭する"],
+  ["ASD","rrb","毎日、同じやり方・同じ順番で物事を進めたい"],
+  ["ASD","rrb","音・光・におい・肌ざわりなどに、人より敏感（または鈍感）だと感じる"],
+  ["ASD","rrb","細かい部分に目が行き、全体像をつかむのに時間がかかる"],
+  ["ASD","rrb","数字・配置・規則性などのパターンに、自然と目が向く"],
+  ["ADHD","inatt","退屈な作業や面倒な作業を、最後まで仕上げるのが難しい"],
+  ["ADHD","inatt","約束や締め切り、やるべきことを忘れてしまう"],
+  ["ADHD","inatt","鍵・スマホ・財布などを探したり、なくしたりする"],
+  ["ADHD","inatt","人の話を聞いているつもりでも、途中で別のことを考えている"],
+  ["ADHD","inatt","段取りを考えて、順序よく作業を進めるのが苦手"],
+  ["ADHD","inatt","まわりの物音や人の動きで、すぐに気が散る"],
+  ["ADHD","hyper","長く座っていなければならない場面で、手足を動かしたりそわそわしたりする"],
+  ["ADHD","hyper","相手の話が終わる前に、話し始めてしまう"],
+  ["ADHD","hyper","順番待ちや行列が、とても苦痛に感じる"],
+  ["ADHD","hyper","思いつきで買い物や決断をして、あとで後悔する"],
+  ["ADHD","hyper","頭の中が常に忙しく、落ち着いてくつろぐのが難しい"],
+  ["ADHD","hyper","一度にいくつものことに手を出し、途中で投げ出してしまう"]
+];
+const CONTEXT = [
+  {id:"onset", sect:"背景について", text:"ここまでの質問で「よくある」と感じた特徴は、子どもの頃（12歳ごろまで）からありましたか？",
+   opts:["あった","なかった（最近になって感じる）","分からない／思い出せない"]},
+  {id:"impact", sect:"背景について", text:"これらの特徴によって、仕事・学業・家事・人間関係などで困ることはありますか？",
+   opts:["ほとんどない","少しある","かなりある","とても大きく、生活に支障がある"]}
+];
+const SUB = {social:"対人・コミュニケーション", rrb:"こだわり・感覚", inatt:"不注意", hyper:"多動性・衝動性"};
+const DOM = {
+  ASD:{name:"ASD（自閉スペクトラム症）の傾向", subs:["social","rrb"],
+    lv:["回答からは、ASDの特性はあまり目立ちません。",
+        "ASDの特性がいくつかみられます。特定の場面で困りごとが出ていないか振り返ってみてください。",
+        "ASDの特性が比較的強くみられます。困りごとがある場合は、専門家への相談を検討してみてください。"]},
+  ADHD:{name:"ADHD（注意欠如・多動症）の傾向", subs:["inatt","hyper"],
+    lv:["回答からは、ADHDの特性はあまり目立ちません。",
+        "ADHDの特性がいくつかみられます。忙しさや睡眠不足でも起こりやすいので、生活の状況とあわせて考えてください。",
+        "ADHDの特性が比較的強くみられます。困りごとがある場合は、専門家への相談を検討してみてください。"]}
+};
+const LVNAME = ["目立たない","いくつかみられる","強めにみられる"];
+const lvOf = avg => avg >= 2.5 ? 2 : avg >= 1.5 ? 1 : 0;   // avg on 0–4 scale
+
+const steps = [...ITEMS.map((it,i)=>({kind:"item", i})), ...CONTEXT.map((c,i)=>({kind:"ctx", i}))];
+const $ = id => document.getElementById(id);
+let ans = new Array(steps.length).fill(null), cur = 0, lock = false;
+function show(id){ ["intro","quiz","result"].forEach(s => $(s).hidden = s!==id); window.scrollTo(0,0); }
+
+$("agree").onchange = e => $("start").disabled = !e.target.checked;
+$("start").onclick = () => { ans.fill(null); cur = 0; show("quiz"); render(); };
+$("back").onclick = () => { if(cur>0){ cur--; render(); } };
+$("retry").onclick = () => { $("agree").checked = false; $("start").disabled = true; show("intro"); };
+
+function render(){
+  const st = steps[cur];
+  let sect, text, opts;
+  if(st.kind==="item"){ const it = ITEMS[st.i]; sect = SUB[it[1]]; text = it[2]; opts = FREQ; }
+  else { const c = CONTEXT[st.i]; sect = c.sect; text = c.text; opts = c.opts; }
+  $("qsect").textContent = sect;
+  $("qsect-top").textContent = st.kind==="item" ? (ITEMS[st.i][0]==="ASD" ? "パート1／2" : "パート2／2") : "最後に";
+  $("qcount").textContent = (cur+1) + " / " + steps.length;
+  $("qtext").textContent = text;
+  $("bar").style.width = (cur/steps.length*100) + "%";
+  $("back").disabled = cur===0;
+  const box = $("opts"); box.innerHTML = "";
+  opts.forEach((o,k) => {
+    const b = document.createElement("button");
+    b.className = "opt" + (ans[cur]===k ? " on" : ""); b.id = "opt"+k;
+    b.setAttribute("role","radio"); b.setAttribute("aria-checked", ans[cur]===k);
+    b.innerHTML = '<span class="dot"></span><span></span>';
+    b.lastChild.textContent = o;
+    b.onclick = () => pick(k);
+    box.appendChild(b);
+  });
+}
+function pick(k){
+  if(lock) return;
+  ans[cur] = k;
+  document.querySelectorAll(".opt").forEach((b,j)=>{ b.classList.toggle("on", j===k); b.setAttribute("aria-checked", j===k); });
+  lock = true;
+  setTimeout(()=>{ lock = false; if(cur < steps.length-1){ cur++; render(); } else finish(); }, 200);
+}
+document.addEventListener("keydown", e => {
+  if($("quiz").hidden) return;
+  const n = parseInt(e.key,10), max = document.querySelectorAll(".opt").length;
+  if(n>=1 && n<=max) pick(n-1);
+});
+
+function finish(){
+  const sub = {};
+  ITEMS.forEach((it,i)=>{ (sub[it[1]] ||= []).push(ans[i]); });
+  const avg = a => a.reduce((x,y)=>x+y,0)/a.length;
+  const subAvg = {}; for(const k in sub) subAvg[k] = avg(sub[k]);
+  const res = {};
+  for(const d in DOM){ const vals = DOM[d].subs.flatMap(s=>sub[s]); res[d] = {avg:avg(vals), lv:lvOf(avg(vals))}; }
+  const onset = ans[ITEMS.length], impact = ans[ITEMS.length+1];
+
+  $("domains").innerHTML = Object.keys(DOM).map(d => {
+    const D = DOM[d], r = res[d];
+    const rows = D.subs.map(s => { const p = Math.round(subAvg[s]/4*100), l = lvOf(subAvg[s]);
+      return `<div class="m-row"><span>${SUB[s]}</span><div class="m-bar lv${l}"><i style="width:0" data-w="${p}"></i></div><span>${subAvg[s].toFixed(1)}</span></div>`; }).join("");
+    return `<div class="domain"><div class="d-head"><h3>${D.name}</h3><span class="pill lv${r.lv}">${LVNAME[r.lv]}</span></div>
+      <div class="meter">${rows}</div><p class="small">${D.lv[r.lv]}</p></div>`;
+  }).join("");
+
+  const onsetTxt = ["子どもの頃からあった","最近になって感じる","分からない"][onset];
+  const impactTxt = CONTEXT[1].opts[impact];
+  let ctx = `<div class="domain"><div class="d-head"><h3>背景</h3></div><p class="small" style="margin-top:8px">特徴の始まり：<b>${onsetTxt}</b>　／　生活への影響：<b>${impactTxt}</b></p>`;
+  if(onset===1) ctx += `<p class="small muted">発達特性は子どもの頃からみられるものです。最近になって強く感じる場合は、ストレス・睡眠・気分の落ち込みなど、ほかの原因も考えられます。</p>`;
+  ctx += `</div>`;
+  $("context").innerHTML = ctx;
+
+  const anyHigh = res.ASD.lv===2 || res.ADHD.lv===2, anyMid = res.ASD.lv>=1 || res.ADHD.lv>=1;
+  let adv;
+  if(impact>=2 || (anyHigh && impact>=1)){
+    adv = `<div class="callout go"><h4>専門家への相談をおすすめします</h4><p style="margin:0">生活の中で困りごとが出ているようです。特性によるものかどうかに関わらず、相談することで対処の方法が見つかることがあります。まずは下の「発達障害者支援センター」など、無料の窓口から始めるのがおすすめです。受診するときは、このページの結果をコピーしてメモとして持っていくと伝えやすくなります。</p></div>`;
+  } else if(anyMid){
+    adv = `<div class="callout calm"><h4>気になる点があれば相談を</h4><p style="margin:0">いくつかの特性がみられますが、誰にでもある程度ある特徴でもあります。今のところ大きな困りごとがなければ、様子をみてもかまいません。困る場面が増えてきたら、下の窓口に相談してみてください。</p></div>`;
+  } else {
+    adv = `<div class="callout calm"><h4>特性は目立ちませんでした</h4><p style="margin:0">今回の回答では、目立った傾向はみられませんでした。ただし、このチェックで見落とされる特性もあります。実際に困りごとを感じている場合は、結果にかかわらず相談してください。</p></div>`;
+  }
+  $("advice").innerHTML = adv;
+
+  const d = new Date(), ds = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  $("rdate").textContent = ds;
+  show("result");
+  requestAnimationFrame(()=>requestAnimationFrame(()=>document.querySelectorAll(".m-bar i").forEach(i=>i.style.width=i.dataset.w+"%")));
+
+  window._summary = [
+    `発達特性セルフチェック（簡易・診断ではありません）　実施日：${ds}`,
+    `■ASDの傾向：${LVNAME[res.ASD.lv]}（対人・コミュニケーション ${subAvg.social.toFixed(1)}／こだわり・感覚 ${subAvg.rrb.toFixed(1)}）`,
+    `■ADHDの傾向：${LVNAME[res.ADHD.lv]}（不注意 ${subAvg.inatt.toFixed(1)}／多動性・衝動性 ${subAvg.hyper.toFixed(1)}）`,
+    `　※数値は0（まったくない）〜4（とてもよくある）の平均`,
+    `■特徴の始まり：${onsetTxt}`,
+    `■生活への影響：${impactTxt}`,
+    `■「よくある」以上と答えた項目：`,
+    ...ITEMS.map((it,i)=> ans[i]>=3 ? `・${it[2]}（${FREQ[ans[i]]}）` : null).filter(Boolean)
+  ].join("\n");
+}
+
+$("copy").onclick = async () => {
+  const btn = $("copy");
+  try{ await navigator.clipboard.writeText(window._summary); btn.textContent = "コピーしました"; }
+  catch(e){
+    const pre = document.createElement("textarea"); pre.value = window._summary; pre.rows = 10;
+    pre.style.cssText = "width:100%;font:13px var(--body);margin-top:10px;background:var(--card);color:var(--ink);border:1px solid var(--rule);border-radius:6px;padding:10px";
+    btn.after(pre); pre.select(); btn.textContent = "下の文字を選択してコピーしてください";
+  }
+  setTimeout(()=>btn.textContent="結果をテキストでコピー（受診時のメモに）", 3000);
+};
+</script>
+
+</body>
+</html>
