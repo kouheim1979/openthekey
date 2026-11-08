@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>星読みノート</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+html,body{margin:0}img{max-width:100%}
+/* Layout: one narrow column like an observer's notebook; the chart wheel is the centerpiece, readings follow as ruled entries */
+:root{
+  --bg:#EDF0F5; --paper:#F8F9FC; --ink:#1A2140; --muted:#5E6684; --line:#C9CFDE;
+  --accent:#2C44A3; --brass:#9C7426; --fire:#C2492F; --earth:#5F7A33; --air:#3A7FA6; --water:#3C4FA0;
+  --display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --mono:"DM Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1322; --paper:#151B2F; --ink:#E3E6F2; --muted:#9AA2C0; --line:#2B3452;
+  --accent:#93A6FF; --brass:#D9B66C; --fire:#F08A6E; --earth:#A6C772; --air:#7CC3E8; --water:#9DAAF5; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1322; --paper:#151B2F; --ink:#E3E6F2; --muted:#9AA2C0; --line:#2B3452;
+  --accent:#93A6FF; --brass:#D9B66C; --fire:#F08A6E; --earth:#A6C772; --air:#7CC3E8; --water:#9DAAF5; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.7}
+.wrap{max-width:680px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+header h1{font-family:var(--display);font-weight:700;font-size:28px;letter-spacing:.06em;margin:0}
+header p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.people{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:6px 14px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+.chip.add{border-style:dashed;color:var(--muted)}
+.chip:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+form{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px 14px}
+form .full{grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);letter-spacing:.04em;min-width:0}
+label.inline{flex-direction:row;align-items:center;gap:8px;font-size:13px;color:var(--ink)}
+input,select{font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;min-width:0;width:100%;box-sizing:border-box}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{font:inherit;font-size:14px;font-weight:700;border:0;background:var(--accent);color:var(--paper);padding:9px 18px;border-radius:6px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:500}
+.btn.danger{background:transparent;color:var(--fire);border:1px solid var(--line);font-weight:500}
+.note{font-size:12px;color:var(--muted)}
+.sample{display:inline-block;font-size:11px;letter-spacing:.08em;color:var(--brass);border:1px solid var(--brass);border-radius:4px;padding:0 6px;margin-left:6px;vertical-align:middle}
+.chartbox{display:flex;flex-direction:column;align-items:center;gap:6px}
+.chartbox svg{width:100%;max-width:520px;height:auto}
+.caption{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center}
+h2{font-family:var(--display);font-size:19px;font-weight:700;margin:0 0 10px;letter-spacing:.05em;display:flex;align-items:baseline;gap:10px}
+h2 small{font-family:var(--body);font-size:12px;color:var(--muted);font-weight:400}
+.big3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.b3{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
+.b3 .k{font-size:11px;color:var(--muted);letter-spacing:.08em}
+.b3 .v{font-family:var(--display);font-size:22px;font-weight:700;line-height:1.3;margin:2px 0}
+.b3 .g{font-size:20px;color:var(--brass)}
+.b3 p{margin:4px 0 0;font-size:12.5px;line-height:1.6;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:11px;color:var(--muted);font-weight:500;letter-spacing:.06em;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.gl{font-size:17px;color:var(--brass);width:1.4em;display:inline-block;text-align:center}
+.retro{font-family:var(--mono);font-size:11px;color:var(--fire);margin-left:4px}
+.bal{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.bar{display:grid;grid-template-columns:3.2em 1fr 1.6em;align-items:center;gap:8px;font-size:13px;margin:5px 0}
+.bar .track{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar .fill{height:100%;border-radius:4px}
+.bar .n{font-family:var(--mono);font-size:12px;text-align:right;color:var(--muted)}
+.readings{display:flex;flex-direction:column}
+.entry{display:grid;grid-template-columns:2em 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.entry .gl{font-size:22px;width:auto}
+.entry h3{margin:0;font-size:15px;font-weight:700}
+.entry h3 span{font-weight:400;color:var(--muted);font-size:13px;margin-left:6px}
+.entry p{margin:3px 0 0;font-size:14px;max-width:62ch}
+.asp{display:flex;flex-wrap:wrap;gap:6px}
+.asp span{font-size:13px;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:3px 9px;white-space:nowrap}
+.asp .h{color:var(--fire)} .asp .s{color:var(--air)} .asp .c{color:var(--brass)}
+footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+[hidden]{display:none!important}
+@media (max-width:520px){form{grid-template-columns:1fr}.big3{grid-template-columns:1fr}.bal{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>星読みノート</h1>
+    <p>生まれた日時と場所から出生ホロスコープを描きます</p>
+  </header>
+
+  <div class="people" id="people"></div>
+
+  <form id="f" autocomplete="off">
+    <label class="full">名前<input id="name" maxlength="20" placeholder="例：りん"></label>
+    <label>生年月日<input id="date" type="date" min="1800-01-01" max="2050-12-31" required></label>
+    <label>生まれた時刻<input id="time" type="time"></label>
+    <label class="inline full"><input id="unk" type="checkbox">生まれた時刻がわからない（正午で計算し、ハウスとASCは出しません）</label>
+    <label class="full">出生地<select id="place"></select></label>
+    <div class="row3 full" id="custom" hidden>
+      <label>緯度（北+）<input id="lat" type="number" step="0.01" inputmode="decimal"></label>
+      <label>経度（東+）<input id="lon" type="number" step="0.01" inputmode="decimal"></label>
+      <label>UTCとの時差<input id="tz" type="number" step="0.5" inputmode="decimal"></label>
+    </div>
+    <div class="actions full">
+      <button class="btn" type="submit" id="save">保存して表示</button>
+      <button class="btn danger" type="button" id="del">この人を削除</button>
+      <span class="note" id="msg"></span>
+    </div>
+  </form>
+
+  <section class="chartbox">
+    <h2 style="align-self:flex-start" id="who">出生図</h2>
+    <svg id="wheel" viewBox="0 0 400 400" role="img" aria-label="出生ホロスコープ"></svg>
+    <div class="caption" id="cap"></div>
+  </section>
+
+  <section>
+    <h2>ビッグスリー<small>太陽・月・アセンダント</small></h2>
+    <div class="big3" id="big3"></div>
+  </section>
+
+  <section>
+    <h2>天体の位置</h2>
+    <div class="tablewrap"><table id="tbl"></table></div>
+  </section>
+
+  <section class="bal" id="bal"></section>
+
+  <section>
+    <h2>主なアスペクト<small>天体どうしの角度</small></h2>
+    <div class="asp" id="asp"></div>
+  </section>
+
+  <section>
+    <h2>天体ごとの読み</h2>
+    <div class="readings" id="read"></div>
+  </section>
+
+  <footer>
+    天体位置は簡易天文計算（誤差は数分角程度、1800〜2050年）。ハウスはプラシーダス方式（高緯度ではポルフィリー）。1948〜1951年の夏時間で生まれた場合は、時刻を1時間早めて入力してください。データはこのブラウザの中だけに保存されます。
+  </footer>
+</div>
+
+<script>
+// ===== Astro core: low-precision ephemeris (JPL approx elements 1800-2050, Meeus Sun/Moon) =====
+const AC = (() => {
+  const D2R = Math.PI / 180, R2D = 180 / Math.PI;
+  const norm = x => ((x % 360) + 360) % 360;
+  const sind = x => Math.sin(x * D2R), cosd = x => Math.cos(x * D2R);
+
+  // JD from UTC Date
+  const jd = date => date.getTime() / 86400000 + 2440587.5;
+  const TT_OFFSET = 69 / 86400; // approx ΔT (days)
+
+  // JPL Keplerian elements [a, e, I, L, varpi, Omega] and rates per century
+  const EL = {
+    mercury: [[0.38709927, 0.20563593, 7.00497902, 252.25032350, 77.45779628, 48.33076593], [0.00000037, 0.00001906, -0.00594749, 149472.67411175, 0.16047689, -0.12534081]],
+    venus:   [[0.72333566, 0.00677672, 3.39467605, 181.97909950, 131.60246718, 76.67984255], [0.00000390, -0.00004107, -0.00078890, 58517.81538729, 0.00268329, -0.27769418]],
+    earth:   [[1.00000261, 0.01671123, -0.00001531, 100.46457166, 102.93768193, 0.0], [0.00000562, -0.00004392, -0.01294668, 35999.37244981, 0.32327364, 0.0]],
+    mars:    [[1.52371034, 0.09339410, 1.84969142, -4.55343205, -23.94362959, 49.55953891], [0.00001847, 0.00007882, -0.00813131, 19140.30268499, 0.44441088, -0.29257343]],
+    jupiter: [[5.20288700, 0.04838624, 1.30439695, 34.39644051, 14.72847983, 100.47390909], [-0.00011607, -0.00013253, -0.00183714, 3034.74612775, 0.21252668, 0.20469106]],
+    saturn:  [[9.53667594, 0.05386179, 2.48599187, 49.95424423, 92.59887831, 113.66242448], [-0.00125060, -0.00050991, 0.00193609, 1222.49362201, -0.41897216, -0.28867794]],
+    uranus:  [[19.18916464, 0.04725744, 0.77263783, 313.23810451, 170.95427630, 74.01692503], [-0.00196176, -0.00004397, -0.00242939, 428.48202785, 0.40805281, 0.04240589]],
+    neptune: [[30.06992276, 0.00859048, 1.77004347, -55.12002969, 44.96476227, 131.78422574], [0.00026291, 0.00005105, 0.00035372, 218.45945325, -0.32241464, -0.00508664]],
+    pluto:   [[39.48211675, 0.24882730, 17.14001206, 238.92903833, 224.06891629, 110.30393684], [-0.00031596, 0.00005170, 0.00004818, 145.20780515, -0.04062942, -0.01183482]]
+  };
+
+  function helio(name, T) {
+    const [e0, r] = EL[name];
+    const a = e0[0] + r[0] * T, e = e0[1] + r[1] * T, I = e0[2] + r[2] * T;
+    const L = e0[3] + r[3] * T, wb = e0[4] + r[4] * T, Om = e0[5] + r[5] * T;
+    const w = wb - Om; let M = norm(L - wb); if (M > 180) M -= 360;
+    let E = M + R2D * e * sind(M);
+    for (let i = 0; i < 30; i++) {
+      const dM = M - (E - R2D * e * sind(E));
+      const dE = dM / (1 - e * cosd(E)); E += dE; if (Math.abs(dE) < 1e-8) break;
+    }
+    const xp = a * (cosd(E) - e), yp = a * Math.sqrt(1 - e * e) * sind(E);
+    const cw = cosd(w), sw = sind(w), cO = cosd(Om), sO = sind(Om), cI = cosd(I), sI = sind(I);
+    return [
+      (cw * cO - sw * sO * cI) * xp + (-sw * cO - cw * sO * cI) * yp,
+      (cw * sO + sw * cO * cI) * xp + (-sw * sO + cw * cO * cI) * yp,
+      (sw * sI) * xp + (cw * sI) * yp
+    ];
+  }
+
+  function sunLon(T) { // apparent, ecliptic of date
+    const L0 = 280.46646 + 36000.76983 * T + 0.0003032 * T * T;
+    const M = 357.52911 + 35999.05029 * T - 0.0001537 * T * T;
+    const C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * sind(M) + (0.019993 - 0.000101 * T) * sind(2 * M) + 0.000289 * sind(3 * M);
+    const Om = 125.04 - 1934.136 * T;
+    return norm(L0 + C - 0.00569 - 0.00478 * sind(Om));
+  }
+
+  function moonLon(T) {
+    const L0 = 218.3164477 + 481267.88123421 * T;
+    const D = 297.8501921 + 445267.1114034 * T;
+    const M = 357.5291092 + 35999.0502909 * T;
+    const Mp = 134.9633964 + 477198.8675055 * T;
+    const F = 93.2720950 + 483202.0175233 * T;
+    const lon = L0
+      + 6.288774 * sind(Mp) + 1.274027 * sind(2 * D - Mp) + 0.658314 * sind(2 * D)
+      + 0.213618 * sind(2 * Mp) - 0.185116 * sind(M) - 0.114332 * sind(2 * F)
+      + 0.058793 * sind(2 * D - 2 * Mp) + 0.057066 * sind(2 * D - M - Mp)
+      + 0.053322 * sind(2 * D + Mp) + 0.045758 * sind(2 * D - M)
+      - 0.040923 * sind(M - Mp) - 0.034720 * sind(D) - 0.030383 * sind(M + Mp)
+      + 0.015327 * sind(2 * D - 2 * F) - 0.012528 * sind(Mp + 2 * F)
+      + 0.010980 * sind(Mp - 2 * F) + 0.010675 * sind(4 * D - Mp)
+      + 0.010034 * sind(3 * Mp) + 0.008548 * sind(4 * D - 2 * Mp)
+      - 0.007888 * sind(2 * D + M - Mp) - 0.006766 * sind(2 * D + M)
+      - 0.005163 * sind(D - Mp) + 0.004987 * sind(D + M)
+      + 0.004036 * sind(2 * D - M + Mp) + 0.003994 * sind(2 * D + 2 * Mp)
+      + 0.003861 * sind(4 * D) + 0.003665 * sind(2 * D - 3 * Mp);
+    return norm(lon);
+  }
+
+  function nodeLon(T) { return norm(125.0445479 - 1934.1362891 * T + 0.0020754 * T * T); }
+
+  function planetLon(name, T) {
+    const p = helio(name, T), e = helio('earth', T);
+    const x = p[0] - e[0], y = p[1] - e[1];
+    return norm(Math.atan2(y, x) * R2D + 1.396971 * T); // J2000 -> of date
+  }
+
+  const BODIES = ['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'node'];
+  function lonAt(body, T) {
+    if (body === 'sun') return sunLon(T);
+    if (body === 'moon') return moonLon(T);
+    if (body === 'node') return nodeLon(T);
+    return planetLon(body, T);
+  }
+  function T_of(date) { return (jd(date) + TT_OFFSET - 2451545) / 36525; }
+
+  function positions(date) {
+    const T = T_of(date), dT = 1 / 36525;
+    return BODIES.map(b => {
+      const l = lonAt(b, T), l2 = lonAt(b, T + dT);
+      let sp = l2 - l; if (sp > 180) sp -= 360; if (sp < -180) sp += 360;
+      return { body: b, lon: l, speed: sp, retro: b !== 'node' && sp < 0 };
+    });
+  }
+
+  function obliquity(T) { return 23.4392911 - 0.0130042 * T; }
+  function gmst(date) {
+    const d = jd(date) - 2451545, T = d / 36525;
+    return norm(280.46061837 + 360.98564736629 * d + 0.000387933 * T * T);
+  }
+
+  // Ascendant / MC / Placidus houses
+  function houses(date, lat, lon) {
+    const T = T_of(date), eps = obliquity(T);
+    const ramc = norm(gmst(date) + lon);
+    const mc = norm(Math.atan2(sind(ramc), cosd(ramc) * cosd(eps)) * R2D);
+    const asc = norm(Math.atan2(cosd(ramc), -(sind(ramc) * cosd(eps) + Math.tan(lat * D2R) * sind(eps))) * R2D);
+    const raToLon = ra => norm(Math.atan2(sind(ra), cosd(ra) * cosd(eps)) * R2D);
+    let system = 'placidus';
+    function cusp(kind) { // kind: 11,12,2,3
+      let R = ramc + ({ 11: 30, 12: 60, 2: 120, 3: 150 })[kind];
+      for (let i = 0; i < 60; i++) {
+        const lam = raToLon(R);
+        const dec = Math.asin(sind(eps) * sind(lam)) * R2D;
+        const x = Math.tan(lat * D2R) * Math.tan(dec * D2R);
+        if (Math.abs(x) >= 1) return null;
+        const ad = Math.asin(x) * R2D;
+        const dsa = 90 + ad, nsa = 90 - ad;
+        let Rn;
+        if (kind === 11) Rn = ramc + dsa / 3;
+        else if (kind === 12) Rn = ramc + 2 * dsa / 3;
+        else if (kind === 3) Rn = ramc + 180 - nsa / 3;
+        else Rn = ramc + 180 - 2 * nsa / 3;
+        if (Math.abs(Rn - R) < 1e-7) { R = Rn; break; }
+        R = Rn;
+      }
+      return raToLon(R);
+    }
+    let c11 = cusp(11), c12 = cusp(12), c2 = cusp(2), c3 = cusp(3);
+    if ([c11, c12, c2, c3].some(v => v === null)) { // Porphyry fallback at high latitude
+      system = 'porphyry';
+      const q1 = norm(asc - mc), q2 = norm(mc + 180 - asc);
+      c11 = norm(mc + q1 / 3); c12 = norm(mc + 2 * q1 / 3);
+      c2 = norm(asc + q2 / 3); c3 = norm(asc + 2 * q2 / 3);
+    }
+    const c = [asc, c2, c3, norm(mc + 180), norm(c11 + 180), norm(c12 + 180), norm(asc + 180), norm(c2 + 180), norm(c3 + 180), mc, c11, c12];
+    return { asc, mc, cusps: c, system };
+  }
+
+  function houseOf(lon, cusps) {
+    for (let i = 0; i < 12; i++) {
+      const a = cusps[i], b = cusps[(i + 1) % 12];
+      const span = norm(b - a), off = norm(lon - a);
+      if (off < span) return i + 1;
+    }
+    return 1;
+  }
+
+  // ===== Four Pillars helpers =====
+  function sunLonAtDate(date) { return sunLon(T_of(date)); }
+  // find time when sun longitude crosses target near date (direction +1 next, -1 previous)
+  function findSolarTerm(date, target, dir) {
+    let t = date.getTime();
+    const step = dir * 86400000;
+    let prev = norm(sunLonAtDate(new Date(t)) - target);
+    for (let i = 0; i < 400; i++) {
+      const t2 = t + step;
+      const cur = norm(sunLonAtDate(new Date(t2)) - target);
+      const crossed = dir > 0 ? (cur < prev && prev > 300 && cur < 60) : (cur > prev && cur > 300 && prev < 60);
+      if (crossed) {
+        let lo = Math.min(t, t2), hi = Math.max(t, t2);
+        for (let k = 0; k < 40; k++) {
+          const mid = (lo + hi) / 2;
+          const v = norm(sunLonAtDate(new Date(mid)) - target);
+          if (v > 180) lo = mid; else hi = mid;
+        }
+        return new Date((lo + hi) / 2);
+      }
+      t = t2; prev = cur;
+    }
+    return null;
+  }
+  function jdnFromYMD(y, m, d) {
+    const a = Math.floor((14 - m) / 12), yy = y + 4800 - a, mm = m + 12 * a - 3;
+    return d + Math.floor((153 * mm + 2) / 5) + 365 * yy + Math.floor(yy / 4) - Math.floor(yy / 100) + Math.floor(yy / 400) - 32045;
+  }
+
+  return { norm, positions, houses, houseOf, sunLonAtDate, findSolarTerm, jdnFromYMD, jd };
+})();
+
+
+// ===== Shared: places, storage, time =====
+const PLACES = [
+  ['北海道', 43.06, 141.35], ['青森県', 40.82, 140.74], ['岩手県', 39.70, 141.15], ['宮城県', 38.27, 140.87], ['秋田県', 39.72, 140.10],
+  ['山形県', 38.24, 140.36], ['福島県', 37.75, 140.47], ['茨城県', 36.34, 140.45], ['栃木県', 36.57, 139.88], ['群馬県', 36.39, 139.06],
+  ['埼玉県', 35.86, 139.65], ['千葉県', 35.61, 140.12], ['東京都', 35.69, 139.69], ['神奈川県', 35.45, 139.64], ['新潟県', 37.90, 139.02],
+  ['富山県', 36.70, 137.21], ['石川県', 36.59, 136.63], ['福井県', 36.07, 136.22], ['山梨県', 35.66, 138.57], ['長野県', 36.65, 138.18],
+  ['岐阜県', 35.39, 136.72], ['静岡県', 34.98, 138.38], ['愛知県', 35.18, 136.91], ['三重県', 34.73, 136.51], ['滋賀県', 35.00, 135.87],
+  ['京都府', 35.02, 135.76], ['大阪府', 34.69, 135.52], ['兵庫県', 34.69, 135.18], ['奈良県', 34.69, 135.83], ['和歌山県', 34.23, 135.17],
+  ['鳥取県', 35.50, 134.24], ['島根県', 35.47, 133.05], ['岡山県', 34.66, 133.93], ['広島県', 34.40, 132.46], ['山口県', 34.19, 131.47],
+  ['徳島県', 34.07, 134.56], ['香川県', 34.34, 134.04], ['愛媛県', 33.84, 132.77], ['高知県', 33.56, 133.53], ['福岡県', 33.61, 130.42],
+  ['佐賀県', 33.25, 130.30], ['長崎県', 32.74, 129.87], ['熊本県', 32.79, 130.74], ['大分県', 33.24, 131.61], ['宮崎県', 31.91, 131.42],
+  ['鹿児島県', 31.56, 130.56], ['沖縄県', 26.21, 127.68]
+];
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+};
+function placeInfo(p) {
+  if (p.place === 'custom') return { lat: +p.lat || 0, lon: +p.lon || 0, tz: +p.tz || 0, label: `緯度${(+p.lat || 0).toFixed(2)} 経度${(+p.lon || 0).toFixed(2)}` };
+  const f = PLACES.find(x => x[0] === p.place) || PLACES[12];
+  return { lat: f[1], lon: f[2], tz: 9, label: f[0] };
+}
+function toUTC(dateStr, timeStr, tz) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const [hh, mm] = (timeStr || '12:00').split(':').map(Number);
+  return new Date(Date.UTC(y, m - 1, d, hh, mm) - tz * 3600000);
+}
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+
+const SIGNS = [
+  ['牡羊座','♈','火','活動','ためらわず飛び込む行動派。思い立ったらすぐ動き、先頭を切ることで力が湧きます。'],
+  ['牡牛座','♉','地','不動','五感と安定を大切にするマイペース型。時間をかけて確かなものを育てます。'],
+  ['双子座','♊','風','柔軟','好奇心が旺盛で頭の回転が速いタイプ。言葉と情報を軽やかに扱います。'],
+  ['蟹座','♋','水','活動','身内を守る情の深さが持ち味。安心できる居場所づくりが上手です。'],
+  ['獅子座','♌','火','不動','自分らしさを堂々と表現する人。周りを明るくし、創造することで輝きます。'],
+  ['乙女座','♍','地','柔軟','細部に気づき、役に立つことを喜ぶ実務派。整えることで心も落ち着きます。'],
+  ['天秤座','♎','風','活動','バランス感覚と美意識の人。人との関わりの中で自分を磨きます。'],
+  ['蠍座','♏','水','不動','一度決めたら深く掘り下げる集中力の持ち主。信頼した相手には一途です。'],
+  ['射手座','♐','火','柔軟','自由と冒険を愛する探求者。遠くの世界や学びに心が向かいます。'],
+  ['山羊座','♑','地','活動','目標に向けてこつこつ積み上げる努力家。責任を引き受けて信頼を得ます。'],
+  ['水瓶座','♒','風','不動','独自の視点を持つ自由人。仲間や社会の未来に目を向けます。'],
+  ['魚座','♓','水','柔軟','共感力と想像力が豊か。人の気持ちや目に見えないものを感じ取ります。']
+];
+const VS = '︎';
+const PL = {
+  sun:['太陽','☉','自分らしさ・人生の目的'], moon:['月','☽','心の安らぎ・素の感情'], mercury:['水星','☿','考え方・話し方'],
+  venus:['金星','♀','好きなもの・愛し方'], mars:['火星','♂','やる気・闘い方'], jupiter:['木星','♃','伸びしろ・幸運'],
+  saturn:['土星','♄','課題・鍛えられるところ'], uranus:['天王星','♅','個性・変化'], neptune:['海王星','♆','夢・インスピレーション'],
+  pluto:['冥王星','♇','根本からの変容'], node:['ドラゴンヘッド','☊','人生で向かう方向']
+};
+const HOUSES = ['自分自身・第一印象','お金・才能','学び・兄弟・身近な交流','家庭・ルーツ','恋愛・創作・子ども','仕事の進め方・健康',
+  'パートナー・対人関係','深い絆・受け継ぐもの','旅・学問・理想','社会的立場・天職','仲間・将来の夢','ひとりの時間・内面'];
+const ASPECTS = [[0,'合','☌',8,'c'],[60,'セクスタイル','⚹',4,'s'],[90,'スクエア','□',6,'h'],[120,'トライン','△',6,'s'],[180,'オポジション','☍',8,'h']];
+const ELC = {火:'var(--fire)',地:'var(--earth)',風:'var(--air)',水:'var(--water)'};
+
+const KEY = 'hoshiyomi.people.v1';
+let people = store.get(KEY, null);
+const SAMPLE = {id:'sample', name:'サンプル', date:'1990-04-15', time:'08:30', unk:false, place:'東京都', lat:'', lon:'', tz:'', sample:true};
+if (!people || !people.length) people = [SAMPLE];
+let cur = people[0].id;
+
+const $ = id => document.getElementById(id);
+$('place').innerHTML = PLACES.map(p => `<option>${p[0]}</option>`).join('') + '<option value="custom">海外・その他（緯度経度を入力）</option>';
+
+function renderPeople(){
+  $('people').innerHTML = people.map(p => `<button class="chip" type="button" data-id="${p.id}" aria-pressed="${p.id===cur}">${esc(p.name||'名前なし')}${p.sample?'<span class="sample">例</span>':''}</button>`).join('')
+    + '<button class="chip add" type="button" id="addp">＋ 追加</button>';
+}
+function fillForm(p){
+  $('name').value = p.name||''; $('date').value = p.date||''; $('time').value = p.time||''; $('unk').checked = !!p.unk;
+  $('place').value = p.place||'東京都'; $('lat').value = p.lat??''; $('lon').value = p.lon??''; $('tz').value = p.tz??'';
+  $('custom').hidden = $('place').value !== 'custom'; $('time').disabled = $('unk').checked;
+}
+function readForm(){
+  return {name:$('name').value.trim(), date:$('date').value, time:$('time').value, unk:$('unk').checked, place:$('place').value, lat:$('lat').value, lon:$('lon').value, tz:$('tz').value};
+}
+
+const fmtDeg = l => { const d = l % 30; const dd = Math.floor(d); const mm = Math.floor((d - dd) * 60); return `${dd}°${String(mm).padStart(2,'0')}′`; };
+const signOf = l => Math.floor(((l % 360) + 360) % 360 / 30);
+
+function compute(p){
+  const pi = placeInfo(p);
+  const utc = toUTC(p.date, p.unk ? '12:00' : (p.time || '12:00'), pi.tz);
+  const pos = AC.positions(utc);
+  const hs = p.unk ? null : AC.houses(utc, pi.lat, pi.lon);
+  pos.forEach(x => x.house = hs ? AC.houseOf(x.lon, hs.cusps) : null);
+  return {p, pi, utc, pos, hs};
+}
+
+function drawWheel(r){
+  const cx=200, cy=200, R1=192, R2=160, R3=142, RP=120, RA=92;
+  const base = r.hs ? r.hs.asc : 0;
+  const ang = l => (180 + (l - base)) * Math.PI / 180;
+  const pt = (l, rad) => [cx + rad*Math.cos(ang(l)), cy - rad*Math.sin(ang(l))];
+  let s = '';
+  s += `<circle cx="${cx}" cy="${cy}" r="${R1}" fill="var(--paper)" stroke="var(--line)"/>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${R2}" fill="var(--bg)" stroke="var(--line)"/>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="${RA}" fill="var(--paper)" stroke="var(--line)"/>`;
+  for (let i=0;i<12;i++){
+    const l=i*30, [x1,y1]=pt(l,R1), [x2,y2]=pt(l,R2);
+    s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--line)"/>`;
+    const [gx,gy]=pt(l+15,(R1+R2)/2);
+    s += `<text x="${gx}" y="${gy}" font-size="17" text-anchor="middle" dominant-baseline="central" fill="${ELC[SIGNS[i][2]]}">${SIGNS[i][1]}${VS}</text>`;
+    for (let k=1;k<6;k++){ const [a,b]=pt(l+k*5,R2), [c,d]=pt(l+k*5,R2+4); s+=`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="var(--line)"/>`; }
+  }
+  if (r.hs){
+    r.hs.cusps.forEach((c,i)=>{
+      const axis = i%3===0, [x1,y1]=pt(c,R2), [x2,y2]=pt(c,RA);
+      s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${axis?'var(--accent)':'var(--line)'}" stroke-width="${axis?1.6:1}"/>`;
+      const next = r.hs.cusps[(i+1)%12], mid = c + (((next - c)%360)+360)%360/2;
+      const [nx,ny]=pt(mid,RA+9);
+      s += `<text x="${nx}" y="${ny}" font-size="8.5" font-family="DM Mono,monospace" text-anchor="middle" dominant-baseline="central" fill="var(--muted)">${i+1}</text>`;
+    });
+    [[r.hs.asc,'ASC'],[r.hs.mc,'MC']].forEach(([l,t])=>{const [x,y]=pt(l,R2-10); s+=`<text x="${x}" y="${y}" font-size="8" font-weight="700" font-family="DM Mono,monospace" text-anchor="middle" dominant-baseline="central" fill="var(--accent)">${t}</text>`;});
+  }
+  // aspects
+  const as = aspects(r.pos);
+  as.forEach(a=>{
+    const [x1,y1]=pt(a.a.lon,RA), [x2,y2]=pt(a.b.lon,RA);
+    if (a.t[0]===0) return;
+    const col = a.t[4]==='h' ? 'var(--fire)' : 'var(--air)';
+    s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="1" opacity="${a.orb<2?0.9:0.55}"/>`;
+  });
+  // planets with spreading
+  const items = r.pos.map(p=>({p, d:p.lon})).sort((a,b)=>a.p.lon-b.p.lon);
+  for (let it=0; it<40; it++){
+    let moved=false;
+    for (let i=0;i<items.length;i++){
+      const a=items[i], b=items[(i+1)%items.length];
+      let gap=((b.d-a.d)%360+360)%360; if (items.length===1) break;
+      if (gap<8){ a.d-=(8-gap)/2; b.d+=(8-gap)/2; moved=true; }
+    }
+    if(!moved) break;
+  }
+  items.forEach(({p,d})=>{
+    const [tx,ty]=pt(p.lon,R2), [ux,uy]=pt(p.lon,R2-6);
+    s += `<line x1="${tx}" y1="${ty}" x2="${ux}" y2="${uy}" stroke="var(--brass)" stroke-width="1.4"/>`;
+    const [gx,gy]=pt(d,RP);
+    s += `<text x="${gx}" y="${gy}" font-size="16" text-anchor="middle" dominant-baseline="central" fill="var(--ink)">${PL[p.body][1]}${VS}</text>`;
+    const [dx,dy]=pt(d,RP-16);
+    s += `<text x="${dx}" y="${dy}" font-size="7.5" font-family="DM Mono,monospace" text-anchor="middle" dominant-baseline="central" fill="var(--muted)">${Math.floor(p.lon%30)}${p.retro?'R':''}</text>`;
+  });
+  $('wheel').innerHTML = s;
+}
+
+function aspects(pos){
+  const out=[], list=pos.filter(p=>p.body!=='node');
+  for (let i=0;i<list.length;i++) for (let j=i+1;j<list.length;j++){
+    let d=Math.abs(list[i].lon-list[j].lon); if (d>180) d=360-d;
+    for (const t of ASPECTS){ const orb=Math.abs(d-t[0]); if (orb<=t[3]) { out.push({a:list[i], b:list[j], t, orb}); break; } }
+  }
+  return out.sort((x,y)=>x.orb-y.orb);
+}
+
+function render(){
+  const p = people.find(x=>x.id===cur); if (!p) return;
+  if (!p.date){ return; }
+  const r = compute(p);
+  drawWheel(r);
+  const pad=n=>String(n).padStart(2,'0');
+  $('who').innerHTML = `${esc(p.name||'名前なし')}さんの出生図${p.sample?'<span class="sample">例</span>':''}`;
+  $('cap').textContent = `${p.date.replace(/-/g,'/')} ${p.unk?'時刻不明':p.time} ・ ${r.pi.label}${r.hs?` ・ ASC ${SIGNS[signOf(r.hs.asc)][0]} ${fmtDeg(r.hs.asc)}`:''}`;
+
+  const sun=r.pos[0], moon=r.pos[1];
+  const b3 = [['太陽','☉',sun.lon,'外から見えるあなたの軸'],['月','☽',moon.lon,'安心したいときの素顔'],['アセンダント','ASC',r.hs?r.hs.asc:null,'第一印象と生まれ持った雰囲気']];
+  $('big3').innerHTML = b3.map(([k,g,l,sub])=>{
+    if (l===null) return `<div class="b3"><div class="k">${k}</div><div class="v">—</div><p>出生時刻を入れると分かります。</p></div>`;
+    const sg=SIGNS[signOf(l)];
+    return `<div class="b3"><div class="k">${k} ・ ${sub}</div><div class="v"><span class="g">${sg[1]}${VS}</span> ${sg[0]}</div><p>${sg[4]}</p></div>`;
+  }).join('');
+
+  $('tbl').innerHTML = `<tr><th>天体</th><th>サイン</th><th>度数</th>${r.hs?'<th>ハウス</th>':''}</tr>` + r.pos.map(x=>{
+    const sg=SIGNS[signOf(x.lon)];
+    return `<tr><td><span class="gl">${PL[x.body][1]}${VS}</span>${PL[x.body][0]}${x.retro?'<span class="retro">逆行</span>':''}</td><td><span class="gl">${sg[1]}${VS}</span>${sg[0]}</td><td class="num">${fmtDeg(x.lon)}</td>${r.hs?`<td class="num">${x.house}</td>`:''}</tr>`;
+  }).join('') + (r.hs?`<tr><td><span class="gl">↑</span>アセンダント</td><td><span class="gl">${SIGNS[signOf(r.hs.asc)][1]}${VS}</span>${SIGNS[signOf(r.hs.asc)][0]}</td><td class="num">${fmtDeg(r.hs.asc)}</td><td class="num">1</td></tr><tr><td><span class="gl">⊤</span>MC（天頂）</td><td><span class="gl">${SIGNS[signOf(r.hs.mc)][1]}${VS}</span>${SIGNS[signOf(r.hs.mc)][0]}</td><td class="num">${fmtDeg(r.hs.mc)}</td><td class="num">10</td></tr>`:'');
+
+  // balance: 10 planets
+  const el={火:0,地:0,風:0,水:0}, md={活動:0,不動:0,柔軟:0};
+  r.pos.filter(x=>x.body!=='node').forEach(x=>{const sg=SIGNS[signOf(x.lon)]; el[sg[2]]++; md[sg[3]]++;});
+  const bars=(o,colors)=>Object.entries(o).map(([k,v])=>`<div class="bar"><span>${k}</span><div class="track"><div class="fill" style="width:${v*10}%;background:${colors(k)}"></div></div><span class="n">${v}</span></div>`).join('');
+  const topEl=Object.entries(el).sort((a,b)=>b[1]-a[1])[0][0];
+  const elText={火:'情熱と行動力が前に出やすい配置です。',地:'現実的で堅実な判断が得意な配置です。',風:'考えることと人とのつながりが得意な配置です。',水:'感受性と思いやりが豊かな配置です。'};
+  $('bal').innerHTML = `<div><h2>四元素<small>10天体の分布</small></h2>${bars(el,k=>ELC[k])}<p class="note">${topEl}が多め。${elText[topEl]}</p></div><div><h2>三区分</h2>${bars(md,()=>'var(--accent)')}<p class="note">活動＝始める力、不動＝続ける力、柔軟＝合わせる力。</p></div>`;
+
+  const as=aspects(r.pos).filter(a=>a.orb<=6).slice(0,14);
+  $('asp').innerHTML = as.length ? as.map(a=>`<span class="${a.t[4]}">${PL[a.a.body][1]}${VS} ${a.t[2]} ${PL[a.b.body][1]}${VS} ${a.t[1]} <small>${a.orb.toFixed(1)}°</small></span>`).join('') : '<span class="note">目立つアスペクトはありません</span>';
+
+  $('read').innerHTML = r.pos.map(x=>{
+    const sg=SIGNS[signOf(x.lon)], pl=PL[x.body];
+    const hTxt = x.house ? `第${x.house}ハウス（${HOUSES[x.house-1]}）で発揮されやすいテーマです。` : '';
+    const rTxt = x.retro ? 'この天体は逆行中で、そのテーマを内側でじっくり育てる傾向があります。' : '';
+    return `<div class="entry"><span class="gl">${pl[1]}${VS}</span><div><h3>${pl[0]} × ${sg[0]}<span>${pl[2]}</span></h3><p>${sg[4].replace(/。$/,'')}。そんな${sg[0]}の性質が、${pl[2]}に表れます。${hTxt}${rTxt}</p></div></div>`;
+  }).join('');
+}
+
+function save(e){
+  e.preventDefault();
+  const v = readForm();
+  if (!v.date){ $('msg').textContent='生年月日を入れてください'; return; }
+  const i = people.findIndex(x=>x.id===cur);
+  const rec = Object.assign({id: cur==='sample' ? 'p'+Date.now() : cur}, v);
+  if (i>=0) people[i]=rec; else people.push(rec);
+  cur = rec.id;
+  people = people.filter(x=>!x.sample || x.id===cur);
+  $('msg').textContent = store.set(KEY, people) ? '保存しました' : 'このブラウザでは保存できませんでした（表示はできます）';
+  renderPeople(); render();
+}
+
+$('f').addEventListener('submit', save);
+$('place').addEventListener('change', ()=>{ $('custom').hidden = $('place').value!=='custom'; });
+$('unk').addEventListener('change', ()=>{ $('time').disabled = $('unk').checked; });
+$('del').addEventListener('click', ()=>{
+  if ($('del').dataset.arm!=='1'){ $('del').dataset.arm='1'; $('del').textContent='もう一度押すと削除'; return; }
+  $('del').dataset.arm=''; $('del').textContent='この人を削除';
+  people = people.filter(x=>x.id!==cur);
+  if (!people.length) people=[SAMPLE];
+  store.set(KEY, people.filter(x=>!x.sample));
+  cur = people[0].id; fillForm(people[0]); renderPeople(); render(); $('msg').textContent='削除しました';
+});
+$('people').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if (!b) return;
+  $('msg').textContent=''; $('del').dataset.arm=''; $('del').textContent='この人を削除';
+  if (b.id==='addp'){
+    const np={id:'p'+Date.now(), name:'', date:'', time:'', unk:false, place:'東京都', lat:'', lon:'', tz:''};
+    people.push(np); cur=np.id; fillForm(np); renderPeople(); $('name').focus(); return;
+  }
+  cur=b.dataset.id; fillForm(people.find(x=>x.id===cur)); renderPeople(); render();
+});
+
+renderPeople(); fillForm(people[0]); render();
+</script>
+
+</body>
+</html>
