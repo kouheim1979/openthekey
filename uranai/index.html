@@ -3,7 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>星と命式ノート</title>
+<title>無料の相性占い・相性のいい誕生日検索 | 星と命式ノート</title>
+<meta name="description" content="生年月日から相性のいい誕生日を無料で検索。西洋占星術と四柱推命で、ふたりの相性やホロスコープ、命式を自分で確かめられる占いツールです。結果は参考としてお楽しみください。">
+<link rel="canonical" href="https://kouheim1979.github.io/openthekey/uranai/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="無料の相性占い・相性のいい誕生日検索 | 星と命式ノート">
+<meta property="og:description" content="相性のいい誕生日を西洋占星術と四柱推命から無料検索。名前を出さずに結果画像も共有できます。">
+<meta property="og:url" content="https://kouheim1979.github.io/openthekey/uranai/">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#EDF0F3">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap">
@@ -180,6 +189,17 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .rrow .n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
 .rrow .tot{font-weight:700;color:var(--plum)}
 .rrow button{font:inherit;background:none;border:0;color:var(--ink);text-align:left;padding:0;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hero{border:1px solid var(--line);border-radius:12px;background:var(--paper);padding:18px;display:flex;flex-direction:column;gap:10px}
+.hero h2{font-size:21px;line-height:1.55;margin:0}
+.hero p{font-size:13px;color:var(--muted);margin:0}
+.hero .hero-kicker{font-size:11px;color:var(--plum);font-weight:700;letter-spacing:.08em}
+.hero-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:4px}
+.hero-link{display:inline-block;text-decoration:none;border:1px solid var(--line);border-radius:7px;padding:10px 13px;color:var(--ink);font-size:13px;font-weight:700}
+.hero-link.primary{background:var(--plum);border-color:var(--plum);color:#fff}
+.find-share{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:10px}
+.footer-links{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px}
+.footer-links a{color:var(--accent)}
+#birthfinder{scroll-margin-top:110px}
 footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
 [hidden]{display:none!important}
 @media (max-width:520px){
@@ -200,6 +220,16 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
     <h1>星と命式ノート</h1>
     <p>西洋占星術と四柱推命を、生まれた日時と場所から</p>
   </header>
+
+  <section class="hero" aria-labelledby="hero-title">
+    <span class="hero-kicker">無料・登録不要の相性占い</span>
+    <h2 id="hero-title">あなたと相性のいい誕生日を、星と命式から探そう</h2>
+    <p>自分の生年月日を登録したら、西洋占星術・四柱推命・総合の3通りで相性のいい誕生日候補を計算。恋人、家族、友達との相性も確認できます。占いの結果は楽しむための目安です。</p>
+    <div class="hero-actions">
+      <a href="#aisho" id="heroFind" class="hero-link primary">相性のいい誕生日を探す</a>
+      <a href="./aisho-tanjoubi/" class="hero-link">計算方法と使い方を見る</a>
+    </div>
+  </section>
 
   <div class="people" id="people"></div>
 
@@ -313,6 +343,10 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
       </div>
       <p id="findstatus" class="note" role="status" aria-live="polite">検索を押すと、星読み・四柱推命・総合の3つの候補を表示します。</p>
       <div id="findresults"></div>
+      <div id="findshare" class="find-share" hidden>
+        <button type="button" class="btn line" id="savefind">匿名の結果画像を保存・共有</button>
+        <span class="note">自分や登録した人の名前・生年月日は画像に入れません。</span>
+      </div>
       <p class="note">候補者の出生時刻は不明として正午（日本時間）、出生地は日本国内を仮定した参考順位です。出生地自体を相性から特定することはできません。実在する相手の出生時刻・出生地が分かれば、上の「相性を見る」で再計算できます。占いの結果は科学的な相性の保証ではありません。</p>
     </section>
     <section><h2>登録した人との相性</h2><div class="rank" id="a-rank"></div></section>
@@ -320,6 +354,11 @@ footer{font-size:12px;color:var(--muted);border-top:1px solid var(--line);paddin
 
   <footer>
     天体位置は簡易天文計算（誤差は数分角程度、1800〜2050年）。ハウスはプラシーダス方式（高緯度ではポルフィリー）。四柱推命は年を立春、月を節入り（太陽の黄経）で切り替え、日は0時、23時台の時柱は翌日の日干で出しています。節入り前後の数時間に生まれた人は流派によって月柱・年柱が変わることがあります。相性の点数は楽しむための目安です。1948〜1951年の夏時間で生まれた場合は、時刻を1時間早めて入力してください。データはこのブラウザの中だけに保存されます。
+    <nav class="footer-links" aria-label="サイト情報">
+      <a href="./aisho-tanjoubi/">誕生日相性検索の使い方</a>
+      <a href="./about.html">このサイトについて</a>
+      <a href="./privacy.html">プライバシー</a>
+    </nav>
   </footer>
 </div>
 
@@ -1046,6 +1085,7 @@ function matchCard(title, sub, score, notes, color){
 
 let finderRun = 0;
 let finderPersonKey = '';
+let lastBirthResults = [];
 function resetFinderForPerson(p){
   const key = JSON.stringify([p.id,p.date,p.time,p.unk,p.place,p.lat,p.lon,p.tz,p.fix]);
   if(key === finderPersonKey) return;
@@ -1053,6 +1093,8 @@ function resetFinderForPerson(p){
   finderPersonKey = key;
   $('findbutton').disabled = false;
   $('findresults').innerHTML = '';
+  lastBirthResults = [];
+  $('findshare').hidden = true;
   $('findstatus').textContent = '検索を押すと、星読み・四柱推命・総合の3つの候補を表示します。';
 }
 function renderA(p){
@@ -1130,6 +1172,8 @@ function renderBirthFinder(pools, yearStart, yearEnd){
         }).join('')
         +'</div>';
     }).join('')+'</div>';
+  lastBirthResults = spacedBirthdays(pools.total, 'total');
+  $('findshare').hidden = !lastBirthResults.length;
 }
 function searchBirthdays(){
   const p=people.find(x=>x.id===cur);
@@ -1144,6 +1188,8 @@ function searchBirthdays(){
   const run=++finderRun;
   $('findbutton').disabled=true;
   $('findresults').innerHTML='';
+  $('findshare').hidden=true;
+  lastBirthResults=[];
   $('findstatus').textContent=yearStart+'〜'+yearEnd+'年の誕生日を検索中… 0%';
   let t=start, tested=0;
   function chunk(){
@@ -1172,7 +1218,49 @@ function searchBirthdays(){
   }
   setTimeout(chunk,0);
 }
+// The image deliberately excludes the visitor's name and date of birth.
+async function shareBirthdayImage(){
+  if (!lastBirthResults.length) return;
+  const canvas=document.createElement('canvas');
+  canvas.width=1080; canvas.height=1080;
+  const ctx=canvas.getContext('2d');
+  if(!ctx) return;
+  ctx.fillStyle='#F9FAFB';ctx.fillRect(0,0,1080,1080);
+  ctx.fillStyle='#8A3A78';ctx.fillRect(0,0,1080,20);
+  ctx.fillStyle='#8A3A78';ctx.font='bold 32px sans-serif';ctx.fillText('星と命式ノート',82,105);
+  ctx.fillStyle='#1B2130';ctx.font='bold 49px sans-serif';ctx.fillText('相性のいい誕生日 TOP 5',82,202);
+  ctx.fillStyle='#5D6578';ctx.font='25px sans-serif';ctx.fillText('西洋占星術 × 四柱推命 / 総合評価',82,257);
+  lastBirthResults.slice(0,5).forEach((r,i)=>{
+    const y=345+i*120;
+    ctx.fillStyle=i%2?'#EDF0F3':'#F1EBF0';ctx.fillRect(72,y-49,935,92);
+    ctx.fillStyle='#8A3A78';ctx.font='bold 31px sans-serif';ctx.fillText((i+1)+' 位',95,y+8);
+    ctx.fillStyle='#1B2130';ctx.font='bold 36px sans-serif';ctx.fillText(r.date.replace(/-/g,'/'),255,y+8);
+    ctx.fillStyle='#8A3A78';ctx.font='bold 30px sans-serif';ctx.textAlign='right';ctx.fillText(r.total+' 点',973,y+8);ctx.textAlign='left';
+  });
+  ctx.fillStyle='#5D6578';ctx.font='23px sans-serif';
+  ctx.fillText('※結果は占術上の参考値で、実際の相性を保証しません。',82,1010);
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+  if (!blob) return;
+  const filename='aisho-birthday-top5.png';
+  if(navigator.share && navigator.canShare && typeof File!=='undefined'){
+    const file=new File([blob],filename,{type:'image/png'});
+    if(navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:'相性のいい誕生日 TOP 5'});return;}
+      catch(e){if(e.name==='AbortError')return;}
+    }
+  }
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
 $('findbutton').addEventListener('click', searchBirthdays);
+$('savefind').addEventListener('click', shareBirthdayImage);
+$('heroFind').addEventListener('click', e=>{
+  e.preventDefault();
+  if(location.hash!=='#aisho') location.hash='aisho';
+  showTab('aisho');
+  $('birthfinder').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+});
 $('findresults').addEventListener('click', e=>{
   const button=e.target.closest('[data-find-date]');
   if(!button) return;
